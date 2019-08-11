@@ -1,7 +1,7 @@
 """Database models"""
 # pylint: disable=no-member,too-few-public-methods
 
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum, auto
 
 from flask_sqlalchemy import SQLAlchemy
@@ -77,3 +77,44 @@ class Activity(db.Model):
                               backref=db.backref('activities',
                                                  lazy=True,
                                                  cascade='all, delete-orphan'))
+
+
+class Product(db.Model):
+    """Product describes an item in the InnoStore that a user may purchase"""
+    __tablename__ = 'products'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    url = db.Column(db.String(96), nullable=False)
+    type = db.Column(db.String(128))
+    description = db.Column(db.String(1024), nullable=False)
+    cost = db.Column(db.Integer, nullable=False)
+    addition_date = db.Column(db.Date, nullable=False, default=date.today)
+
+
+class Variety(db.Model):
+    """Represents various types of one product"""
+    __tablename__ = 'varieties'
+
+    id = db.Column(db.Integer, primary_key=True)
+    size = db.Column(db.String(3), nullable=False)
+    color = db.Column(db.Integer, nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+
+    product = db.relationship('Product',
+                              backref=db.backref('varieties',
+                                                 lazy=True,
+                                                 cascade='all, delete-orphan'))
+
+
+class ProductImage(db.Model):
+    """Stores the location of the product image"""
+    __tablename__ = 'product_images'
+
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(96), nullable=False)
+    order = db.Column(db.Integer, nullable=False)
+    variety_id = db.Column(db.Integer, db.ForeignKey('varieties.id'), nullable=False)
+
+    variety = db.relationship('Variety',
+                              backref=db.backref('images', lazy=True, cascade='all, delete-orphan'))
