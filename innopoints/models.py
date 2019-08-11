@@ -58,6 +58,38 @@ class Project(db.Model):
                                                  cascade='all, delete-orphan'))
 
 
+# yapf: disable
+# pylint: disable=bad-continuation
+activity_competence = db.Table('activity_competence',  # pylint: disable=invalid-name
+    db.Column('activity_id', db.Integer, db.ForeignKey('activities.id'), primary_key=True),
+    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True))
+# pylint: enable=bad-continuation
+# yapf: enable
+
+
+class Competence(db.Model):
+    """Represents volunteers' competences"""
+    __tablename__ = 'competences'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+
+    activities = db.relationship('Activity',
+                                 secondary=activity_competence,
+                                 lazy=True,
+                                 backref=db.backref('competences', lazy=True))
+
+    def save(self):
+        """Save object to database"""
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        """Delete object from database"""
+        db.session.delete(self)
+        db.session.commit()
+
+
 class Activity(db.Model):
     """Represents a volunteering activity in the project"""
     __tablename__ = 'activities'
