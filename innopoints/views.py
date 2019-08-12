@@ -8,7 +8,8 @@ from psycopg2.extras import DateTimeRange
 from sqlalchemy import or_
 from werkzeug.exceptions import BadRequestKeyError
 
-from innopoints.models import Activity, Competence, LifetimeStage, Product, Project, db
+from innopoints.models import (Activity, ApplicationStatus, Competence, LifetimeStage, Product,
+                               Project, db)
 
 api = Blueprint('api', __name__)  # pylint: disable=invalid-name
 
@@ -92,7 +93,7 @@ def get_post_projects():
             'id': activity.id,
             'name': activity.name,
             'vacant_spots': activity.people_required,
-            'reward': activity.fixed_reward + activity.working_hours * activity.reward_rate,
+            'reward': activity.working_hours * activity.reward_rate,
         } for activity in project.activities],
     } for project in db_query.all()]
     # yapf: enable
@@ -103,7 +104,61 @@ def get_post_projects():
 @api.route('/projects/<int:project_id>', methods=['GET', 'PUT', 'DELETE'])
 def manage_projects(project_id):
     """Get, update and delete projects"""
-    abort(418)
+    project = Project.query.get_or_404(project_id)
+
+    if request.method == 'GET':
+        # yapf: disable
+        json_data = {
+            'id': project.id,
+            'title': project.title,
+            'dates': {
+                'start': project.dates.lower,
+                'end': project.dates.upper,
+            },
+            'creation_time': project.created_at,
+            'organizer': project.organizer,
+            'review_status': project.review_status.name,
+            'lifetime_stage': project.lifetime_stage.name,
+            'activities': [{
+                'id': activity.id,
+                'name': activity.name,
+                'description': activity.description,
+                'people_required': activity.people_required,
+                'accepted_applications': [{
+                    'applicant_name': application.applicant.full_name,
+                } for application in activity.applications
+                                          if application.status == ApplicationStatus.approved],
+                'reward_rate': activity.reward_rate,
+                'work_hours': activity.working_hours,
+                'has_fixed_rate': activity.fixed_reward,
+                'existing_application': 'WTF?',
+            } for activity in project.activities],
+        }
+        # yapf: enable
+        return jsonify(json_data)
+
+    if request.method == 'PUT':
+        if not request.is_json:
+            abort(400)
+
+        try:
+            project.title = request.get('title', project.title)
+            if 'dates' in request.json:
+                lower_date = datetime.fromisoformat(request.json['dates']['start'])
+                upper_date = datetime.fromisoformat(request.json['dates']['end'])
+                dates = DateTimeRange(lower=lower_date, upper=upper_date)
+                project.dates = dates
+            project.organizer = request.get('organizer', project.organizer)
+            project.image_url = request.get('img', project.image_url)
+        except (KeyError, ValueError):
+            abort(400)
+
+        db.session.add(project)  # pylint: disable=no-member
+        db.session.commit()  # pylint: disable=no-member
+
+    db.session.delete(project)  # pylint: disable=no-member
+    db.session.commit()  # pylint: disable=no-member
+    return jsonify()
 
 
 @api.route('/products')
@@ -144,6 +199,7 @@ class CompetenceAPI(MethodView):
     """REST views for Competence model"""
 
     # pylint: disable=no-self-use
+
     def get(self, compt_id):
         """Get info on chosen competence"""
         if compt_id is None:
