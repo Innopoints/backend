@@ -42,14 +42,15 @@ class Project(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(64), nullable=False)
-    url = db.Column(db.String(96), nullable=False)
     image_url = db.Column(db.String(256), nullable=False)
     dates = db.Column(postgresql.DATERANGE, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     organizer = db.Column(db.String(64), nullable=False)
     admin_feedback = db.Column(db.String(1024))
-    review_status = db.Column(db.Enum(ReviewStatus), nullable=False)
-    lifetime_stage = db.Column(db.Enum(LifetimeStage), nullable=False)
+    review_status = db.Column(db.Enum(ReviewStatus), nullable=False, default=ReviewStatus.pending)
+    lifetime_stage = db.Column(db.Enum(LifetimeStage),
+                               nullable=False,
+                               default=LifetimeStage.created)
     creator_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
 
     creator = db.relationship('Account',
@@ -99,10 +100,10 @@ class Activity(db.Model):
     description = db.Column(db.String(1024), nullable=False)
     working_hours = db.Column(db.Integer, nullable=False)
     reward_rate = db.Column(db.Integer, nullable=False)
-    fixed_reward = db.Column(db.Integer, nullable=False)
+    fixed_reward = db.Column(db.Integer)
     people_required = db.Column(db.Integer, nullable=False, default=-1)
     telegram_required = db.Column(db.Boolean, nullable=False)
-    application_deadline = db.Column(db.Date, nullable=False)
+    application_deadline = db.Column(db.Date)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
 
     project = db.relationship('Project',
