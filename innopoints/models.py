@@ -31,6 +31,14 @@ class ApplicationStatus(Enum):
     rejected = auto()
 
 
+class StockChangeStatus(Enum):
+    """Represents a status of product variety stock change"""
+    carried_out = auto()
+    pending = auto()
+    ready_for_pickup = auto()
+    rejected = auto()
+
+
 class Account(db.Model):
     """Represents an account of a logged in user"""
     __tablename__ = 'accounts'
@@ -124,7 +132,7 @@ class Variety(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     size = db.Column(db.String(3), nullable=False)
-    color = db.Column(db.Integer, nullable=False)
+    color = db.Column(db.String(8), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
 
     product = db.relationship('Product',
@@ -180,3 +188,24 @@ class ProductImage(db.Model):
 
     variety = db.relationship('Variety',
                               backref=db.backref('images', lazy=True, cascade='all, delete-orphan'))
+
+
+class StockChange(db.Model):
+    """Represents the change in the amount of variety available"""
+    __tablename__ = 'stock_changes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    amount = db.Column(db.Integer, nullable=False)
+    time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    status = db.Column(db.Enum(StockChangeStatus), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    variety_id = db.Column(db.Integer, db.ForeignKey('varieties.id'), nullable=False)
+
+    account = db.relationship('Account',
+                              backref=db.backref('stock_changes',
+                                                 lazy=True,
+                                                 cascade='all, delete-orphan'))
+    variety = db.relationship('Variety',
+                              backref=db.backref('stock_changes',
+                                                 lazy=True,
+                                                 cascade='all, delete-orphan'))

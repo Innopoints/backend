@@ -9,7 +9,7 @@ from sqlalchemy import or_
 from werkzeug.exceptions import BadRequestKeyError
 
 from innopoints.models import (Activity, ApplicationStatus, Competence, LifetimeStage, Product,
-                               Project, db)
+                               Project, StockChange, StockChangeStatus, db)
 
 api = Blueprint('api', __name__)  # pylint: disable=invalid-name
 
@@ -164,18 +164,20 @@ def manage_projects(project_id):
 @api.route('/products')
 def get_products():
     """List products available in InnoStore"""
-    if not request.is_json:
-        abort(400)
-
     try:
-        limit = int(request.json['limit'])
-        query = request.json['q']
-        page = int(request.json['page'])
+        limit = int(request.args['limit'])
+        page = int(request.args['page'])
+        query = request.json.get('q')
     except (BadRequestKeyError, ValueError):
         abort(400)
 
-    ordered_query = Product.query.order_by(Product.cost.asc())
-    offset_limit_query = ordered_query.offset(limit * (page - 1)).limit(limit)
+    db_query = Product.query
+    if query is not None:
+        like_query = f'%{query}%'
+        or_condition = or_(Product.name.ilike(like_query), Product.description.ilike(like_query))
+        db_query = db_query.filter(or_condition)
+    db_query = db_query.order_by(Product.cost.asc())
+    db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
     # yapf: disable
     products = [{
@@ -187,9 +189,14 @@ def get_products():
         'varieties': [{
             'color': variety.color,
             'cover_images': [image.url for image in variety.images],
-            'background': variety.color + 1,
+            'background': variety.color,
+            'amount': sum([
+                s_change.amount for s_change in StockChange.query.filter(
+                    StockChange.variety_id == variety.id,
+                    StockChange.status != StockChangeStatus.rejected).all()
+            ]),
         } for variety in product.varieties],
-    } for product in offset_limit_query.all()]
+    } for product in db_query.all()]
     # yapf: enable
 
     return jsonify(products)
