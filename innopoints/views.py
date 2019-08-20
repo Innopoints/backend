@@ -4,7 +4,7 @@ from datetime import datetime
 
 from flask import Blueprint, abort, jsonify, request
 from flask.views import MethodView
-from psycopg2.extras import DateTimeRange
+from psycopg2.extras import DateRange
 from sqlalchemy import or_
 from werkzeug.exceptions import BadRequestKeyError
 
@@ -23,19 +23,22 @@ def get_post_projects():
             abort(400)
 
         try:
+            creator_id = 1  # request.json['creator_id']
             lower_date = datetime.fromisoformat(request.json['dates']['start'])
             upper_date = datetime.fromisoformat(request.json['dates']['end'])
-            dates = DateTimeRange(lower=lower_date, upper=upper_date)
             new_project = Project(title=request.json['title'],
-                                  dates=dates,
+                                  start_date=lower_date,
+                                  end_date=upper_date,
                                   image_url=request.json['img'],
-                                  organizer=request.json['organizer'])
+                                  organizer=request.json['organizer'],
+                                  creator_id=creator_id)
             db.session.add(new_project)
 
             for activity_data in request.json['activities']:
                 new_activity = Activity(name=activity_data['name'],
                                         description=activity_data['description'],
                                         working_hours=activity_data['work_hours'],
+                                        fixed_reward=activity_data['has_fixed_rate'],
                                         reward_rate=activity_data['reward_rate'],
                                         people_required=activity_data['people_required'],
                                         telegram_required=activity_data['telegram_required'],
@@ -146,7 +149,7 @@ def manage_projects(project_id):
             if 'dates' in request.json:
                 lower_date = datetime.fromisoformat(request.json['dates']['start'])
                 upper_date = datetime.fromisoformat(request.json['dates']['end'])
-                dates = DateTimeRange(lower=lower_date, upper=upper_date)
+                dates = DateRange(lower=lower_date, upper=upper_date)
                 project.dates = dates
             project.organizer = request.get('organizer', project.organizer)
             project.image_url = request.get('img', project.image_url)
