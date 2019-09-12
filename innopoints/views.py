@@ -1,17 +1,22 @@
 """Application views"""
 
 from datetime import datetime
+import mimetypes
 
-from flask import Blueprint, abort, jsonify, request
+import requests
+from flask import Blueprint, abort, jsonify, request, current_app
 from flask.views import MethodView
 from psycopg2.extras import DateRange
 from sqlalchemy import or_
+import werkzeug
 from werkzeug.exceptions import BadRequestKeyError
 
+import innopoints.file_manager_s3 as file_manager
 from innopoints.models import (Activity, ApplicationStatus, Competence, LifetimeStage, Product,
-                               Project, StockChange, StockChangeStatus, db)
+                               Project, StockChange, StockChangeStatus, StaticFile, db)
 
 api = Blueprint('api', __name__)  # pylint: disable=invalid-name
+ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp'}
 
 
 @api.route('/projects', methods=['GET', 'POST'])
@@ -267,3 +272,59 @@ api.add_url_rule('/competences', view_func=competence_api, methods=('POST', ))
 api.add_url_rule('/competences/<int:compt_id>',
                  view_func=competence_api,
                  methods=('GET', 'PUT', 'DELETE'))
+
+
+class StaticFileAPI(MethodView):
+    """REST views for StaticFile model"""
+
+    @staticmethod
+    def get_mimetype(file: werkzeug.FileStorage) -> str:
+        """Return a MIME type of a Flask file object"""
+        if file.mimetype:
+            return file.mimetype
+
+        return mimetypes.guess_type(file.filename)[0]
+
+    # pylint: disable=no-self-use
+
+    def get(self, file_id):
+        """Get the chosen static file"""
+        file = StaticFile.query.get_or_404(file_id)
+        url = f'{file.namespace}/{file.id}'
+        response = current_app.make_response(file_manager.retrieve(url))
+        response.headers.set('Content-Type', file.mimetype)
+        return response
+
+    def post(self, namespace):
+        """Upload a new file to the given namespace"""
+        if 'file' not in request.files:
+            print('File not found')
+            abort(400)
+
+        file = request.files['file']
+
+        if not file.filename:
+            print('No filename')
+            abort(400)
+
+        mimetype = self.get_mimetype(file)
+        if mimetype not in ALLOWED_MIMETYPES:
+            print(f'Mimetype "{mimetype}" is not allowed')
+            abort(400)
+
+        new_file = StaticFile(mimetype=mimetype, namespace=namespace)
+        try:
+            new_file.save(file.stream)
+        except requests.exceptions.HTTPError as exc:
+            print('Upload failed')
+            print(exc)
+            new_file.delete()
+            abort(400)
+        return jsonify(id=new_file.id)
+
+
+static_file_api = StaticFileAPI.as_view('static_file_api')  # pylint: disable=invalid-name
+api.add_url_rule('/static/<namespace>', view_func=static_file_api, methods=('POST', ))
+api.add_url_rule('/static/<int:file_id>',
+                 view_func=static_file_api,
+                 methods=('GET', ))

@@ -11,9 +11,10 @@ flask-migrate = "*"
 [packages]
 flask = "*"
 flask-sqlalchemy = "*"
-psycopg2 = "*"
+psycopg2-binary = "*"
 gunicorn = "*"
 flask-migrate = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"

@@ -7,6 +7,11 @@ from enum import Enum, auto
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects import postgresql
 
+import innopoints.file_manager_s3 as file_manager
+
+
+IPTS_PER_HOUR = 70
+
 db = SQLAlchemy()  # pylint: disable=invalid-name
 
 
@@ -210,3 +215,30 @@ class StockChange(db.Model):
                               backref=db.backref('stock_changes',
                                                  lazy=True,
                                                  cascade='all, delete-orphan'))
+
+
+class StaticFile(db.Model):
+    """Represents the user-uploaded static files"""
+    __tablename__ = 'static_files'
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
+    mimetype = db.Column(db.String(255), nullable=False)
+    namespace = db.Column(db.String(64), nullable=False)
+
+    project = db.relationship('Project',
+                              backref=db.backref('static_files',
+                                                 lazy=True,
+                                                 cascade='all, delete-orphan'))
+
+    def save(self, file_data):
+        """Save object to database"""
+        db.session.add(self)
+        db.session.commit()
+        file_manager.store(file_data, str(self.id), self.namespace)
+
+    def delete(self):
+        """Delete object from database"""
+        file_manager.delete(str(self.id), self.namespace)
+        db.session.delete(self)
+        db.session.commit()
