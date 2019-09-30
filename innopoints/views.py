@@ -3,6 +3,7 @@
 from datetime import datetime
 import mimetypes
 
+# pylint: disable=import-error
 import requests
 from flask import Blueprint, abort, jsonify, request, current_app
 from flask.views import MethodView
@@ -10,119 +11,195 @@ from psycopg2.extras import DateRange
 from sqlalchemy import or_
 import werkzeug
 from werkzeug.exceptions import BadRequestKeyError
+# pylint: enable=import-error
 
 import innopoints.file_manager_s3 as file_manager
-from innopoints.models import (Activity, ApplicationStatus, Competence, LifetimeStage, Product,
-                               Project, StockChange, StockChangeStatus, StaticFile, db)
+from innopoints.models import (Activity, ApplicationStatus, Competence, LifetimeStage, Variety,
+                               Color, Product, Project, StockChange, StockChangeStatus,
+                               StaticFile, db)
 
 api = Blueprint('api', __name__)  # pylint: disable=invalid-name
 ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp'}
+ALLOWED_SIZES = {'XS', 'S', 'M', 'L', 'XL', 'XXL'}
 
 
-@api.route('/projects', methods=['GET', 'POST'])
-def get_post_projects():
+# ----- Projects -----
+
+@api.route('/projects')
+def list_projects():
     """List ongoing or past projects"""
-    if request.method == 'POST':
-        # pylint: disable=no-member
-        if not request.is_json:
-            abort(400)
-
-        try:
-            creator_id = 1  # request.json['creator_id']
-            lower_date = datetime.fromisoformat(request.json['dates']['start'])
-            upper_date = datetime.fromisoformat(request.json['dates']['end'])
-            new_project = Project(title=request.json['title'],
-                                  start_date=lower_date,
-                                  end_date=upper_date,
-                                  image_url=request.json['img'],
-                                  organizer=request.json['organizer'],
-                                  creator_id=creator_id)
-            db.session.add(new_project)
-
-            for activity_data in request.json['activities']:
-                new_activity = Activity(name=activity_data['name'],
-                                        description=activity_data['description'],
-                                        working_hours=activity_data['work_hours'],
-                                        fixed_reward=activity_data['has_fixed_rate'],
-                                        reward_rate=activity_data['reward_rate'],
-                                        people_required=activity_data['people_required'],
-                                        telegram_required=activity_data['telegram_required'],
-                                        project=new_project)
-                db.session.add(new_activity)
-
-        except (KeyError, ValueError):
-            db.session.rollback()
-            abort(400)
-
-        db.session.commit()
-        return jsonify(id=new_project.id)
-
-    try:
-        lifetime = request.args['type'].lower()
-        if lifetime == 'past':
-            page = int(request.args['page'])
-        query = request.args.get('q')
-    except (BadRequestKeyError, ValueError):
-        abort(400)
-
-    lifetime_mapping = {
-        'draft': LifetimeStage.draft,
+    lifetime_stages = {
         'ongoing': LifetimeStage.created,
         'past': LifetimeStage.finished,
     }
-    try:
-        lifetime_stage = lifetime_mapping[lifetime]
-    except KeyError:
-        abort(400)
+
+    if 'type' not in request.args or request.args['type'] not in lifetime_stages:
+        abort(400, {'message': 'A valid project type must be specified.'})
+
+    lifetime_stage = lifetime_stages[request.args['type']]
 
     db_query = Project.query.filter_by(lifetime_stage=lifetime_stage)
-    if query is not None:
-        like_query = f'%{query}%'
+    if 'q' in request.args:
+        like_query = f'%{request.args["query"]}%'
         db_query = db_query.join(Project.activities)
-        or_condition = or_(Project.title.ilike(like_query), Activity.name.ilike(like_query),
+        or_condition = or_(Project.title.ilike(like_query),
+                           Activity.name.ilike(like_query),
                            Activity.description.ilike(like_query))
         db_query = db_query.filter(or_condition).distinct()
-    if lifetime == 'past':
+
+    if lifetime_stage == LifetimeStage.finished:
+        page = request.args.get('page', 1)
         db_query = db_query.order_by(Project.id.desc())
         db_query = db_query.offset(10 * (page - 1)).limit(10)
 
     # yapf: disable
-    projects = [{
-        'id': project.id,
-        'title': project.title,
-        'img': project.image_url,
-        'dates': {
-            'start': project.dates.lower,
-            'end': project.dates.upper,
-        },
-        'creation_time': project.created_at,
-        'organizer': project.organizer,
-        'activities': [{
-            'id': activity.id,
-            'name': activity.name,
-            'vacant_spots': activity.people_required,
-            'reward': activity.working_hours * activity.reward_rate,
-        } for activity in project.activities],
-    } for project in db_query.all()]
+    projects = []
+    for project in db_query.all():
+        project_json = {
+            'id': project.id,
+            'title': project.title,
+            'img': project.image_url,
+            'creation_time': project.created_at,
+            'organizer': project.organizer,
+            'activities': [],
+        }
+
+        # TODO: handle administrators
+
+        for activity in project.activities:
+            accepted = Activity.query.filter_by(activity=activity,
+                                                status=ApplicationStatus.approved).count()
+            activity_json = {
+                'name': activity.name,
+                'dates': {
+                    'start': activity.start_date,
+                    'end': activity.end_date,
+                },
+                'is_fixed_reward': activity.fixed_reward,
+                'worktime': activity.working_hours,
+                'vacant_spots': activity.people_required - accepted,
+                'reward': activity.working_hours * activity.reward_rate,
+                'competences': [comp.id for comp in activity.competences],
+            }
+            project_json['activities'].append(activity_json)
+
+        projects.append(project_json)
     # yapf: enable
 
     return jsonify(projects)
 
 
-@api.route('/projects/<int:project_id>', methods=['GET', 'PUT', 'DELETE'])
-def manage_projects(project_id):
-    """Get, update and delete projects"""
-    project = Project.query.get_or_404(project_id)
-
-    if request.method == 'GET':
-        # yapf: disable
-        json_data = {
+@api.route('/projects/drafts')
+def list_drafts():
+    """Return a list of drafts for the logged in user"""
+    # TODO: handle authentication
+    db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.draft,)
+                                       #creator=)
+    return jsonify([
+        {
             'id': project.id,
             'title': project.title,
-            'dates': {
-                'start': project.dates.lower,
-                'end': project.dates.upper,
-            },
+            'creation_time': project.created_at,
+        } for project in db_query.all()
+    ])
+
+
+@api.route('/projects', methods=['POST'])
+def create_project():
+    """Create a new project"""
+    # pylint: disable=no-member
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if 'is_draft' not in request.json:
+        abort(400, {'message': 'is_draft should be specified.'})
+
+    is_draft = bool(request.json['is_draft'])
+
+    try:
+        creator_id = 1  # request.json['creator_id']
+
+        if not is_draft and not request.json['title']:
+            abort(400, {'message': 'The title must not be empty.'})
+
+        if not is_draft and not request.json['img']:
+            abort(400, {'message': 'The image must be specified.'})
+
+        if not is_draft and not request.json['organizer']:
+            abort(400, {'message': 'The organizer must not be empty.'})
+
+        new_project = Project(title=request.json['title'],
+                              image_url=request.json['img'],
+                              organizer=request.json['organizer'],
+                              lifetime_stage=(LifetimeStage.draft if is_draft
+                                              else LifetimeStage.ongoing),
+                              creator_id=creator_id)
+        db.session.add(new_project)
+
+        for activity_data in request.json['activities']:
+            if activity_data['has_fixed_rate'] and activity_data.get('work_hours') != 1:
+                abort(400, {'message': 'Fixed-rate activities should have work_hours == 1.'})
+
+            try:
+                lower_date = datetime.fromisoformat(activity_data['dates']['start'])
+                upper_date = datetime.fromisoformat(activity_data['dates']['end'])
+                if lower_date > upper_date:
+                    abort(400,
+                          {'message': 'The start date must not be greater than the end date.'})
+            except (TypeError, KeyError):
+                if not is_draft:
+                    abort(400, {'message': 'Valid dates should be provided.'})
+                lower_date = None
+                upper_date = None
+
+            if not is_draft and not activity_data.get('name'):
+                abort(400, {'message': 'Activities should have a non-empty name.'})
+
+            if not is_draft and not activity_data.get('work_hours'):
+                abort(400, {'message': 'Activities should have valid working hours.'})
+
+            if not is_draft and not activity_data.get('reward_rate'):
+                abort(400, {'message': 'Activities should have a valid reward rate.'})
+
+            new_activity = Activity(name=activity_data.get('name'),
+                                    description=activity_data.get('description'),
+                                    start_date=lower_date,
+                                    end_date=upper_date,
+                                    working_hours=activity_data.get('work_hours'),
+                                    fixed_reward=activity_data['has_fixed_rate'],
+                                    reward_rate=activity_data.get('reward_rate'),
+                                    people_required=activity_data.get('people_required'),
+                                    telegram_required=activity_data.get('telegram_required'),
+                                    project=new_project)
+            db.session.add(new_activity)
+
+            for competence_id in activity_data.get('competences', ()):
+                competence = Competence.query.get(competence_id)
+                new_activity.competences.append(competence)
+
+    except KeyError as exc:
+        db.session.rollback()
+        abort(400, {'message': f'Key {exc} not found.'})
+    except ValueError as exc:
+        db.session.rollback()
+        abort(400, {'message': str(exc)})
+
+    db.session.commit()
+    return jsonify(id=new_project.id)
+
+
+class ProjectDetailAPI(MethodView):
+    """REST views for a particular instance of a Project model"""
+
+    # pylint: disable=no-self-use
+
+    def get(self, project_id):
+        """Get full information about the project"""
+        project = Project.query.get_or_404(project_id)
+        # yapf: disable
+        json_data = {
+            'title': project.title,
+            'img': project.image_url,
             'creation_time': project.created_at,
             'organizer': project.organizer,
             'review_status': project.review_status.name,
@@ -139,15 +216,17 @@ def manage_projects(project_id):
                 'reward_rate': activity.reward_rate,
                 'work_hours': activity.working_hours,
                 'has_fixed_rate': activity.fixed_reward,
-                'existing_application': 'WTF?',
+                'existing_application': 'WTF?',  # TODO: fix when we will add the Application
             } for activity in project.activities],
         }
         # yapf: enable
         return jsonify(json_data)
 
-    if request.method == 'PUT':
+    def put(self, project_id):
+        """Edit the information of the project"""
+        project = Project.query.get_or_404(project_id)
         if not request.is_json:
-            abort(400)
+            abort(400, {'message': 'The request should be in JSON.'})
 
         try:
             project.title = request.get('title', project.title)
@@ -158,15 +237,26 @@ def manage_projects(project_id):
                 project.dates = dates
             project.organizer = request.get('organizer', project.organizer)
             project.image_url = request.get('img', project.image_url)
-        except (KeyError, ValueError):
-            abort(400)
+        except (KeyError, ValueError) as exc:
+            abort(400, {'message': str(exc)})
 
         db.session.add(project)  # pylint: disable=no-member
-        db.session.commit()  # pylint: disable=no-member
+        db.session.commit()
+        return jsonify()
 
-    db.session.delete(project)  # pylint: disable=no-member
-    db.session.commit()  # pylint: disable=no-member
-    return jsonify()
+    def delete(self, project_id):
+        """Delete the project entirely"""
+        project = Project.query.get_or_404(project_id)
+
+        db.session.delete(project)  # pylint: disable=no-member
+        db.session.commit()  # pylint: disable=no-member
+        return jsonify()
+
+
+project_api = ProjectDetailAPI.as_view('project_detail_api')  # pylint: disable=invalid-name
+api.add_url_rule('/projects/<int:project_id>',
+                 view_func=project_api,
+                 methods=('GET', 'PUT', 'DELETE'))
 
 
 @api.route('/products')
@@ -177,7 +267,7 @@ def get_products():
         page = int(request.args['page'])
         query = request.json.get('q')
     except (BadRequestKeyError, ValueError):
-        abort(400)
+        abort(400, {'message': 'Missing required query parameters.'})
 
     db_query = Product.query
     if query is not None:
@@ -189,25 +279,166 @@ def get_products():
 
     # yapf: disable
     products = [{
+        'id': product.id,
         'name': product.name,
         'type': product.type,
         'description': product.description,
         'price': product.cost,
-        'url': product.url,
         'varieties': [{
-            'color': variety.color,
+            'color': Color.query.get(variety.color),
             'cover_images': [image.url for image in variety.images],
-            'background': variety.color,
-            'amount': sum([
-                s_change.amount for s_change in StockChange.query.filter(
-                    StockChange.variety_id == variety.id,
-                    StockChange.status != StockChangeStatus.rejected).all()
-            ]),
+            'background': Color.query.get(variety.color).background,
+            'amount': product.amount,
         } for variety in product.varieties],
     } for product in db_query.all()]
     # yapf: enable
 
     return jsonify(products)
+
+
+@api.route('/products', methods=['POST'])
+def create_product():
+    """Create a new product"""
+    # pylint: disable=no-member
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    try:
+        if request.json['price'] <= 0:
+            abort(400, {'message': 'The price must be strictly positive.'})
+
+        new_product = Product(name=request.json['name'],
+                              type=request.json['type'],
+                              description=request.json['description'],
+                              price=request.json['price'])
+        db.session.add(new_product)
+
+        for variety_data in request.json['varieties']:
+            if Color.query.get(variety_data['color']) is None:
+                abort(400, {'message', 'Specify a valid color.'})
+
+            if variety_data.get('size') not in ALLOWED_SIZES:
+                abort(400, {'message', 'Specify a valid size: XS, S, M, L, XL, XXL.'})
+
+            if not variety_data['images']:
+                abort(400, {'message', 'Specify at least one image.'})
+
+            new_variety = Variety(color=variety_data['color'],
+                                  size=variety_data.get('size'),
+                                  images=variety_data['images'],
+                                  product=new_product)
+            db.session.add(new_variety)
+
+            stock = StockChange(amount=variety_data['amount'],
+                                status=StockChangeStatus.carried_out,
+                                account=1,  # to be replaced by the current user
+                                variety=new_variety)
+            db.session.add(stock)
+
+    except (KeyError, ValueError) as exc:
+        db.session.rollback()
+        abort(400, {'message': str(exc)})
+
+    db.session.commit()
+    return jsonify(id=new_product.id)
+
+
+class ProductDetailAPI(MethodView):
+    """REST views for the Product model"""
+
+    # pylint: disable=no-self-use
+
+    def put(self, product_id):
+        """Edit the product with the given ID"""
+        product = Product.query.get_or_404(product_id)
+        if not request.is_json:
+            abort(400, {'message': 'The request should be in JSON.'})
+
+        try:
+            if request.get('price', 1) <= 0:
+                abort(400, {'message': 'The request should be in JSON.'})
+
+            product.name = request.get('name', product.name)
+            product.type = request.get('type', product.type)
+            product.description = request.get('description', product.description)
+            product.price = request.get('price', product.price)
+        except (KeyError, ValueError) as exc:
+            abort(400, {'message': str(exc)})
+
+        db.session.add(product)  # pylint: disable=no-member
+        db.session.commit()
+        return jsonify()
+
+    def delete(self, product_id):
+        """Delete the product entirely"""
+        product = Product.query.get_or_404(product_id)
+
+        db.session.delete(product)  # pylint: disable=no-member
+        db.session.commit()  # pylint: disable=no-member
+        return jsonify()
+
+
+product_api = ProductDetailAPI.as_view('product_api')  # pylint: disable=invalid-name
+api.add_url_rule('/products/<int:product_id>',
+                 view_func=product_api,
+                 methods=('PUT', 'DELETE'))
+
+
+class VarietyAPI(MethodView):
+    """REST views for the Variety model"""
+
+    # pylint: disable=no-self-use
+
+    def put(self, var_id):
+        """Update the given variety"""
+        variety = Variety.query.get_or_404(var_id)
+
+        if not request.is_json:
+            abort(400, {'message': 'The request should be in JSON.'})
+
+        try:
+            if 'color' in request.json and Color.query.get(request.json['color']) is None:
+                abort(400, {'message', 'Specify a valid color.'})
+
+            if 'size' in request.json and request.json['size'] not in ALLOWED_SIZES:
+                abort(400, {'message', 'Specify a valid size: XS, S, M, L, XL, XXL.'})
+
+            if 'images' in request.json and not request.json['images']:
+                abort(400, {'message', 'Specify at least one image.'})
+
+            variety.color = request.get('color', variety.color)
+            variety.size = request.get('size', variety.size)
+            variety.images = request.get('images', variety.images)
+
+            if 'amount' in request.json:
+                diff = request.json['amount'] - variety.amount
+                if diff != 0:
+                    stock = StockChange(amount=diff,
+                                        status=StockChangeStatus.carried_out,
+                                        account=1,  # to be replaced by the current user
+                                        variety=variety)
+                    db.session.add(stock)
+
+        except (KeyError, ValueError) as exc:
+            abort(400, {'message': str(exc)})
+
+        db.session.add(variety)  # pylint: disable=no-member
+        db.session.commit()
+        return jsonify()
+
+    def delete(self, var_id):
+        """Delete the variety entirely"""
+        variety = Variety.query.get_or_404(var_id)
+
+        db.session.delete(variety)  # pylint: disable=no-member
+        db.session.commit()  # pylint: disable=no-member
+        return jsonify()
+
+
+variety_api = VarietyAPI.as_view('variety_api')  # pylint: disable=invalid-name
+api.add_url_rule('/varieties/<int:var_id>',
+                 view_func=variety_api,
+                 methods=('PUT', 'DELETE'))
 
 
 class CompetenceAPI(MethodView):
@@ -320,7 +551,7 @@ class StaticFileAPI(MethodView):
             print(exc)
             new_file.delete()
             abort(400)
-        return jsonify(id=new_file.id)
+        return jsonify(id=new_file.id, url=f'/static/{new_file.id}')
 
 
 static_file_api = StaticFileAPI.as_view('static_file_api')  # pylint: disable=invalid-name

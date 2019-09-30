@@ -4,9 +4,11 @@
 from datetime import datetime, date
 from enum import Enum, auto
 
+# pylint: disable=import-error
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects import postgresql
+# pylint: enable=import-error
 
+import innopoints.utils.colors as colors
 import innopoints.file_manager_s3 as file_manager
 
 
@@ -44,6 +46,37 @@ class StockChangeStatus(Enum):
     rejected = auto()
 
 
+class Project(db.Model):
+    """Represents an event for which volunteering is required"""
+    __tablename__ = 'projects'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(64), nullable=True)
+    image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
+    organizer = db.Column(db.String(64), nullable=True)
+    admin_feedback = db.Column(db.String(1024), nullable=True)
+    review_status = db.Column(db.Enum(ReviewStatus), nullable=True)
+    lifetime_stage = db.Column(db.Enum(LifetimeStage),
+                               nullable=False,
+                               default=LifetimeStage.draft)
+    creator_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+
+    creator = db.relationship('Account',
+                              backref=db.backref('projects',
+                                                 lazy=True,
+                                                 cascade='all, delete-orphan'))
+    image = db.relationship('StaticFile',
+                            backref=db.backref('projects',
+                                               lazy=True,
+                                               cascade='all, delete-orphan'))
+
+    @property
+    def image_url(self):
+        """Return an image URL constructed from the ID"""
+        return f'/static/{self.image_id}'
+
+
 class Account(db.Model):
     """Represents an account of a logged in user"""
     __tablename__ = 'accounts'
@@ -61,14 +94,16 @@ class Activity(db.Model):
     __tablename__ = 'activities'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False)
-    description = db.Column(db.String(1024), nullable=False)
-    working_hours = db.Column(db.Integer, nullable=False)
-    reward_rate = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.String(128), nullable=True)
+    description = db.Column(db.String(1024), nullable=True)
+    start_date = db.Column(db.Date, nullable=True)
+    end_date = db.Column(db.Date, nullable=True)
+    working_hours = db.Column(db.Integer, nullable=True)
+    reward_rate = db.Column(db.Integer, nullable=True, default=IPTS_PER_HOUR)
     fixed_reward = db.Column(db.Boolean, nullable=False)
     people_required = db.Column(db.Integer, nullable=False, default=-1)
-    telegram_required = db.Column(db.Boolean, nullable=False)
-    application_deadline = db.Column(db.Date)
+    telegram_required = db.Column(db.Boolean, nullable=False, default=False)
+    application_deadline = db.Column(db.Date, nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
 
     project = db.relationship('Project',
@@ -136,38 +171,41 @@ class Variety(db.Model):
     __tablename__ = 'varieties'
 
     id = db.Column(db.Integer, primary_key=True)
-    size = db.Column(db.String(3), nullable=False)
-    color = db.Column(db.String(8), nullable=False)
+    size = db.Column(db.String(3), nullable=True)
+    color_id = db.Column(db.Integer, db.ForeignKey('colors.id'), nullable=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
 
     product = db.relationship('Product',
                               backref=db.backref('varieties',
                                                  lazy=True,
                                                  cascade='all, delete-orphan'))
+    color = db.relationship('Color',
+                            backref=db.backref('products',
+                                               lazy=True,
+                                               cascade='all, delete-orphan'))
+
+    @property
+    def amount(self):
+        """Return the amount of items of this variety, computed
+           from the StockChange instances"""
+        return sum([
+            s_change.amount for s_change in StockChange.query.filter(
+                StockChange.variety_id == self.id,
+                StockChange.status != StockChangeStatus.rejected).all()
+        ]),
 
 
-class Project(db.Model):
-    """Represents an event for which volunteering is required"""
-    __tablename__ = 'projects'
+class Color(db.Model):
+    """Represents colors of items in the store"""
+    __tablename__ = 'colors'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(64), nullable=False)
-    image_url = db.Column(db.String(256), nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    organizer = db.Column(db.String(64), nullable=False)
-    admin_feedback = db.Column(db.String(1024))
-    review_status = db.Column(db.Enum(ReviewStatus), nullable=False, default=ReviewStatus.pending)
-    lifetime_stage = db.Column(db.Enum(LifetimeStage),
-                               nullable=False,
-                               default=LifetimeStage.created)
-    creator_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    value = db.Column(db.String(6), nullable=False)
 
-    creator = db.relationship('Account',
-                              backref=db.backref('projects',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
+    @property
+    def background(self):
+        """Returns the background color for an item with the given color."""
+        return colors.get_background(self.value)
 
 
 class Product(db.Model):
@@ -176,7 +214,6 @@ class Product(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
-    url = db.Column(db.String(96), nullable=False)
     type = db.Column(db.String(128))
     description = db.Column(db.String(1024), nullable=False)
     cost = db.Column(db.Integer, nullable=False)
