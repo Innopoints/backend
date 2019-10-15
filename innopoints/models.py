@@ -62,8 +62,8 @@ class NotificationType(Enum):
 
 # pylint: disable=bad-continuation
 project_moderation = db.Table('project_moderation',  # pylint: disable=invalid-name
-db.Column('project_id', db.Integer, db.ForeignKey('project.id'), primary_key=True),
-db.Column('account_id', db.Integer, db.ForeignKey('account.id'), primary_key=True))
+db.Column('project_id', db.Integer, db.ForeignKey('projects.id'), primary_key=True),
+db.Column('account_id', db.Integer, db.ForeignKey('accounts.id'), primary_key=True))
 # pylint: enable=bad-continuation
 
 
