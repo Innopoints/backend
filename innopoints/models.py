@@ -1,14 +1,13 @@
 """Database models"""
 # pylint: disable=no-member,too-few-public-methods
 
-from datetime import datetime, date
+from datetime import datetime
 from enum import Enum, auto
 
 # pylint: disable=import-error
 from flask_sqlalchemy import SQLAlchemy
 # pylint: enable=import-error
 
-import innopoints.utils.colors as colors
 import innopoints.file_manager_s3 as file_manager
 
 
@@ -18,14 +17,14 @@ db = SQLAlchemy()  # pylint: disable=invalid-name
 
 
 class ReviewStatus(Enum):
-    """Represents review status of the project"""
+    """Represents the review status of the project"""
     pending = auto()
     approved = auto()
     rejected = auto()
 
 
 class LifetimeStage(Enum):
-    """Represents project's lifetime stage"""
+    """Represents the project's lifetime stage"""
     draft = auto()
     created = auto()
     finished = auto()
@@ -46,21 +45,45 @@ class StockChangeStatus(Enum):
     rejected = auto()
 
 
+class NotificationType(Enum):
+    """Represents various notifications"""
+    purchase_ready = auto()
+    new_arrivals = auto()
+    claim_ipts = auto()
+    apl_accept = auto()
+    apl_reject = auto()
+    service = auto()
+    act_table_reject = auto()
+    all_feedback_in = auto()
+    out_of_stock = auto()
+    new_purchase = auto()
+    proj_final_review = auto()
+
+
+# pylint: disable=bad-continuation
+project_moderation = db.Table('project_moderation',  # pylint: disable=invalid-name
+db.Column('project_id', db.Integer, db.ForeignKey('project.id'), primary_key=True),
+db.Column('account_id', db.Integer, db.ForeignKey('account.id'), primary_key=True))
+# pylint: enable=bad-continuation
+
+
 class Project(db.Model):
-    """Represents an event for which volunteering is required"""
+    """Represents a project for volunteering"""
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(64), nullable=True)
+    name = db.Column(db.String(64), nullable=True)
     image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
+    creation_time = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
+    # property `activities` created with a backref
     organizer = db.Column(db.String(64), nullable=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
     admin_feedback = db.Column(db.String(1024), nullable=True)
     review_status = db.Column(db.Enum(ReviewStatus), nullable=True)
     lifetime_stage = db.Column(db.Enum(LifetimeStage),
                                nullable=False,
                                default=LifetimeStage.draft)
-    creator_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    # property `files` created with a backref
 
     creator = db.relationship('Account',
                               backref=db.backref('projects',
@@ -71,22 +94,15 @@ class Project(db.Model):
                                                lazy=True,
                                                cascade='all, delete-orphan'))
 
+    moderators = db.relationship('Account', secondary=project_moderation,
+                                 backref=db.backref('moderated_projects',
+                                                    lazy=True,
+                                                    cascade='all, delete-orphan'))
+
     @property
     def image_url(self):
         """Return an image URL constructed from the ID"""
-        return f'/static/{self.image_id}'
-
-
-class Account(db.Model):
-    """Represents an account of a logged in user"""
-    __tablename__ = 'accounts'
-
-    id = db.Column(db.Integer, primary_key=True)
-    full_name = db.Column(db.String(256), nullable=False)
-    # university_status = ???
-    university_email = db.Column(db.String(128), nullable=False)
-    telegram_username = db.Column(db.String(32))
-    is_admin = db.Column(db.Boolean, nullable=False)
+        return f'/file/{self.image_id}'
 
 
 class Activity(db.Model):
@@ -96,15 +112,17 @@ class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=True)
     description = db.Column(db.String(1024), nullable=True)
-    start_date = db.Column(db.Date, nullable=True)
-    end_date = db.Column(db.Date, nullable=True)
+    start_date = db.Column(db.DateTime, nullable=True)
+    end_date = db.Column(db.DateTime, nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
     working_hours = db.Column(db.Integer, nullable=True)
     reward_rate = db.Column(db.Integer, nullable=True, default=IPTS_PER_HOUR)
     fixed_reward = db.Column(db.Boolean, nullable=False)
     people_required = db.Column(db.Integer, nullable=False, default=-1)
     telegram_required = db.Column(db.Boolean, nullable=False, default=False)
-    application_deadline = db.Column(db.Date, nullable=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    application_deadline = db.Column(db.DateTime, nullable=True)
+    feedback_questions = db.Column(db.ARRAY(db.String(1024)), nullable=False)
+    # property `competences` created with a backref
 
     project = db.relationship('Project',
                               backref=db.backref('activities',
@@ -112,17 +130,36 @@ class Activity(db.Model):
                                                  cascade='all, delete-orphan'))
 
 
+class Account(db.Model):
+    """Represents an account of a logged in user"""
+    __tablename__ = 'accounts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(256), nullable=False)
+    university_status = db.Column(db.String(256), nullable=True)
+    university_email = db.Column(db.String(128), nullable=False)
+    telegram_username = db.Column(db.String(32))
+    is_admin = db.Column(db.Boolean, nullable=False)
+    # property `moderated_projects` created with a backref
+    # property `stock_changes` created with a backref
+    # property `transactions` created with a backref
+    # property `notifications` created with a backref
+
+
 class Application(db.Model):
     """Represents a volunteering application"""
     __tablename__ = 'applications'
 
     id = db.Column(db.Integer, primary_key=True)
-    comment = db.Column(db.String(1024))
-    application_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    telegram_username = db.Column(db.String(32))
-    status = db.Column(db.Enum(ApplicationStatus), nullable=False)
     applicant_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
     activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=False)
+    comment = db.Column(db.String(1024), nullable=False)
+    application_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    telegram_username = db.Column(db.String(32), nullable=False)
+    status = db.Column(db.Enum(ApplicationStatus), nullable=False)
+    actual_hours = db.Column(db.Integer, nullable=True)
+    # property `report` created with a backref
+    # property `feedback` created with a backref
 
     applicant = db.relationship('Account',
                                 backref=db.backref('applications',
@@ -134,36 +171,17 @@ class Application(db.Model):
                                                   cascade='all, delete-orphan'))
 
 
-# yapf: disable
-# pylint: disable=bad-continuation
-activity_competence = db.Table('activity_competence',  # pylint: disable=invalid-name
-    db.Column('activity_id', db.Integer, db.ForeignKey('activities.id'), primary_key=True),
-    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True))
-# pylint: enable=bad-continuation
-# yapf: enable
-
-
-class Competence(db.Model):
-    """Represents volunteers' competences"""
-    __tablename__ = 'competences'
+class Product(db.Model):
+    """Product describes an item in the InnoStore that a user may purchase"""
+    __tablename__ = 'products'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
-
-    activities = db.relationship('Activity',
-                                 secondary=activity_competence,
-                                 lazy=True,
-                                 backref=db.backref('competences', lazy=True))
-
-    def save(self):
-        """Save object to database"""
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        """Delete object from database"""
-        db.session.delete(self)
-        db.session.commit()
+    type = db.Column(db.String(128), nullable=True)
+    description = db.Column(db.String(1024), nullable=False)
+    # property `varieties` created with a backref
+    price = db.Column(db.Integer, nullable=False)
+    addition_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 
 class Variety(db.Model):
@@ -171,9 +189,11 @@ class Variety(db.Model):
     __tablename__ = 'varieties'
 
     id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     size = db.Column(db.String(3), nullable=True)
     color_id = db.Column(db.Integer, db.ForeignKey('colors.id'), nullable=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    # property `images` created with a backref
+    # property `stock_changes` created with a backref
 
     product = db.relationship('Product',
                               backref=db.backref('varieties',
@@ -188,49 +208,29 @@ class Variety(db.Model):
     def amount(self):
         """Return the amount of items of this variety, computed
            from the StockChange instances"""
-        return sum([
-            s_change.amount for s_change in StockChange.query.filter(
-                StockChange.variety_id == self.id,
-                StockChange.status != StockChangeStatus.rejected).all()
-        ]),
-
-
-class Color(db.Model):
-    """Represents colors of items in the store"""
-    __tablename__ = 'colors'
-
-    id = db.Column(db.Integer, primary_key=True)
-    value = db.Column(db.String(6), nullable=False)
-
-    @property
-    def background(self):
-        """Returns the background color for an item with the given color."""
-        return colors.get_background(self.value)
-
-
-class Product(db.Model):
-    """Product describes an item in the InnoStore that a user may purchase"""
-    __tablename__ = 'products'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False)
-    type = db.Column(db.String(128))
-    description = db.Column(db.String(1024), nullable=False)
-    cost = db.Column(db.Integer, nullable=False)
-    addition_date = db.Column(db.Date, nullable=False, default=date.today)
+        return db.session.query(
+            db.func.sum(StockChange.amount)
+        ).filter(
+            StockChange.variety == self,
+            StockChange.status != StockChangeStatus.rejected
+        ).scalar()
 
 
 class ProductImage(db.Model):
-    """Stores the location of the product image"""
+    """Represents an ordered image for a particular product"""
     __tablename__ = 'product_images'
 
     id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.String(96), nullable=False)
-    order = db.Column(db.Integer, nullable=False)
     variety_id = db.Column(db.Integer, db.ForeignKey('varieties.id'), nullable=False)
+    image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=False)
+    order = db.Column(db.Integer, nullable=False)
 
     variety = db.relationship('Variety',
-                              backref=db.backref('images', lazy=True, cascade='all, delete-orphan'))
+                              backref=db.backref('images',
+                                                 lazy=True,
+                                                 cascade='all, delete-orphan'))
+
+    image = db.relationship('StaticFile')
 
 
 class StockChange(db.Model):
@@ -254,6 +254,141 @@ class StockChange(db.Model):
                                                  cascade='all, delete-orphan'))
 
 
+# pylint: disable=bad-continuation
+activity_competence = db.Table('activity_competence',  # pylint: disable=invalid-name
+    db.Column('activity_id', db.Integer, db.ForeignKey('activities.id'), primary_key=True),
+    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True))
+
+feedback_competence = db.Table('feedback_competence',  # pylint: disable=invalid-name
+    db.Column('feedback_id', db.Integer, db.ForeignKey('feedback.id'), primary_key=True),
+    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True))
+# pylint: enable=bad-continuation
+
+
+class Competence(db.Model):
+    """Represents volunteers' competences"""
+    __tablename__ = 'competences'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+
+    activities = db.relationship('Activity',
+                                 secondary=activity_competence,
+                                 lazy=True,
+                                 backref=db.backref('competences', lazy=True,
+                                                    cascade='all, delete-orphan'))
+
+    feedback = db.relationship('Feedback',
+                               secondary=feedback_competence,
+                               lazy=True,
+                               backref=db.backref('competences', lazy=True,
+                                                  cascade='all, delete-orphan'))
+
+    def save(self):
+        """Save object to database"""
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        """Delete object from database"""
+        db.session.delete(self)
+        db.session.commit()
+
+
+class VolunteeringReport(db.Model):
+    """Represents a moderator's report about a certain occurence of work
+       done by a volunteer"""
+    __tablename__ = 'reports'
+
+    id = db.Column(db.Integer, primary_key=True)
+    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
+    rating = db.Column(db.Integer,
+                       db.CheckConstraint('rating <= 5 AND rating >= 1'),
+                       nullable=False)
+    report = db.Column(db.String(1024), nullable=True)
+
+    application = db.relationship('Application',
+                                  uselist=False,
+                                  backref=db.backref('report',
+                                                     lazy=True,
+                                                     cascade='all, delete-orphan'))
+
+
+class Feedback(db.Model):
+    """Represents a volunteer's feedback on an activity"""
+    __tablename__ = 'feedback'
+
+    id = db.Column(db.Integer, primary_key=True)
+    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
+    # property `competences` created with a backref
+    answers = db.Column(db.ARRAY(db.String(1024)), nullable=False)
+
+    application = db.relationship('Application',
+                                  uselist=False,
+                                  backref=db.backref('feedback',
+                                                     lazy=True,
+                                                     cascade='all, delete-orphan'))
+
+
+class Transaction(db.Model):
+    """Represents a change in the innopoints balance for a certain user"""
+    __tablename__ = 'transactions'
+    __table_args__ = (
+        db.CheckConstraint('(stock_change_id IS NULL) != (feedback_id IS NULL)',
+                           name='feedback xor stock_change'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    change = db.Column(db.Integer, nullable=False)
+    stock_change_id = db.Column(db.Integer, db.ForeignKey('stock_changes.id'), nullable=True)
+    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=True)
+
+    account = db.relationship('Account',
+                              backref=db.backref('transactions',
+                                                 lazy=True,
+                                                 cascade='all, delete-orphan'))
+    stock_change = db.relationship('StockChange')
+    feedback = db.relationship('Feedback')
+
+
+class Notification(db.Model):
+    """Represents a notification about a certain event"""
+    __tablename__ = 'notifications'
+    __table_args__ = (
+        db.CheckConstraint('(product_id IS NULL)::INTEGER '
+                           '+ (project_id IS NULL)::INTEGER '
+                           '+ (activity_id IS NULL)::INTEGER '
+                           '< 1',
+                           name='not more than 1 related object'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    is_read = db.Column(db.Boolean, nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
+    activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=True)
+    type = db.Column(db.Enum(NotificationType), nullable=False)
+
+    recipient = db.relationship('Account',
+                                backref=db.backref('notifications',
+                                                   lazy=True,
+                                                   cascade='all, delete-orphan'))
+    product = db.relationship('Product')
+    project = db.relationship('Project')
+    activity = db.relationship('Activity')
+
+
+class Color(db.Model):
+    """Represents colors of items in the store"""
+    __tablename__ = 'colors'
+
+    id = db.Column(db.Integer, primary_key=True)
+    value = db.Column(db.String(6), nullable=True)
+    # property `products` created with a backref
+
+
 class StaticFile(db.Model):
     """Represents the user-uploaded static files"""
     __tablename__ = 'static_files'
@@ -264,7 +399,7 @@ class StaticFile(db.Model):
     namespace = db.Column(db.String(64), nullable=False)
 
     project = db.relationship('Project',
-                              backref=db.backref('static_files',
+                              backref=db.backref('files',
                                                  lazy=True,
                                                  cascade='all, delete-orphan'))
 
