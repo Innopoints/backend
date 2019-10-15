@@ -96,8 +96,7 @@ class Project(db.Model):
 
     moderators = db.relationship('Account', secondary=project_moderation,
                                  backref=db.backref('moderated_projects',
-                                                    lazy=True,
-                                                    cascade='all, delete-orphan'))
+                                                    lazy=True))
 
     @property
     def image_url(self):
@@ -275,14 +274,12 @@ class Competence(db.Model):
     activities = db.relationship('Activity',
                                  secondary=activity_competence,
                                  lazy=True,
-                                 backref=db.backref('competences', lazy=True,
-                                                    cascade='all, delete-orphan'))
+                                 backref=db.backref('competences', lazy=True))
 
     feedback = db.relationship('Feedback',
                                secondary=feedback_competence,
                                lazy=True,
-                               backref=db.backref('competences', lazy=True,
-                                                  cascade='all, delete-orphan'))
+                               backref=db.backref('competences', lazy=True))
 
     def save(self):
         """Save object to database"""
@@ -394,14 +391,8 @@ class StaticFile(db.Model):
     __tablename__ = 'static_files'
 
     id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
     mimetype = db.Column(db.String(255), nullable=False)
     namespace = db.Column(db.String(64), nullable=False)
-
-    project = db.relationship('Project',
-                              backref=db.backref('files',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
 
     def save(self, file_data):
         """Save object to database"""
@@ -414,3 +405,18 @@ class StaticFile(db.Model):
         file_manager.delete(str(self.id), self.namespace)
         db.session.delete(self)
         db.session.commit()
+
+
+class ProjectFile(db.Model):
+    """Represents the files that can only be accessed by volunteers and moderators
+       of a certain project"""
+    __tablename__ = 'project_files'
+
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
+    file_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), primary_key=True)
+
+    project = db.relationship('Project',
+                              backref=db.backref('files',
+                                                 lazy=True,
+                                                 cascade='all, delete-orphan'))
+    file = db.relationship('StaticFile')
