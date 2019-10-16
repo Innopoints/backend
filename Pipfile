@@ -5,14 +5,12 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
-yapf = "*"
-flask-migrate = "*"
 
 [packages]
 flask = "*"
 flask-sqlalchemy = "*"
 psycopg2-binary = "*"
-gunicorn = "*"
+uwsgi = "*"
 flask-migrate = "*"
 requests = "*"
 
