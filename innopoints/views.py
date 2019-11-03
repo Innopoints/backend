@@ -4,8 +4,9 @@ from datetime import datetime
 import mimetypes
 
 # pylint: disable=import-error
+from authlib.flask.client import OAuth
 import requests
-from flask import Blueprint, abort, jsonify, request, current_app
+from flask import Blueprint, abort, jsonify, request, current_app, url_for
 from flask.views import MethodView
 from psycopg2.extras import DateRange
 from sqlalchemy import or_
@@ -19,6 +20,17 @@ from innopoints.models import (Activity, ApplicationStatus, Competence, Lifetime
                                StaticFile, db)
 
 api = Blueprint('api', __name__)  # pylint: disable=invalid-name
+sso_base = 'https://sso.university.innopolis.ru/adfs/oauth2'
+# TODO: move to config
+
+oauth = OAuth()
+innopolis_sso = oauth.register('innopolis_sso',
+    access_token_url=f'{sso_base}/access_token',
+    authorize_url=f'{sso_base}/authorize',
+    # api_base_url='https://api.github.com/',
+    client_kwargs={'scope': 'openid email profile'},
+)
+
 ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp'}
 ALLOWED_SIZES = {'XS', 'S', 'M', 'L', 'XL', 'XXL'}
 
@@ -559,3 +571,29 @@ api.add_url_rule('/static/<namespace>', view_func=static_file_api, methods=('POS
 api.add_url_rule('/static/<int:file_id>',
                  view_func=static_file_api,
                  methods=('GET', ))
+
+
+
+# session = OAuth2Session(
+#     client_id,
+#     client_secret,
+#     scope='openid email profile',
+#     redirect_uri='/login',
+# )
+
+#should be login
+@api.route('/signin', methods=['GET'])
+def login():
+    redirect_uri = url_for('api.authorize', _external=True)
+    return innopolis_sso.authorize_redirect('https://innopoints-frontend.herokuapp.com/login')
+    # return innopolis_sso.authorize_redirect(redirect_uri)
+
+# should be authorize
+@api.route('/login')
+def authorize():
+    token = innopolis_sso.authorize_access_token()
+    user = innopolis_sso.parse_id_token(token)
+    print(user)
+    profile = innopolis_sso.get('/user')
+    print(profile)
+    return jsonify(profile)
