@@ -1,11 +1,14 @@
 """Application views"""
 
 from datetime import datetime
+import os
 import mimetypes
 
 # pylint: disable=import-error
-from authlib.flask.client import OAuth
 import requests
+from authlib.flask.client import OAuth
+from authlib.jose import jwt
+from authlib.oidc.core import CodeIDToken
 from flask import Blueprint, abort, jsonify, request, current_app, url_for
 from flask.views import MethodView
 from psycopg2.extras import DateRange
@@ -19,17 +22,23 @@ from innopoints.models import (Activity, ApplicationStatus, Competence, Lifetime
                                Color, Product, Project, StockChange, StockChangeStatus,
                                StaticFile, db)
 
+INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
+
+sso_config = requests.get(f'{INNOPOLIS_SSO_BASE}/.well-known/openid-configuration').json()
+jwks = requests.get(sso_config['jwks_uri']).json()
+
 api = Blueprint('api', __name__)  # pylint: disable=invalid-name
-sso_base = 'https://sso.university.innopolis.ru/adfs/oauth2'
-# TODO: move to config
 
 oauth = OAuth()
-innopolis_sso = oauth.register('innopolis_sso',
-    access_token_url=f'{sso_base}/token',
-    authorize_url=f'{sso_base}/authorize',
-    # api_base_url='https://api.github.com/',
-    client_kwargs={'scope': 'openid email profile'},
+oauth.register('innopolis_sso',
+    server_metadata_url=f'{INNOPOLIS_SSO_BASE}/.well-known/openid-configuration',
+    access_token_url=sso_config.get('token_endpoint',
+                                    f'{INNOPOLIS_SSO_BASE}/oauth2/token'),
+    authorize_url=sso_config.get('authorization_endpoint',
+                                 f'{INNOPOLIS_SSO_BASE}/oauth2/authorize'),
+    client_kwargs={'scope': 'openid'},
 )
+
 
 ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp'}
 ALLOWED_SIZES = {'XS', 'S', 'M', 'L', 'XL', 'XXL'}
@@ -573,27 +582,15 @@ api.add_url_rule('/static/<int:file_id>',
                  methods=('GET', ))
 
 
-
-# session = OAuth2Session(
-#     client_id,
-#     client_secret,
-#     scope='openid email profile',
-#     redirect_uri='/login',
-# )
-
-#should be login
-@api.route('/signin', methods=['GET'])
+@api.route('/login', methods=['GET'])
 def login():
     redirect_uri = url_for('api.authorize', _external=True)
-    return innopolis_sso.authorize_redirect('https://innopoints-frontend.herokuapp.com/login')
-    # return innopolis_sso.authorize_redirect(redirect_uri)
+    return oauth.innopolis_sso.authorize_redirect(redirect_uri)
 
-# should be authorize
-@api.route('/login')
+@api.route('/authorize')
 def authorize():
-    token = innopolis_sso.authorize_access_token()
-    user = innopolis_sso.parse_id_token(token)
-    print(user)
-    profile = innopolis_sso.get('/user')
-    print(profile)
-    return jsonify(profile)
+    token = oauth.innopolis_sso.authorize_access_token()
+    claims = jwt.decode(token['id_token'], jwks, claims_cls=CodeIDToken)
+    print(claims.validate())
+    print(claims)
+    return jsonify(token)
