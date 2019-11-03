@@ -25,7 +25,7 @@ sso_base = 'https://sso.university.innopolis.ru/adfs/oauth2'
 
 oauth = OAuth()
 innopolis_sso = oauth.register('innopolis_sso',
-    access_token_url=f'{sso_base}/access_token',
+    access_token_url=f'{sso_base}/token',
     authorize_url=f'{sso_base}/authorize',
     # api_base_url='https://api.github.com/',
     client_kwargs={'scope': 'openid email profile'},
