@@ -6,7 +6,11 @@ from innopoints.app import create_app
 
 
 if __name__ == '__main__':
-    app = create_app('config/prod.py')  # pylint: disable=invalid-name
+    app = create_app('config/dev.py')
     app.run(host='0.0.0.0', port=os.environ.get('PORT', 7507), debug=True)
 else:
-    app = create_app()  # pylint: disable=invalid-name
+    if os.environ.get('FLASK_DEV') is not None:
+        config = 'config/dev.py'
+    else:
+        config = 'config/prod.py'
+    app = create_app(config)

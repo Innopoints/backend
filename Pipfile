@@ -15,6 +15,7 @@ gunicorn = "*"
 flask-migrate = "*"
 requests = "*"
 authlib = "*"
+flask-login = "*"
 
 [requires]
 python_version = "3.7"

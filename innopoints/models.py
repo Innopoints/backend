@@ -3,6 +3,8 @@
 from datetime import datetime
 from enum import Enum, auto
 
+from flask_login import LoginManager
+from flask_login.mixins import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
 import innopoints.file_manager_s3 as file_manager
@@ -11,6 +13,7 @@ import innopoints.file_manager_s3 as file_manager
 IPTS_PER_HOUR = 70
 
 db = SQLAlchemy()
+login_manager = LoginManager()
 
 
 class ReviewStatus(Enum):
@@ -126,20 +129,33 @@ class Activity(db.Model):
                                                  cascade='all, delete-orphan'))
 
 
-class Account(db.Model):
+class Account(db.Model, UserMixin):
     """Represents an account of a logged in user"""
     __tablename__ = 'accounts'
 
-    id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(256), nullable=False)
-    university_status = db.Column(db.String(256), nullable=True)
-    university_email = db.Column(db.String(128), nullable=False)
-    telegram_username = db.Column(db.String(32))
+    university_status = db.Column(db.String(64), nullable=True)
+    email = db.Column(db.String(128), primary_key=True)
+    telegram_username = db.Column(db.String(32), nullable=True)
     is_admin = db.Column(db.Boolean, nullable=False)
     # property `moderated_projects` created with a backref
     # property `stock_changes` created with a backref
     # property `transactions` created with a backref
     # property `notifications` created with a backref
+
+    @login_manager.user_loader
+    @staticmethod
+    def load_user(email):
+        """Return a user instance by the e-mail"""
+        return Account.objects.get(id=email)
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    def get_id(self):
+        """Return the user's e-mail"""
+        return self.email
 
 
 class Application(db.Model):

@@ -11,14 +11,15 @@ from authlib.jose.errors import MissingClaimError, InvalidClaimError
 from authlib.oidc.core import CodeIDToken
 from flask import Blueprint, abort, jsonify, request, current_app, url_for
 from flask.views import MethodView
+from flask_login import login_user, login_required, logout_user
 from psycopg2.extras import DateRange
 from sqlalchemy import or_
 import werkzeug
 from werkzeug.exceptions import BadRequestKeyError
 
 import innopoints.file_manager_s3 as file_manager
-from innopoints.models import (Activity, ApplicationStatus, Competence, LifetimeStage, Variety,
-                               Color, Product, Project, StockChange, StockChangeStatus,
+from innopoints.models import (Activity, ApplicationStatus, Account, Competence, LifetimeStage,
+                               Variety, Color, Product, Project, StockChange, StockChangeStatus,
                                StaticFile, db)
 
 INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
@@ -111,6 +112,7 @@ def list_projects():
 
 
 @api.route('/projects/drafts')
+@login_required
 def list_drafts():
     """Return a list of drafts for the logged in user"""
     # TODO: handle authentication
@@ -126,6 +128,7 @@ def list_drafts():
 
 
 @api.route('/projects', methods=['POST'])
+@login_required
 def create_project():
     """Create a new project"""
     # pylint: disable=no-member
@@ -243,6 +246,7 @@ class ProjectDetailAPI(MethodView):
         # yapf: enable
         return jsonify(json_data)
 
+    @login_required  # TODO: check if the user is a project moderator
     def put(self, project_id):
         """Edit the information of the project"""
         project = Project.query.get_or_404(project_id)
@@ -597,6 +601,22 @@ def authorize():
     try:
         claims.validate()
     except (MissingClaimError, InvalidClaimError):
-        return jsonify({'message': 'Invalid ID token'}), 401
+        return abort(401)
+
+    user = Account.query.get(email=claims['email'])
+    if user is None:
+        user = Account(email=claims['email'],
+                       full_name=claims['commonname'],
+                       status=claims['role'],
+                       is_admin=claims['email'] in current_app.config['ADMINS'])
+        db.session.add(user)
+        db.session.commit()
+
+    login_user(user, remember=True)
 
     return jsonify(claims)
+
+@api.route('/logout')
+def logout():
+    logout_user()
+    return '', 204

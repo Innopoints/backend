@@ -39,3 +39,5 @@ $ cd ..
 ```bash
 $ pipenv run python run.py
 ```
+
+To run the server with the development configuration, set the environment variable `FLASK_DEV` to 1.
