@@ -1,19 +1,16 @@
 """Database models"""
-# pylint: disable=no-member,too-few-public-methods
 
 from datetime import datetime
 from enum import Enum, auto
 
-# pylint: disable=import-error
 from flask_sqlalchemy import SQLAlchemy
-# pylint: enable=import-error
 
 import innopoints.file_manager_s3 as file_manager
 
 
 IPTS_PER_HOUR = 70
 
-db = SQLAlchemy()  # pylint: disable=invalid-name
+db = SQLAlchemy()
 
 
 class ReviewStatus(Enum):
@@ -60,11 +57,11 @@ class NotificationType(Enum):
     proj_final_review = auto()
 
 
-# pylint: disable=bad-continuation
-project_moderation = db.Table('project_moderation',  # pylint: disable=invalid-name
-db.Column('project_id', db.Integer, db.ForeignKey('projects.id'), primary_key=True),
-db.Column('account_id', db.Integer, db.ForeignKey('accounts.id'), primary_key=True))
-# pylint: enable=bad-continuation
+project_moderation = db.Table(
+    'project_moderation',
+    db.Column('project_id', db.Integer, db.ForeignKey('projects.id'), primary_key=True),
+    db.Column('account_id', db.Integer, db.ForeignKey('accounts.id'), primary_key=True)
+)
 
 
 class Project(db.Model):
@@ -253,15 +250,17 @@ class StockChange(db.Model):
                                                  cascade='all, delete-orphan'))
 
 
-# pylint: disable=bad-continuation
-activity_competence = db.Table('activity_competence',  # pylint: disable=invalid-name
+activity_competence = db.Table(
+    'activity_competence',
     db.Column('activity_id', db.Integer, db.ForeignKey('activities.id'), primary_key=True),
-    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True))
+    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True)
+)
 
-feedback_competence = db.Table('feedback_competence',  # pylint: disable=invalid-name
+feedback_competence = db.Table(
+    'feedback_competence',
     db.Column('feedback_id', db.Integer, db.ForeignKey('feedback.id'), primary_key=True),
-    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True))
-# pylint: enable=bad-continuation
+    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True)
+)
 
 
 class Competence(db.Model):

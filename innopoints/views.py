@@ -4,7 +4,6 @@ from datetime import datetime
 import os
 import mimetypes
 
-# pylint: disable=import-error
 import requests
 from authlib.flask.client import OAuth
 from authlib.jose import jwt
@@ -16,7 +15,6 @@ from psycopg2.extras import DateRange
 from sqlalchemy import or_
 import werkzeug
 from werkzeug.exceptions import BadRequestKeyError
-# pylint: enable=import-error
 
 import innopoints.file_manager_s3 as file_manager
 from innopoints.models import (Activity, ApplicationStatus, Competence, LifetimeStage, Variety,
@@ -28,7 +26,7 @@ INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
 sso_config = requests.get(f'{INNOPOLIS_SSO_BASE}/.well-known/openid-configuration').json()
 jwks = requests.get(sso_config['jwks_uri']).json()
 
-api = Blueprint('api', __name__)  # pylint: disable=invalid-name
+api = Blueprint('api', __name__)
 
 oauth = OAuth()
 oauth.register(
@@ -594,6 +592,7 @@ def login():
 def authorize():
     """Catch the user after the back-redirect and fetch the essential info"""
     token = oauth.innopolis_sso.authorize_access_token()
+    # TODO: replace this for the `parse_id_token` in the upcoming authlib version
     claims = jwt.decode(token['id_token'], jwks, claims_cls=CodeIDToken)
     try:
         claims.validate()
