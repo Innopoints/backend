@@ -48,6 +48,7 @@ ALLOWED_SIZES = {'XS', 'S', 'M', 'L', 'XL', 'XXL'}
 # ----- Projects -----
 
 @api.route('/projects')
+@login_required
 def list_projects():
     """List ongoing or past projects"""
     lifetime_stages = {
