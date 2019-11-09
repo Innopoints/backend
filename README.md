@@ -20,10 +20,13 @@ Ensure that PostgreSQL is installed and functioning. Create a database and subst
 
 ```bash
 $ export DATABASE_URL='postgresql://localhost/{database_name}'
-$ export INNOPOINTS_DATABASE_URI='postgresql://localhost/{database_name}'
+$ export INNOPOLIS_SSO_BASE='https://sso.university.innopolis.ru/adfs'
+$ export INNOPOLIS_SSO_CLIENT_ID='{application-client-id}'
+$ export INNOPOLIS_SSO_CLIENT_SECRET='{application-secret}'
 # for fish:
 #  set -x DATABASE_URL 'postgresql://localhost/{database_name}'
-#  set -x INNOPOINTS_DATABASE_URI 'postgresql://localhost/{database_name}'
+#  set -x INNOPOLIS_SSO_BASE 'https://sso.university.innopolis.ru/adfs'
+
 $ cd innopoints
 $ pipenv run flask db init
 $ pipenv run flask db migrate
