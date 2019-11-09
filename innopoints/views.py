@@ -604,7 +604,7 @@ def authorize():
     except (MissingClaimError, InvalidClaimError):
         return abort(401)
 
-    user = Account.query.get(email=claims['email'])
+    user = Account.query.get(claims['email'])
     if user is None:
         user = Account(email=claims['email'],
                        full_name=claims['commonname'],

@@ -63,7 +63,7 @@ class NotificationType(Enum):
 project_moderation = db.Table(
     'project_moderation',
     db.Column('project_id', db.Integer, db.ForeignKey('projects.id'), primary_key=True),
-    db.Column('account_id', db.Integer, db.ForeignKey('accounts.id'), primary_key=True)
+    db.Column('account_id', db.String(128), db.ForeignKey('accounts.email'), primary_key=True)
 )
 
 
@@ -77,7 +77,7 @@ class Project(db.Model):
     creation_time = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
     # property `activities` created with a backref
     organizer = db.Column(db.String(64), nullable=True)
-    creator_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    creator_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     admin_feedback = db.Column(db.String(1024), nullable=True)
     review_status = db.Column(db.Enum(ReviewStatus), nullable=True)
     lifetime_stage = db.Column(db.Enum(LifetimeStage),
@@ -147,7 +147,7 @@ class Account(db.Model, UserMixin):
     @staticmethod
     def load_user(email):
         """Return a user instance by the e-mail"""
-        return Account.objects.get(id=email)
+        return Account.objects.get(email=email)
 
     @property
     def is_authenticated(self):
@@ -163,7 +163,7 @@ class Application(db.Model):
     __tablename__ = 'applications'
 
     id = db.Column(db.Integer, primary_key=True)
-    applicant_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    applicant_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=False)
     comment = db.Column(db.String(1024), nullable=False)
     application_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -253,7 +253,7 @@ class StockChange(db.Model):
     amount = db.Column(db.Integer, nullable=False)
     time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     status = db.Column(db.Enum(StockChangeStatus), nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    account_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     variety_id = db.Column(db.Integer, db.ForeignKey('varieties.id'), nullable=False)
 
     account = db.relationship('Account',
@@ -351,7 +351,7 @@ class Transaction(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    account_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     change = db.Column(db.Integer, nullable=False)
     stock_change_id = db.Column(db.Integer, db.ForeignKey('stock_changes.id'), nullable=True)
     feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=True)
@@ -376,7 +376,7 @@ class Notification(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    recipient_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    recipient_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     is_read = db.Column(db.Boolean, nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
