@@ -8,6 +8,7 @@ import mimetypes
 import requests
 from authlib.flask.client import OAuth
 from authlib.jose import jwt
+from authlib.jose.errors import MissingClaimError, InvalidClaimError
 from authlib.oidc.core import CodeIDToken
 from flask import Blueprint, abort, jsonify, request, current_app, url_for
 from flask.views import MethodView
@@ -30,7 +31,8 @@ jwks = requests.get(sso_config['jwks_uri']).json()
 api = Blueprint('api', __name__)  # pylint: disable=invalid-name
 
 oauth = OAuth()
-oauth.register('innopolis_sso',
+oauth.register(
+    'innopolis_sso',
     server_metadata_url=f'{INNOPOLIS_SSO_BASE}/.well-known/openid-configuration',
     access_token_url=sso_config.get('token_endpoint',
                                     f'{INNOPOLIS_SSO_BASE}/oauth2/token'),
@@ -584,13 +586,18 @@ api.add_url_rule('/static/<int:file_id>',
 
 @api.route('/login', methods=['GET'])
 def login():
+    """Redirect the user to the Innopolis SSO login page"""
     redirect_uri = url_for('api.authorize', _external=True)
     return oauth.innopolis_sso.authorize_redirect(redirect_uri)
 
 @api.route('/authorize')
 def authorize():
+    """Catch the user after the back-redirect and fetch the essential info"""
     token = oauth.innopolis_sso.authorize_access_token()
     claims = jwt.decode(token['id_token'], jwks, claims_cls=CodeIDToken)
-    print(claims.validate())
-    print(claims)
-    return jsonify(token)
+    try:
+        claims.validate()
+    except (MissingClaimError, InvalidClaimError):
+        return jsonify({'message': 'Invalid ID token'}), 401
+
+    return jsonify(claims)
