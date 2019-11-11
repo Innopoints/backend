@@ -20,10 +20,10 @@ def create_app(config='config/prod.py'):
     Migrate(app, db)
 
     with app.app_context():
-        flask_migrate.init()
+        if not os.path.exists('migrations'):
+            flask_migrate.init()
         flask_migrate.migrate()
         flask_migrate.upgrade()
-        db.create_all()
 
     login_manager.init_app(app)
 
