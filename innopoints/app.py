@@ -17,6 +17,7 @@ def create_app(config='config/prod.py'):
 
     db.init_app(app)
     Migrate(app, db)
+    db.create_all()
 
     login_manager.init_app(app)
 

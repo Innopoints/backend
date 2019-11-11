@@ -1,1 +1,1 @@
-web: ./startup.sh
+web: gunicorn run:app
