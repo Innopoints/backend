@@ -7,8 +7,7 @@ import mimetypes
 import requests
 from authlib.integrations.flask_client import OAuth
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
-from authlib.oidc.core import CodeIDToken
-from flask import Blueprint, abort, jsonify, request, current_app, url_for
+from flask import Blueprint, abort, jsonify, request, current_app, url_for, redirect
 from flask.views import MethodView
 from flask_login import login_user, login_required, logout_user
 from psycopg2.extras import DateRange
@@ -612,7 +611,7 @@ def authorize():
 
     login_user(user, remember=True)
 
-    return jsonify(userinfo)
+    return redirect(url_for('projects'))
 
 @api.route('/logout')
 def logout():

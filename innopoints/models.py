@@ -143,12 +143,6 @@ class Account(db.Model, UserMixin):
     # property `transactions` created with a backref
     # property `notifications` created with a backref
 
-    @login_manager.user_loader
-    @staticmethod
-    def load_user(email):
-        """Return a user instance by the e-mail"""
-        return Account.objects.get(email=email)
-
     @property
     def is_authenticated(self):
         return True
@@ -156,6 +150,12 @@ class Account(db.Model, UserMixin):
     def get_id(self):
         """Return the user's e-mail"""
         return self.email
+
+
+@login_manager.user_loader
+def load_user(email):
+    """Return a user instance by the e-mail"""
+    return Account.query.get(email)
 
 
 class Application(db.Model):
