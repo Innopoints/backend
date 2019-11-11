@@ -5,8 +5,7 @@ import os
 import mimetypes
 
 import requests
-from authlib.flask.client import OAuth
-from authlib.jose import jwt
+from authlib.integrations.flask_client import OAuth
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
 from authlib.oidc.core import CodeIDToken
 from flask import Blueprint, abort, jsonify, request, current_app, url_for
@@ -597,25 +596,23 @@ def login():
 def authorize():
     """Catch the user after the back-redirect and fetch the essential info"""
     token = oauth.innopolis_sso.authorize_access_token()
-    # TODO: replace this for the `parse_id_token` in the upcoming authlib version
-    claims = jwt.decode(token['id_token'], jwks, claims_cls=CodeIDToken)
     try:
-        claims.validate()
+        userinfo = oauth.innopolis_sso.parse_id_token(token)
     except (MissingClaimError, InvalidClaimError):
         return abort(401)
 
-    user = Account.query.get(claims['email'])
+    user = Account.query.get(userinfo['email'])
     if user is None:
-        user = Account(email=claims['email'],
-                       full_name=claims['commonname'],
-                       status=claims['role'],
-                       is_admin=claims['email'] in current_app.config['ADMINS'])
+        user = Account(email=userinfo['email'],
+                       full_name=userinfo['commonname'],
+                       university_status=userinfo['role'],
+                       is_admin=userinfo['email'] in current_app.config['ADMINS'])
         db.session.add(user)
         db.session.commit()
 
     login_user(user, remember=True)
 
-    return jsonify(claims)
+    return jsonify(userinfo)
 
 @api.route('/logout')
 def logout():
