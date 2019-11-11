@@ -594,7 +594,8 @@ def login():
 @api.route('/authorize')
 def authorize():
     """Catch the user after the back-redirect and fetch the essential info"""
-    token = oauth.innopolis_sso.authorize_access_token()
+    token = oauth.innopolis_sso.authorize_access_token(
+        redirect_uri=url_for('api.authorize', _external=True))
     try:
         userinfo = oauth.innopolis_sso.parse_id_token(token)
     except (MissingClaimError, InvalidClaimError):
