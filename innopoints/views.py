@@ -611,7 +611,7 @@ def authorize():
 
     login_user(user, remember=True)
 
-    return redirect(url_for('projects'))
+    return redirect(url_for('api.list_projects'))
 
 @api.route('/logout')
 def logout():
