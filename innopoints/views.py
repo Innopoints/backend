@@ -9,7 +9,7 @@ from authlib.integrations.flask_client import OAuth
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
 from flask import Blueprint, abort, jsonify, request, current_app, url_for, redirect
 from flask.views import MethodView
-from flask_login import login_user, login_required, logout_user
+from flask_login import login_user, login_required, logout_user, current_user
 from psycopg2.extras import DateRange
 from sqlalchemy import or_
 import werkzeug
@@ -45,9 +45,9 @@ ALLOWED_SIZES = {'XS', 'S', 'M', 'L', 'XL', 'XXL'}
 # ----- Projects -----
 
 @api.route('/projects')
-@login_required
 def list_projects():
     """List ongoing or past projects"""
+
     lifetime_stages = {
         'ongoing': LifetimeStage.created,
         'past': LifetimeStage.finished,
@@ -68,11 +68,10 @@ def list_projects():
         db_query = db_query.filter(or_condition).distinct()
 
     if lifetime_stage == LifetimeStage.finished:
-        page = request.args.get('page', 1)
+        page = int(request.args.get('page', 1))
         db_query = db_query.order_by(Project.id.desc())
         db_query = db_query.offset(10 * (page - 1)).limit(10)
 
-    # yapf: disable
     projects = []
     for project in db_query.all():
         project_json = {
@@ -84,7 +83,11 @@ def list_projects():
             'activities': [],
         }
 
-        # TODO: handle administrators
+        if current_user.is_authenticated:
+            project_json['moderators'] = [moderator.email for moderator in project.moderators]
+
+            if current_user.is_admin:
+                project_json['review_status'] = project.review_status
 
         for activity in project.activities:
             accepted = Activity.query.filter_by(activity=activity,
@@ -95,16 +98,12 @@ def list_projects():
                     'start': activity.start_date,
                     'end': activity.end_date,
                 },
-                'is_fixed_reward': activity.fixed_reward,
-                'worktime': activity.working_hours,
                 'vacant_spots': activity.people_required - accepted,
-                'reward': activity.working_hours * activity.reward_rate,
                 'competences': [comp.id for comp in activity.competences],
             }
             project_json['activities'].append(activity_json)
 
         projects.append(project_json)
-    # yapf: enable
 
     return jsonify(projects)
 
