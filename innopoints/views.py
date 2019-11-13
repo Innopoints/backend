@@ -54,7 +54,7 @@ def list_projects():
     }
 
     if 'type' not in request.args or request.args['type'] not in lifetime_stages:
-        abort(400, {'message': 'A valid project type must be specified.'})
+        abort(400, {'message': 'A valid project type must be specified: `ongoing` or `past`.'})
 
     lifetime_stage = lifetime_stages[request.args['type']]
 
@@ -112,9 +112,8 @@ def list_projects():
 @login_required
 def list_drafts():
     """Return a list of drafts for the logged in user"""
-    # TODO: handle authentication
-    db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.draft,)
-                                       #creator=)
+    db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.draft,
+                                       creator=current_user)
     return jsonify([
         {
             'id': project.id,
