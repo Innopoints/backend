@@ -129,6 +129,43 @@ class Activity(db.Model):
                                                  lazy=True,
                                                  cascade='all, delete-orphan'))
 
+    @staticmethod
+    def clean(data):
+        # TODO: finish up
+        clean_data = {}
+        try:
+            clean_data['start_date'] = datetime.fromisoformat(data['dates']['start'])
+            clean_data['end_date'] = datetime.fromisoformat(data['dates']['end'])
+        except KeyError:
+            clean_data['start_date'] = None
+            clean_data['end_date'] = None
+        except (TypeError, ValueError):
+            raise ValueError('Invalid value provided for date.')
+
+        if (None not in (clean_data['start_date'], clean_data['start_date'])
+                and clean_data['start_date'] > clean_data['end_date']):
+            raise ValueError('Start date is greater than the end date.')
+
+        try:
+            clean_data['deadline'] = datetime.fromisoformat(data['application_deadline'])
+        except KeyError:
+            clean_data['deadline'] = None
+        except (TypeError, ValueError):
+            raise ValueError('Invalid value provided for date.')
+
+        if data['work_hours'] <= 0:
+            raise ValueError('Working hours must be positive.')
+
+        if data['reward_rate'] <= 0:
+            raise ValueError('Reward rate must be positive.')
+
+        if data['people_required'] < 0:
+            raise ValueError('People required must be non-negative.')
+
+
+
+
+
 
 class Account(UserMixin, db.Model):
     """Represents an account of a logged in user"""

@@ -1,6 +1,7 @@
 """Application views"""
 
 from datetime import datetime
+import json
 import os
 import mimetypes
 
@@ -16,9 +17,22 @@ import werkzeug
 from werkzeug.exceptions import BadRequestKeyError
 
 import innopoints.file_manager_s3 as file_manager
-from innopoints.models import (Activity, ApplicationStatus, Account, Competence, LifetimeStage,
-                               Variety, Color, Product, Project, StockChange, StockChangeStatus,
-                               StaticFile, db)
+from innopoints.models import (
+    Activity,
+    Application,
+    ApplicationStatus,
+    Account,
+    Color,
+    Competence,
+    LifetimeStage,
+    Product,
+    Project,
+    StaticFile,
+    StockChange,
+    StockChangeStatus,
+    Variety,
+    db
+)
 
 INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
 
@@ -76,9 +90,9 @@ def list_projects():
     for project in db_query.all():
         project_json = {
             'id': project.id,
-            'title': project.title,
+            'name': project.name,
             'img': project.image_url,
-            'creation_time': project.created_at,
+            'creation_time': project.creation_time,
             'organizer': project.organizer,
             'activities': [],
         }
@@ -87,12 +101,13 @@ def list_projects():
             project_json['moderators'] = [moderator.email for moderator in project.moderators]
 
             if current_user.is_admin:
-                project_json['review_status'] = project.review_status
+                project_json['review_status'] = project.review_status.name
 
         for activity in project.activities:
             accepted = Activity.query.filter_by(activity=activity,
                                                 status=ApplicationStatus.approved).count()
             activity_json = {
+                'id': activity.id,
                 'name': activity.name,
                 'dates': {
                     'start': activity.start_date,
@@ -117,8 +132,8 @@ def list_drafts():
     return jsonify([
         {
             'id': project.id,
-            'title': project.title,
-            'creation_time': project.created_at,
+            'name': project.name,
+            'creation_time': project.creation_time,
         } for project in db_query.all()
     ])
 
@@ -126,83 +141,160 @@ def list_drafts():
 @api.route('/projects', methods=['POST'])
 @login_required
 def create_project():
-    """Create a new project"""
-    # pylint: disable=no-member
+    """Create a new draft project"""
     if not request.is_json:
         abort(400, {'message': 'The request should be in JSON.'})
 
-    if 'is_draft' not in request.json:
-        abort(400, {'message': 'is_draft should be specified.'})
+    if request.json.get('title') is None:
+        abort(400, {'message': 'The title must not be empty.'})
 
-    is_draft = bool(request.json['is_draft'])
+    moderators = []
+    for email in request.json.get('moderators', ()):
+        account = Account.query.get(email)
+        if account is not None:
+            moderators.append(account)
 
-    try:
-        creator_id = 1  # request.json['creator_id']
+    new_project = Project(title=request.json['title'],
+                          image_url=request.json.get('img'),
+                          organizer=request.json.get('organizer'),
+                          lifetime_stage=LifetimeStage.draft,
+                          moderators=moderators,
+                          creator=current_user)
+    db.session.add(new_project)
 
-        if not is_draft and not request.json['title']:
-            abort(400, {'message': 'The title must not be empty.'})
+    for activity_data in request.json.get('activities', ()):
+        try:
+            lower_date = datetime.fromisoformat(activity_data['dates']['start'])
+            upper_date = datetime.fromisoformat(activity_data['dates']['end'])
+            if lower_date > upper_date:
+                abort(400, {'message': 'The start date must not be greater than the end date.'})
+        except (TypeError, KeyError, ValueError):
+            lower_date = None
+            upper_date = None
 
-        if not is_draft and not request.json['img']:
-            abort(400, {'message': 'The image must be specified.'})
+        try:
+            deadline = datetime.fromisoformat(activity_data['application_deadline'])
+        except (TypeError, KeyError, ValueError):
+            deadline = None
 
-        if not is_draft and not request.json['organizer']:
-            abort(400, {'message': 'The organizer must not be empty.'})
+        if activity_data['work_hours'] <= 0:
+            abort(400, {'message': 'Working hours must be positive.'})
 
-        new_project = Project(title=request.json['title'],
-                              image_url=request.json['img'],
-                              organizer=request.json['organizer'],
-                              lifetime_stage=(LifetimeStage.draft if is_draft
-                                              else LifetimeStage.ongoing),
-                              creator_id=creator_id)
-        db.session.add(new_project)
+        if activity_data['reward_rate'] <= 0:
+            abort(400, {'message': 'Reward rate must be positive.'})
 
-        for activity_data in request.json['activities']:
-            if activity_data['has_fixed_rate'] and activity_data.get('work_hours') != 1:
-                abort(400, {'message': 'Fixed-rate activities should have work_hours == 1.'})
+        if activity_data['people_required'] < 0:
+            abort(400, {'message': 'People required must be non-negative.'})
 
-            try:
-                lower_date = datetime.fromisoformat(activity_data['dates']['start'])
-                upper_date = datetime.fromisoformat(activity_data['dates']['end'])
-                if lower_date > upper_date:
-                    abort(400,
-                          {'message': 'The start date must not be greater than the end date.'})
-            except (TypeError, KeyError):
-                if not is_draft:
-                    abort(400, {'message': 'Valid dates should be provided.'})
-                lower_date = None
-                upper_date = None
+        if activity_data['work_hours'] is not None and activity_data['reward_rate'] is not None:
+            abort(400, {'message': 'Work hours must be mutually exclusive with the reward rate.'})
 
-            if not is_draft and not activity_data.get('name'):
-                abort(400, {'message': 'Activities should have a non-empty name.'})
+        new_activity = Activity(name=activity_data.get('name'),
+                                description=activity_data.get('description'),
+                                start_date=lower_date,
+                                end_date=upper_date,
+                                telegram_required=activity_data.get('telegram_required'),
+                                fixed_reward=activity_data.get('fixed_reward'),
+                                working_hours=activity_data.get('work_hours'),
+                                reward_rate=activity_data.get('reward_rate'),
+                                people_required=activity_data.get('people_required'),
+                                application_deadline=deadline,
+                                feedback_questions=json.dumps(
+                                    activity_data.get('feedback_questions')),
+                                project=new_project)
+        db.session.add(new_activity)
 
-            if not is_draft and not activity_data.get('work_hours'):
-                abort(400, {'message': 'Activities should have valid working hours.'})
-
-            if not is_draft and not activity_data.get('reward_rate'):
-                abort(400, {'message': 'Activities should have a valid reward rate.'})
-
-            new_activity = Activity(name=activity_data.get('name'),
-                                    description=activity_data.get('description'),
-                                    start_date=lower_date,
-                                    end_date=upper_date,
-                                    working_hours=activity_data.get('work_hours'),
-                                    fixed_reward=activity_data['has_fixed_rate'],
-                                    reward_rate=activity_data.get('reward_rate'),
-                                    people_required=activity_data.get('people_required'),
-                                    telegram_required=activity_data.get('telegram_required'),
-                                    project=new_project)
-            db.session.add(new_activity)
-
-            for competence_id in activity_data.get('competences', ()):
-                competence = Competence.query.get(competence_id)
+        for competence_id in activity_data.get('competences', ()):
+            competence = Competence.query.get(competence_id)
+            if competence is not None:
                 new_activity.competences.append(competence)
 
-    except KeyError as exc:
-        db.session.rollback()
-        abort(400, {'message': f'Key {exc} not found.'})
-    except ValueError as exc:
-        db.session.rollback()
-        abort(400, {'message': str(exc)})
+    db.session.commit()
+    return jsonify(
+        {
+            "id": new_project.id,
+            "name": new_project.name,
+            "img": new_project.image_url,
+            "organizer": new_project.organizer,
+            "activities": [
+                {
+                    "id": new_activity.id,
+                    "name": new_activity.name,
+                    "description": new_activity.description,
+                    "dates": {
+                        "start": new_activity.start_date,
+                        "end": new_activity.end_date
+                    },
+                    "telegram_required": new_activity.telegram_required,
+                    "has_fixed_rate": new_activity.fixed_reward,
+                    "work_hours": new_activity.working_hours,
+                    "reward_rate": new_activity.reward_rate,
+                    "people_required": new_activity.people_required,
+                    "application_deadline": new_activity.application_deadline,
+                    "feedback_questions": json.loads(new_activity.feedback_questions),
+                    "competences": [comp.id for comp in new_activity.competences],
+                } for new_activity in new_project.activities
+            ],
+            "moderators": [account.email for account in new_project.moderators],
+        }
+    )
+
+@login_required
+def publish_project():
+    """Create a new draft project"""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if request.json.get('title') is None:
+        abort(400, {'message': 'The title must not be empty.'})
+
+    new_project = Project(title=request.json['title'],
+                          image_url=request.json.get('img'),
+                          organizer=request.json.get('organizer'),
+                          lifetime_stage=LifetimeStage.draft,
+                          creator=current_user)
+    db.session.add(new_project)
+
+    for activity_data in request.json['activities']:
+        if activity_data['has_fixed_rate'] and activity_data.get('work_hours') != 1:
+            abort(400, {'message': 'Fixed-rate activities should have work_hours == 1.'})
+
+        try:
+            lower_date = datetime.fromisoformat(activity_data['dates']['start'])
+            upper_date = datetime.fromisoformat(activity_data['dates']['end'])
+            if lower_date > upper_date:
+                abort(400,
+                      {'message': 'The start date must not be greater than the end date.'})
+        except (TypeError, KeyError):
+            if not is_draft:
+                abort(400, {'message': 'Valid dates should be provided.'})
+            lower_date = None
+            upper_date = None
+
+        if not is_draft and not activity_data.get('name'):
+            abort(400, {'message': 'Activities should have a non-empty name.'})
+
+        if not is_draft and not activity_data.get('work_hours'):
+            abort(400, {'message': 'Activities should have valid working hours.'})
+
+        if not is_draft and not activity_data.get('reward_rate'):
+            abort(400, {'message': 'Activities should have a valid reward rate.'})
+
+        new_activity = Activity(name=activity_data.get('name'),
+                                description=activity_data.get('description'),
+                                start_date=lower_date,
+                                end_date=upper_date,
+                                working_hours=activity_data.get('work_hours'),
+                                fixed_reward=activity_data['has_fixed_rate'],
+                                reward_rate=activity_data.get('reward_rate'),
+                                people_required=activity_data.get('people_required'),
+                                telegram_required=activity_data.get('telegram_required'),
+                                project=new_project)
+        db.session.add(new_activity)
+
+        for competence_id in activity_data.get('competences', ()):
+            competence = Competence.query.get(competence_id)
+            new_activity.competences.append(competence)
 
     db.session.commit()
     return jsonify(id=new_project.id)
@@ -211,35 +303,38 @@ def create_project():
 class ProjectDetailAPI(MethodView):
     """REST views for a particular instance of a Project model"""
 
-    # pylint: disable=no-self-use
-
     def get(self, project_id):
         """Get full information about the project"""
         project = Project.query.get_or_404(project_id)
-        # yapf: disable
         json_data = {
-            'title': project.title,
+            'name': project.name,
             'img': project.image_url,
-            'creation_time': project.created_at,
             'organizer': project.organizer,
-            'review_status': project.review_status.name,
-            'lifetime_stage': project.lifetime_stage.name,
+            'creation_time': project.creation_time,
             'activities': [{
                 'id': activity.id,
                 'name': activity.name,
                 'description': activity.description,
                 'people_required': activity.people_required,
-                'accepted_applications': [{
+                'reward_rate': activity.reward_rate,
+                'work_hours': activity.working_hours,
+                'has_fixed_rate': activity.fixed_reward
+            } for activity in project.activities],
+            'lifetime_stage': project.lifetime_stage.name,
+        }
+
+        if current_user.is_authenticated:
+            for activity_obj, activity_json in zip(project.activities, json_data['activities']):
+                activity_json['existing_application'] = Application.query.filter_by(
+                    activity=activity_obj, applicant=current_user).one_or_none()
+                activity_json['accepted_applications'] = [{
                     'applicant_name': application.applicant.full_name,
                 } for application in activity.applications
                                           if application.status == ApplicationStatus.approved],
-                'reward_rate': activity.reward_rate,
-                'work_hours': activity.working_hours,
-                'has_fixed_rate': activity.fixed_reward,
-                'existing_application': 'WTF?',  # TODO: fix when we will add the Application
-            } for activity in project.activities],
-        }
-        # yapf: enable
+
+        if current_user.is_admin:
+            json_data['review_status'] = project.review_status.name
+
         return jsonify(json_data)
 
     @login_required  # TODO: check if the user is a project moderator
