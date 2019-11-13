@@ -154,7 +154,7 @@ def create_project():
         if account is not None:
             moderators.append(account)
 
-    new_project = Project(title=request.json['title'],
+    new_project = Project(name=request.json['name'],
                           image_url=request.json.get('img'),
                           organizer=request.json.get('organizer'),
                           lifetime_stage=LifetimeStage.draft,
