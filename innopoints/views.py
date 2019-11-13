@@ -23,7 +23,6 @@ from innopoints.models import (Activity, ApplicationStatus, Account, Competence,
 INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
 
 sso_config = requests.get(f'{INNOPOLIS_SSO_BASE}/.well-known/openid-configuration').json()
-jwks = requests.get(sso_config['jwks_uri']).json()
 
 api = Blueprint('api', __name__)
 
@@ -606,15 +605,28 @@ def authorize():
         user = Account(email=userinfo['email'],
                        full_name=userinfo['commonname'],
                        university_status=userinfo['role'],
-                       is_admin=userinfo['email'] in current_app.config['ADMINS'])
+                       is_admin=current_app.config['IS_ADMIN'](userinfo))
         db.session.add(user)
         db.session.commit()
+
+    if user.full_name != userinfo['commonname']:
+        user.full_name = userinfo['commonname']
+
+    if user.university_status != userinfo['role']:
+        user.university_status = userinfo['role']
+
+    if user.is_admin != current_app.config['IS_ADMIN'](userinfo):
+        user.is_admin = current_app.config['IS_ADMIN'](userinfo)
+
+    db.session.commit()
 
     login_user(user, remember=True)
 
     return redirect(url_for('api.list_projects'))
 
+
 @api.route('/logout')
 def logout():
+    """Log out the currently signed in user"""
     logout_user()
     return '', 204

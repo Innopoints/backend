@@ -14,6 +14,7 @@ IPTS_PER_HOUR = 70
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+login_manager.session_protection = 'strong'
 
 
 class ReviewStatus(Enum):
@@ -129,7 +130,7 @@ class Activity(db.Model):
                                                  cascade='all, delete-orphan'))
 
 
-class Account(db.Model, UserMixin):
+class Account(UserMixin, db.Model):
     """Represents an account of a logged in user"""
     __tablename__ = 'accounts'
 
@@ -142,10 +143,6 @@ class Account(db.Model, UserMixin):
     # property `stock_changes` created with a backref
     # property `transactions` created with a backref
     # property `notifications` created with a backref
-
-    @property
-    def is_authenticated(self):
-        return True
 
     def get_id(self):
         """Return the user's e-mail"""
