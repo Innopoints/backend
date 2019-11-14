@@ -102,6 +102,8 @@ class Project(db.Model):
     @property
     def image_url(self):
         """Return an image URL constructed from the ID"""
+        if self.image_id is None:
+            return None
         return f'/file/{self.image_id}'
 
 
@@ -163,8 +165,18 @@ class Activity(db.Model):
             raise ValueError('People required must be non-negative.')
 
 
+    @property
+    def dates(self):
+        """Return the activity dates as a single JSON object"""
+        return {'start': self.start_date.isoformat(),
+                'end': self.end_date.isoformat()}
 
-
+    @property
+    def vacant_spots(self):
+        """Return the amount of vacant spots for the activity"""
+        accepted = Application.query.filter_by(activity=self,
+                                               status=ApplicationStatus.approved).count()
+        return max(self.people_required - accepted, -1)
 
 
 class Account(UserMixin, db.Model):

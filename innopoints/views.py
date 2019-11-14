@@ -33,6 +33,9 @@ from innopoints.models import (
     Variety,
     db
 )
+from innopoints.schemas import (
+    ListProjectSchema
+)
 
 INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
 
@@ -68,7 +71,7 @@ def list_projects():
     }
 
     if 'type' not in request.args or request.args['type'] not in lifetime_stages:
-        abort(400, {'message': 'A valid project type must be specified: `ongoing` or `past`.'})
+        abort(400, {'message': 'A valid project type must be specified: \'ongoing\' or \'past\'.'})
 
     lifetime_stage = lifetime_stages[request.args['type']]
 
@@ -86,41 +89,14 @@ def list_projects():
         db_query = db_query.order_by(Project.id.desc())
         db_query = db_query.offset(10 * (page - 1)).limit(10)
 
-    projects = []
-    for project in db_query.all():
-        project_json = {
-            'id': project.id,
-            'name': project.name,
-            'img': project.image_url,
-            'creation_time': project.creation_time,
-            'organizer': project.organizer,
-            'activities': [],
-        }
+    exclude = ['review_status', 'moderators']
+    if current_user.is_authenticated:
+        exclude.remove('moderators')
+        if not current_user.is_admin:
+            exclude.remove('review_status')
 
-        if current_user.is_authenticated:
-            project_json['moderators'] = [moderator.email for moderator in project.moderators]
-
-            if current_user.is_admin:
-                project_json['review_status'] = project.review_status.name
-
-        for activity in project.activities:
-            accepted = Activity.query.filter_by(activity=activity,
-                                                status=ApplicationStatus.approved).count()
-            activity_json = {
-                'id': activity.id,
-                'name': activity.name,
-                'dates': {
-                    'start': activity.start_date,
-                    'end': activity.end_date,
-                },
-                'vacant_spots': activity.people_required - accepted,
-                'competences': [comp.id for comp in activity.competences],
-            }
-            project_json['activities'].append(activity_json)
-
-        projects.append(project_json)
-
-    return jsonify(projects)
+    schema = ListProjectSchema(many=True, exclude=exclude)
+    return schema.jsonify(db_query.all())
 
 
 @api.route('/projects/drafts')
@@ -129,13 +105,14 @@ def list_drafts():
     """Return a list of drafts for the logged in user"""
     db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.draft,
                                        creator=current_user)
-    return jsonify([
-        {
-            'id': project.id,
-            'name': project.name,
-            'creation_time': project.creation_time,
-        } for project in db_query.all()
-    ])
+    schema = ListProjectSchema(many=True, exclude=(
+        'image_url',
+        'organizer',
+        'moderators',
+        'review_status',
+        'activities',
+    ))
+    return schema.jsonify(db_query.all())
 
 
 @api.route('/projects', methods=['POST'])
@@ -683,6 +660,7 @@ def login():
     redirect_uri = url_for('api.authorize', _external=True)
     return oauth.innopolis_sso.authorize_redirect(redirect_uri)
 
+
 @api.route('/authorize')
 def authorize():
     """Catch the user after the back-redirect and fetch the essential info"""
@@ -722,4 +700,12 @@ def authorize():
 def logout():
     """Log out the currently signed in user"""
     logout_user()
+    return '', 204
+
+@api.route('/login_cheat')
+def login_cheat():
+    """Bypass OAuth"""
+    user = Account.query.all()[0]
+    login_user(user, remember=True)
+
     return '', 204

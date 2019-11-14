@@ -6,6 +6,7 @@ from flask import Flask
 
 from innopoints.views import api, oauth
 from innopoints.models import db, login_manager
+from innopoints.schemas import ma
 
 
 def create_app(config='config/prod.py'):
@@ -15,6 +16,7 @@ def create_app(config='config/prod.py'):
     app.config.from_pyfile(config)
 
     db.init_app(app)
+    ma.init_app(app)
 
     with app.app_context():
         db.create_all()

@@ -15,6 +15,10 @@ gunicorn = "*"
 requests = "*"
 authlib = "*"
 flask-login = "*"
+flask-marshmallow = "*"
+marshmallow-sqlalchemy = "*"
+marshmallow-enum = "*"
+marshmallow = "*"
 
 [requires]
 python_version = "3.7"
