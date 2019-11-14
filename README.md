@@ -12,10 +12,10 @@ $ pacman -S python-pipenv
 ## Install the dependencies
 
 ```bash
-$ pipenv install --dev
+$ pipenv install
 ```
 
-## Set up the database
+## Run the server
 Ensure that PostgreSQL is installed and functioning. Create a database and substitute `{database_name}` in the following commands.
 
 ```bash
@@ -23,21 +23,10 @@ $ export DATABASE_URL='postgresql://localhost/{database_name}'
 $ export INNOPOLIS_SSO_BASE='https://sso.university.innopolis.ru/adfs'
 $ export INNOPOLIS_SSO_CLIENT_ID='{application-client-id}'
 $ export INNOPOLIS_SSO_CLIENT_SECRET='{application-secret}'
+$ export FLASK_ENV='debug'  # to use the development config
 # for fish:
 #  set -x DATABASE_URL 'postgresql://localhost/{database_name}'
 #  set -x INNOPOLIS_SSO_BASE 'https://sso.university.innopolis.ru/adfs'
 
-$ cd innopoints
-$ pipenv run flask db init
-$ pipenv run flask db migrate
-$ pipenv run flask db upgrade
-$ cd ..
+$ pipenv run gunicorn run:app
 ```
-
-## Run the server
-
-```bash
-$ pipenv run python run.py
-```
-
-To run the server with the development configuration, set the environment variable `FLASK_DEV` to 1.
