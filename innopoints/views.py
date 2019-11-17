@@ -127,7 +127,7 @@ def create_project():
         abort(400, {'message': 'The request should be in JSON.'})
 
     in_schema = ProjectSchema(exclude=('id', 'creation_time', 'creator', 'admin_feedback',
-                                       'review_status', 'lifetime_stage', 'notifications', 'files'))
+                                       'review_status', 'lifetime_stage', 'files'))
 
     try:
         new_project = in_schema.load(request.json)
@@ -148,8 +148,7 @@ def create_project():
         abort(400, {'message': 'Data integrity violated.'})
         db.session.rollback()
 
-    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status',
-                                        'notifications', 'files'))
+    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files', 'image_id'))
     return out_schema.jsonify(new_project)
 
 

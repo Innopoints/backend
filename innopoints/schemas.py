@@ -1,6 +1,6 @@
 """Model schemas for serialization."""
 
-from marshmallow import validate, validates_schema, ValidationError, pre_load
+from marshmallow import validate, validates_schema, ValidationError, pre_load, post_dump
 from flask_marshmallow import Marshmallow
 from marshmallow_enum import EnumField
 
@@ -55,12 +55,14 @@ class ProjectSchema(ma.ModelSchema):
     class Meta:  # pylint: disable=missing-docstring
         model = Project
         sqla_session = db.session
+        exclude = ('notifications',)
 
     name = ma.Str(required=True,
                   validate=validate.Length(min=1, max=128),
                   error_messages={'required': 'A project name is required.',
                                   'validator_failed': 'The name must be between 1 and 128 chars.'})
     image_id = ma.Int()
+    image_url = ma.Str(dump_only=True)
     review_status = EnumField(ReviewStatus)
     lifetime_stage = EnumField(LifetimeStage)
     activities = ma.Nested('ActivitySchema', many=True)
@@ -71,7 +73,7 @@ class ActivitySchema(ma.ModelSchema):
     class Meta:  # pylint: disable=missing-docstring
         model = Activity
         ordered = True
-        exclude = ('project_id',)
+        exclude = ('project_id', 'notifications')
         sqla_session = db.session
 
     @pre_load
@@ -84,6 +86,15 @@ class ActivitySchema(ma.ModelSchema):
         except KeyError:
             raise ValidationError("The date range has a wrong format.")
 
+        return data
+
+    @post_dump
+    def wrap_dates(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Collapse the two date properties into the {"start": , "end": } dates object."""
+        data['dates'] = {
+            'start': data.pop('start_date'),
+            'end': data.pop('end_date')
+        }
         return data
 
     @validates_schema
@@ -101,8 +112,7 @@ class ActivitySchema(ma.ModelSchema):
         if start > end:
             raise ValidationError('The start date is beyond the end date.')
 
-
-    work_hours = ma.Int(validate=validate.Range(min=1))
+    working_hours = ma.Int(validate=validate.Range(min=1))
     reward_rate = ma.Int(validate=validate.Range(min=1))
     people_required = ma.Int(validate=validate.Range(min=0))
-    application_deadline = ma.DateTime(format='iso', data_key='deadline')
+    application_deadline = ma.DateTime(format='iso', data_key='application_deadline')

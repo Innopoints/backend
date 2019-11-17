@@ -134,8 +134,8 @@ class Activity(db.Model):
                                    default=DEFAULT_QUESTIONS)
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan')
-    notification = db.relationship('Notification',
-                                   cascade='all, delete-orphan')
+    notifications = db.relationship('Notification',
+                                    cascade='all, delete-orphan')
 
 
     @staticmethod
@@ -249,8 +249,8 @@ class Product(db.Model):
                                 cascade='all, delete-orphan')
     price = db.Column(db.Integer, nullable=False)
     addition_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    notification = db.relationship('Notification',
-                                   cascade='all, delete-orphan')
+    notifications = db.relationship('Notification',
+                                    cascade='all, delete-orphan')
 
 
 class Variety(db.Model):
