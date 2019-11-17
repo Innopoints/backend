@@ -11,8 +11,10 @@ from authlib.jose.errors import MissingClaimError, InvalidClaimError
 from flask import Blueprint, abort, jsonify, request, current_app, url_for, redirect
 from flask.views import MethodView
 from flask_login import login_user, login_required, logout_user, current_user
+from marshmallow import ValidationError
 from psycopg2.extras import DateRange
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 import werkzeug
 from werkzeug.exceptions import BadRequestKeyError
 
@@ -34,7 +36,8 @@ from innopoints.models import (
     db
 )
 from innopoints.schemas import (
-    ListProjectSchema
+    ListProjectSchema,
+    ProjectSchema,
 )
 
 INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
@@ -122,99 +125,32 @@ def create_project():
     if not request.is_json:
         abort(400, {'message': 'The request should be in JSON.'})
 
-    if request.json.get('title') is None:
-        abort(400, {'message': 'The title must not be empty.'})
+    in_schema = ProjectSchema(exclude=('id', 'creation_time', 'creator', 'admin_feedback',
+                                       'review_status', 'lifetime_stage', 'notifications', 'files'))
 
-    moderators = []
-    for email in request.json.get('moderators', ()):
-        account = Account.query.get(email)
-        if account is not None:
-            moderators.append(account)
+    try:
+        new_project = in_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
 
-    new_project = Project(name=request.json['name'],
-                          image_url=request.json.get('img'),
-                          organizer=request.json.get('organizer'),
-                          lifetime_stage=LifetimeStage.draft,
-                          moderators=moderators,
-                          creator=current_user)
-    db.session.add(new_project)
+    new_project.lifetime_stage = LifetimeStage.draft
+    new_project.creator = current_user
+    new_project.moderators.append(current_user)
 
-    for activity_data in request.json.get('activities', ()):
-        try:
-            lower_date = datetime.fromisoformat(activity_data['dates']['start'])
-            upper_date = datetime.fromisoformat(activity_data['dates']['end'])
-            if lower_date > upper_date:
-                abort(400, {'message': 'The start date must not be greater than the end date.'})
-        except (TypeError, KeyError, ValueError):
-            lower_date = None
-            upper_date = None
+    try:
+        for new_activity in new_project.activities:
+            new_activity.project = new_project
 
-        try:
-            deadline = datetime.fromisoformat(activity_data['application_deadline'])
-        except (TypeError, KeyError, ValueError):
-            deadline = None
+        db.session.add(new_project)
+        db.session.commit()
+    except IntegrityError as err:
+        abort(400, {'message': 'Data integrity violated.'})
+        db.session.rollback()
 
-        if activity_data['work_hours'] <= 0:
-            abort(400, {'message': 'Working hours must be positive.'})
+    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status',
+                                        'notifications', 'files'))
+    return out_schema.jsonify(new_project)
 
-        if activity_data['reward_rate'] <= 0:
-            abort(400, {'message': 'Reward rate must be positive.'})
-
-        if activity_data['people_required'] < 0:
-            abort(400, {'message': 'People required must be non-negative.'})
-
-        if activity_data['work_hours'] is not None and activity_data['reward_rate'] is not None:
-            abort(400, {'message': 'Work hours must be mutually exclusive with the reward rate.'})
-
-        new_activity = Activity(name=activity_data.get('name'),
-                                description=activity_data.get('description'),
-                                start_date=lower_date,
-                                end_date=upper_date,
-                                telegram_required=activity_data.get('telegram_required'),
-                                fixed_reward=activity_data.get('fixed_reward'),
-                                working_hours=activity_data.get('work_hours'),
-                                reward_rate=activity_data.get('reward_rate'),
-                                people_required=activity_data.get('people_required'),
-                                application_deadline=deadline,
-                                feedback_questions=json.dumps(
-                                    activity_data.get('feedback_questions')),
-                                project=new_project)
-        db.session.add(new_activity)
-
-        for competence_id in activity_data.get('competences', ()):
-            competence = Competence.query.get(competence_id)
-            if competence is not None:
-                new_activity.competences.append(competence)
-
-    db.session.commit()
-    return jsonify(
-        {
-            "id": new_project.id,
-            "name": new_project.name,
-            "img": new_project.image_url,
-            "organizer": new_project.organizer,
-            "activities": [
-                {
-                    "id": new_activity.id,
-                    "name": new_activity.name,
-                    "description": new_activity.description,
-                    "dates": {
-                        "start": new_activity.start_date,
-                        "end": new_activity.end_date
-                    },
-                    "telegram_required": new_activity.telegram_required,
-                    "has_fixed_rate": new_activity.fixed_reward,
-                    "work_hours": new_activity.working_hours,
-                    "reward_rate": new_activity.reward_rate,
-                    "people_required": new_activity.people_required,
-                    "application_deadline": new_activity.application_deadline,
-                    "feedback_questions": json.loads(new_activity.feedback_questions),
-                    "competences": [comp.id for comp in new_activity.competences],
-                } for new_activity in new_project.activities
-            ],
-            "moderators": [account.email for account in new_project.moderators],
-        }
-    )
 
 @login_required
 def publish_project():
@@ -702,10 +638,21 @@ def logout():
     logout_user()
     return '', 204
 
+
 @api.route('/login_cheat')
 def login_cheat():
     """Bypass OAuth"""
-    user = Account.query.all()[0]
+    # TODO: remove this
+    users = Account.query.all()
+    if not users:
+        user = Account(email='debug@only.com',
+                       full_name='Cheat Account',
+                       university_status='hacker',
+                       is_admin=True)
+        db.session.add(user)
+        db.session.commit()
+    else:
+        user = users[0]
     login_user(user, remember=True)
 
     return '', 204

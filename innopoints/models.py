@@ -65,8 +65,12 @@ class NotificationType(Enum):
 
 project_moderation = db.Table(
     'project_moderation',
-    db.Column('project_id', db.Integer, db.ForeignKey('projects.id'), primary_key=True),
-    db.Column('account_email', db.String(128), db.ForeignKey('accounts.email'), primary_key=True)
+    db.Column('project_id', db.Integer,
+              db.ForeignKey('projects.id', ondelete='CASCADE'),
+              primary_key=True),
+    db.Column('account_email', db.String(128),
+              db.ForeignKey('accounts.email', ondelete='CASCADE', onupdate='CASCADE'),
+              primary_key=True)
 )
 
 
@@ -80,8 +84,6 @@ class Project(db.Model):
     creation_time = db.Column(db.DateTime, default=datetime.utcnow)
     organizer = db.Column(db.String(128), nullable=True)
     activities = db.relationship('Activity',
-                                 cascade='all, delete-orphan',
-                                 passive_deletes=True,
                                  backref='project')
     moderators = db.relationship('Account',
                                  secondary=project_moderation,
@@ -96,8 +98,8 @@ class Project(db.Model):
     files = db.relationship('ProjectFile',
                             cascade='all, delete-orphan',
                             backref='project')
-    notification = db.relationship('Notification',
-                                   cascade='all, delete-orphan')
+    notifications = db.relationship('Notification',
+                                    cascade='all, delete-orphan')
 
     @property
     def image_url(self):
@@ -116,7 +118,9 @@ class Activity(db.Model):
     description = db.Column(db.String(1024), nullable=True)
     start_date = db.Column(db.DateTime, nullable=True)
     end_date = db.Column(db.DateTime, nullable=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    project_id = db.Column(db.Integer,
+                           db.ForeignKey('projects.id', ondelete='CASCADE'),
+                           nullable=False)
     # property `project` created with a backref
     working_hours = db.Column(db.Integer, nullable=True)
     reward_rate = db.Column(db.Integer, nullable=True, default=IPTS_PER_HOUR)
