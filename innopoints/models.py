@@ -29,8 +29,8 @@ class ReviewStatus(Enum):
 class LifetimeStage(Enum):
     """Represents the project's lifetime stage"""
     draft = auto()
-    created = auto()
-    finished = auto()
+    ongoing = auto()
+    past = auto()
 
 
 class ApplicationStatus(Enum):

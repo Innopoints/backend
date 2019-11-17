@@ -69,14 +69,14 @@ def list_projects():
     """List ongoing or past projects"""
 
     lifetime_stages = {
-        'ongoing': LifetimeStage.created,
-        'past': LifetimeStage.finished,
+        'ongoing': LifetimeStage.ongoing,
+        'past': LifetimeStage.past,
     }
 
-    if 'type' not in request.args or request.args['type'] not in lifetime_stages:
-        abort(400, {'message': 'A valid project type must be specified: \'ongoing\' or \'past\'.'})
-
-    lifetime_stage = lifetime_stages[request.args['type']]
+    try:
+        lifetime_stage = lifetime_stages[request.args['type']]
+    except KeyError:
+        abort(400, {'message': f'A project type must be one of: {", ".join(lifetime_stages)}'})
 
     db_query = Project.query.filter_by(lifetime_stage=lifetime_stage)
     if 'q' in request.args:
@@ -87,7 +87,7 @@ def list_projects():
                            Activity.description.ilike(like_query))
         db_query = db_query.filter(or_condition).distinct()
 
-    if lifetime_stage == LifetimeStage.finished:
+    if lifetime_stage == LifetimeStage.past:
         page = int(request.args.get('page', 1))
         db_query = db_query.order_by(Project.id.desc())
         db_query = db_query.offset(10 * (page - 1)).limit(10)
@@ -152,21 +152,10 @@ def create_project():
     return out_schema.jsonify(new_project)
 
 
+@api.route('/projects/<int:project_id>/publish', methods=['POST'])
 @login_required
-def publish_project():
-    """Create a new draft project"""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
-    if request.json.get('title') is None:
-        abort(400, {'message': 'The title must not be empty.'})
-
-    new_project = Project(title=request.json['title'],
-                          image_url=request.json.get('img'),
-                          organizer=request.json.get('organizer'),
-                          lifetime_stage=LifetimeStage.draft,
-                          creator=current_user)
-    db.session.add(new_project)
+def publish_project(project_id):
+    """Publish an existing draft project"""
 
     for activity_data in request.json['activities']:
         if activity_data['has_fixed_rate'] and activity_data.get('work_hours') != 1:
@@ -282,7 +271,7 @@ class ProjectDetailAPI(MethodView):
         return jsonify()
 
 
-project_api = ProjectDetailAPI.as_view('project_detail_api')  # pylint: disable=invalid-name
+project_api = ProjectDetailAPI.as_view('project_detail_api')
 api.add_url_rule('/projects/<int:project_id>',
                  view_func=project_api,
                  methods=('GET', 'PUT', 'DELETE'))
