@@ -180,7 +180,7 @@ class Activity(db.Model):
     @property
     def vacant_spots(self):
         """Return the amount of vacant spots for the activity"""
-        accepted = Application.query.filter_by(activity=self,
+        accepted = Application.query.filter_by(activity_id=self.id,
                                                status=ApplicationStatus.approved).count()
         return max(self.people_required - accepted, -1)
 
