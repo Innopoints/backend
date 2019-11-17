@@ -60,13 +60,14 @@ oauth.register(
 
 ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp'}
 ALLOWED_SIZES = {'XS', 'S', 'M', 'L', 'XL', 'XXL'}
+NO_PAYLOAD = ('', 204)
 
 
 # ----- Projects -----
 
 @api.route('/projects')
 def list_projects():
-    """List ongoing or past projects"""
+    """List ongoing or past projects."""
 
     lifetime_stages = {
         'ongoing': LifetimeStage.ongoing,
@@ -105,7 +106,7 @@ def list_projects():
 @api.route('/projects/drafts')
 @login_required
 def list_drafts():
-    """Return a list of drafts for the logged in user"""
+    """Return a list of drafts for the logged in user."""
     db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.draft,
                                        creator=current_user)
     schema = ListProjectSchema(many=True, exclude=(
@@ -121,7 +122,7 @@ def list_drafts():
 @api.route('/projects', methods=['POST'])
 @login_required
 def create_project():
-    """Create a new draft project"""
+    """Create a new draft project."""
     if not request.is_json:
         abort(400, {'message': 'The request should be in JSON.'})
 
@@ -155,51 +156,17 @@ def create_project():
 @api.route('/projects/<int:project_id>/publish', methods=['POST'])
 @login_required
 def publish_project(project_id):
-    """Publish an existing draft project"""
+    """Publish an existing draft project."""
 
-    for activity_data in request.json['activities']:
-        if activity_data['has_fixed_rate'] and activity_data.get('work_hours') != 1:
-            abort(400, {'message': 'Fixed-rate activities should have work_hours == 1.'})
+    project = Project.query.get_or_404(project_id)
 
-        try:
-            lower_date = datetime.fromisoformat(activity_data['dates']['start'])
-            upper_date = datetime.fromisoformat(activity_data['dates']['end'])
-            if lower_date > upper_date:
-                abort(400,
-                      {'message': 'The start date must not be greater than the end date.'})
-        except (TypeError, KeyError):
-            if not is_draft:
-                abort(400, {'message': 'Valid dates should be provided.'})
-            lower_date = None
-            upper_date = None
+    if current_user.is_admin or project.creator == current_user:
+        project.lifetime_stage = LifetimeStage.ongoing
+        db.session.commit()
+    else:
+        abort(401, {'message': 'Unauthorized.'})
 
-        if not is_draft and not activity_data.get('name'):
-            abort(400, {'message': 'Activities should have a non-empty name.'})
-
-        if not is_draft and not activity_data.get('work_hours'):
-            abort(400, {'message': 'Activities should have valid working hours.'})
-
-        if not is_draft and not activity_data.get('reward_rate'):
-            abort(400, {'message': 'Activities should have a valid reward rate.'})
-
-        new_activity = Activity(name=activity_data.get('name'),
-                                description=activity_data.get('description'),
-                                start_date=lower_date,
-                                end_date=upper_date,
-                                working_hours=activity_data.get('work_hours'),
-                                fixed_reward=activity_data['has_fixed_rate'],
-                                reward_rate=activity_data.get('reward_rate'),
-                                people_required=activity_data.get('people_required'),
-                                telegram_required=activity_data.get('telegram_required'),
-                                project=new_project)
-        db.session.add(new_activity)
-
-        for competence_id in activity_data.get('competences', ()):
-            competence = Competence.query.get(competence_id)
-            new_activity.competences.append(competence)
-
-    db.session.commit()
-    return jsonify(id=new_project.id)
+    return NO_PAYLOAD
 
 
 class ProjectDetailAPI(MethodView):
@@ -644,4 +611,4 @@ def login_cheat():
         user = users[0]
     login_user(user, remember=True)
 
-    return '', 204
+    return NO_PAYLOAD
