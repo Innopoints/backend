@@ -11,11 +11,13 @@ import innopoints.file_manager_s3 as file_manager
 
 
 IPTS_PER_HOUR = 70
+DEFAULT_QUESTIONS = ("What did you learn from this volunteering opportunity?",
+                     "What could be improved in the organization?")
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
-
+# TODO: set passive_deletes
 
 class ReviewStatus(Enum):
     """Represents the review status of the project"""
@@ -64,7 +66,7 @@ class NotificationType(Enum):
 project_moderation = db.Table(
     'project_moderation',
     db.Column('project_id', db.Integer, db.ForeignKey('projects.id'), primary_key=True),
-    db.Column('account_id', db.String(128), db.ForeignKey('accounts.email'), primary_key=True)
+    db.Column('account_email', db.String(128), db.ForeignKey('accounts.email'), primary_key=True)
 )
 
 
@@ -73,31 +75,29 @@ class Project(db.Model):
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), nullable=True)
+    name = db.Column(db.String(128), nullable=False, unique=True)
     image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=True)
-    creation_time = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
-    # property `activities` created with a backref
-    organizer = db.Column(db.String(64), nullable=True)
-    creator_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
-    admin_feedback = db.Column(db.String(1024), nullable=True)
-    review_status = db.Column(db.Enum(ReviewStatus), nullable=True)
-    lifetime_stage = db.Column(db.Enum(LifetimeStage),
-                               nullable=False,
-                               default=LifetimeStage.draft)
-    # property `files` created with a backref
-
-    creator = db.relationship('Account',
-                              backref=db.backref('projects',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
-    image = db.relationship('StaticFile',
-                            backref=db.backref('projects',
-                                               lazy=True,
-                                               cascade='all, delete-orphan'))
-
-    moderators = db.relationship('Account', secondary=project_moderation,
+    creation_time = db.Column(db.DateTime, default=datetime.utcnow)
+    organizer = db.Column(db.String(128), nullable=True)
+    activities = db.relationship('Activity',
+                                 cascade='all, delete-orphan',
+                                 passive_deletes=True,
+                                 backref='project')
+    moderators = db.relationship('Account',
+                                 secondary=project_moderation,
                                  backref=db.backref('moderated_projects',
                                                     lazy=True))
+    creator_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
+    # property `creator` created with a backref
+    admin_feedback = db.Column(db.String(1024), nullable=True)
+    review_status = db.Column(db.Enum(ReviewStatus), nullable=True)
+    lifetime_stage = db.Column(db.Enum(LifetimeStage), nullable=False)
+
+    files = db.relationship('ProjectFile',
+                            cascade='all, delete-orphan',
+                            backref='project')
+    notification = db.relationship('Notification',
+                                   cascade='all, delete-orphan')
 
     @property
     def image_url(self):
@@ -117,19 +117,22 @@ class Activity(db.Model):
     start_date = db.Column(db.DateTime, nullable=True)
     end_date = db.Column(db.DateTime, nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    # property `project` created with a backref
     working_hours = db.Column(db.Integer, nullable=True)
     reward_rate = db.Column(db.Integer, nullable=True, default=IPTS_PER_HOUR)
     fixed_reward = db.Column(db.Boolean, nullable=False)
-    people_required = db.Column(db.Integer, nullable=False, default=-1)
+    people_required = db.Column(db.Integer, nullable=False, default=0)
     telegram_required = db.Column(db.Boolean, nullable=False, default=False)
-    application_deadline = db.Column(db.DateTime, nullable=True)
-    feedback_questions = db.Column(db.ARRAY(db.String(1024)), nullable=False)
     # property `competences` created with a backref
+    application_deadline = db.Column(db.DateTime, nullable=True)
+    feedback_questions = db.Column(db.ARRAY(db.String(1024)),
+                                   nullable=False,
+                                   default=DEFAULT_QUESTIONS)
+    applications = db.relationship('Application',
+                                   cascade='all, delete-orphan')
+    notification = db.relationship('Notification',
+                                   cascade='all, delete-orphan')
 
-    project = db.relationship('Project',
-                              backref=db.backref('activities',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
 
     @staticmethod
     def clean(data):
@@ -164,7 +167,6 @@ class Activity(db.Model):
         if data['people_required'] < 0:
             raise ValueError('People required must be non-negative.')
 
-
     @property
     def dates(self):
         """Return the activity dates as a single JSON object"""
@@ -188,10 +190,17 @@ class Account(UserMixin, db.Model):
     email = db.Column(db.String(128), primary_key=True)
     telegram_username = db.Column(db.String(32), nullable=True)
     is_admin = db.Column(db.Boolean, nullable=False)
+    created_projects = db.relationship('Project',
+                                       cascade='all, delete-orphan',
+                                       backref='creator')
     # property `moderated_projects` created with a backref
-    # property `stock_changes` created with a backref
-    # property `transactions` created with a backref
-    # property `notifications` created with a backref
+    stock_changes = db.relationship('StockChange')
+    transactions = db.relationship('Transaction')
+    notifications = db.relationship('Notification',
+                                    cascade='all, delete-orphan')
+    applications = db.relationship('Application',
+                                   cascade='all, delete-orphan')
+
 
     def get_id(self):
         """Return the user's e-mail"""
@@ -209,24 +218,19 @@ class Application(db.Model):
     __tablename__ = 'applications'
 
     id = db.Column(db.Integer, primary_key=True)
-    applicant_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
+    applicant_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=False)
     comment = db.Column(db.String(1024), nullable=False)
     application_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     telegram_username = db.Column(db.String(32), nullable=False)
     status = db.Column(db.Enum(ApplicationStatus), nullable=False)
     actual_hours = db.Column(db.Integer, nullable=True)
-    # property `report` created with a backref
-    # property `feedback` created with a backref
-
-    applicant = db.relationship('Account',
-                                backref=db.backref('applications',
-                                                   lazy=True,
-                                                   cascade='all, delete-orphan'))
-    activity = db.relationship('Activity',
-                               backref=db.backref('applications',
-                                                  lazy=True,
-                                                  cascade='all, delete-orphan'))
+    report = db.relationship('VolunteeringReport',
+                             uselist=False,
+                             cascade='all, delete-orphan')
+    feedback = db.relationship('Feedback',
+                               uselist=False,
+                               cascade='all, delete-orphan')
 
 
 class Product(db.Model):
@@ -237,9 +241,12 @@ class Product(db.Model):
     name = db.Column(db.String(128), nullable=False)
     type = db.Column(db.String(128), nullable=True)
     description = db.Column(db.String(1024), nullable=False)
-    # property `varieties` created with a backref
+    varieties = db.relationship('Variety',
+                                cascade='all, delete-orphan')
     price = db.Column(db.Integer, nullable=False)
     addition_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    notification = db.relationship('Notification',
+                                   cascade='all, delete-orphan')
 
 
 class Variety(db.Model):
@@ -250,17 +257,10 @@ class Variety(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     size = db.Column(db.String(3), nullable=True)
     color_id = db.Column(db.Integer, db.ForeignKey('colors.id'), nullable=True)
-    # property `images` created with a backref
-    # property `stock_changes` created with a backref
-
-    product = db.relationship('Product',
-                              backref=db.backref('varieties',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
-    color = db.relationship('Color',
-                            backref=db.backref('products',
-                                               lazy=True,
-                                               cascade='all, delete-orphan'))
+    images = db.relationship('ProductImage',
+                             cascade='all, delete-orphan')
+    stock_changes = db.relationship('StockChange',
+                                    cascade='all, delete-orphan')
 
     @property
     def amount(self):
@@ -283,13 +283,6 @@ class ProductImage(db.Model):
     image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=False)
     order = db.Column(db.Integer, nullable=False)
 
-    variety = db.relationship('Variety',
-                              backref=db.backref('images',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
-
-    image = db.relationship('StaticFile')
-
 
 class StockChange(db.Model):
     """Represents the change in the amount of variety available"""
@@ -299,17 +292,9 @@ class StockChange(db.Model):
     amount = db.Column(db.Integer, nullable=False)
     time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     status = db.Column(db.Enum(StockChangeStatus), nullable=False)
-    account_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
+    account_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     variety_id = db.Column(db.Integer, db.ForeignKey('varieties.id'), nullable=False)
-
-    account = db.relationship('Account',
-                              backref=db.backref('stock_changes',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
-    variety = db.relationship('Variety',
-                              backref=db.backref('stock_changes',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
+    transaction = db.relationship('Transaction')
 
 
 activity_competence = db.Table(
@@ -342,16 +327,6 @@ class Competence(db.Model):
                                lazy=True,
                                backref=db.backref('competences', lazy=True))
 
-    def save(self):
-        """Save object to database"""
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        """Delete object from database"""
-        db.session.delete(self)
-        db.session.commit()
-
 
 class VolunteeringReport(db.Model):
     """Represents a moderator's report about a certain occurence of work
@@ -363,13 +338,7 @@ class VolunteeringReport(db.Model):
     rating = db.Column(db.Integer,
                        db.CheckConstraint('rating <= 5 AND rating >= 1'),
                        nullable=False)
-    report = db.Column(db.String(1024), nullable=True)
-
-    application = db.relationship('Application',
-                                  uselist=False,
-                                  backref=db.backref('report',
-                                                     lazy=True,
-                                                     cascade='all, delete-orphan'))
+    content = db.Column(db.String(1024), nullable=True)
 
 
 class Feedback(db.Model):
@@ -380,12 +349,7 @@ class Feedback(db.Model):
     application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
     # property `competences` created with a backref
     answers = db.Column(db.ARRAY(db.String(1024)), nullable=False)
-
-    application = db.relationship('Application',
-                                  uselist=False,
-                                  backref=db.backref('feedback',
-                                                     lazy=True,
-                                                     cascade='all, delete-orphan'))
+    transaction = db.relationship('Transaction')
 
 
 class Transaction(db.Model):
@@ -397,17 +361,10 @@ class Transaction(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
+    account_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     change = db.Column(db.Integer, nullable=False)
     stock_change_id = db.Column(db.Integer, db.ForeignKey('stock_changes.id'), nullable=True)
     feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=True)
-
-    account = db.relationship('Account',
-                              backref=db.backref('transactions',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
-    stock_change = db.relationship('StockChange')
-    feedback = db.relationship('Feedback')
 
 
 class Notification(db.Model):
@@ -422,20 +379,12 @@ class Notification(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    recipient_id = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
+    recipient_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     is_read = db.Column(db.Boolean, nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
     activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=True)
     type = db.Column(db.Enum(NotificationType), nullable=False)
-
-    recipient = db.relationship('Account',
-                                backref=db.backref('notifications',
-                                                   lazy=True,
-                                                   cascade='all, delete-orphan'))
-    product = db.relationship('Product')
-    project = db.relationship('Project')
-    activity = db.relationship('Activity')
 
 
 class Color(db.Model):
@@ -444,7 +393,8 @@ class Color(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.String(6), nullable=True)
-    # property `products` created with a backref
+    varieties = db.relationship('Variety',
+                                cascade='all, delete-orphan')
 
 
 class StaticFile(db.Model):
@@ -454,6 +404,15 @@ class StaticFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     mimetype = db.Column(db.String(255), nullable=False)
     namespace = db.Column(db.String(64), nullable=False)
+
+    product_image = db.relationship('ProductImage',
+                                    uselist=False,
+                                    cascade='all, delete-orphan')
+    project_file = db.relationship('ProjectFile',
+                                   uselist=False,
+                                   cascade='all, delete-orphan')
+    cover_for = db.relationship('Project',
+                                uselist=False)
 
     def save(self, file_data):
         """Save object to database"""
@@ -475,9 +434,3 @@ class ProjectFile(db.Model):
 
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
     file_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), primary_key=True)
-
-    project = db.relationship('Project',
-                              backref=db.backref('files',
-                                                 lazy=True,
-                                                 cascade='all, delete-orphan'))
-    file = db.relationship('StaticFile')
