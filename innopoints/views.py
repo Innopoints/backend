@@ -163,13 +163,13 @@ def publish_project(project_id):
         project.lifetime_stage = LifetimeStage.ongoing
         db.session.commit()
     else:
-        abort(401, {'message': 'Unauthorized.'})
+        abort(401)
 
     return NO_PAYLOAD
 
 
 class ProjectDetailAPI(MethodView):
-    """REST views for a particular instance of a Project model"""
+    """REST views for a particular instance of a Project model."""
 
     def get(self, project_id):
         """Get full information about the project"""
@@ -205,42 +205,46 @@ class ProjectDetailAPI(MethodView):
 
         return jsonify(json_data)
 
-    @login_required  # TODO: check if the user is a project moderator
-    def put(self, project_id):
-        """Edit the information of the project"""
-        project = Project.query.get_or_404(project_id)
+    @login_required
+    def patch(self, project_id):
+        """Edit the information of the project."""
         if not request.is_json:
             abort(400, {'message': 'The request should be in JSON.'})
 
-        try:
-            project.title = request.get('title', project.title)
-            if 'dates' in request.json:
-                lower_date = datetime.fromisoformat(request.json['dates']['start'])
-                upper_date = datetime.fromisoformat(request.json['dates']['end'])
-                dates = DateRange(lower=lower_date, upper=upper_date)
-                project.dates = dates
-            project.organizer = request.get('organizer', project.organizer)
-            project.image_url = request.get('img', project.image_url)
-        except (KeyError, ValueError) as exc:
-            abort(400, {'message': str(exc)})
+        project = Project.query.get_or_404(project_id)
+        if not current_user.is_admin and current_user != project.creator:
+            abort(401)
 
-        db.session.add(project)  # pylint: disable=no-member
+        in_schema = ProjectSchema(only=('name', 'image_id', 'organizer', 'moderators'))
+
+        try:
+            updated_project = in_schema.load(request.json, instance=project, partial=True)
+        except ValidationError as err:
+            abort(400, {'message': err.messages})
+
+        db.session.add(updated_project)
         db.session.commit()
-        return jsonify()
+
+        out_schema = ProjectSchema(only=('id', 'name', 'image_url', 'organizer', 'moderators'))
+        return out_schema.jsonify(updated_project)
 
     def delete(self, project_id):
-        """Delete the project entirely"""
+        """Delete the project entirely."""
         project = Project.query.get_or_404(project_id)
 
-        db.session.delete(project)  # pylint: disable=no-member
-        db.session.commit()  # pylint: disable=no-member
-        return jsonify()
+        project = Project.query.get_or_404(project_id)
+        if not current_user.is_admin and current_user != project.creator:
+            abort(401)
+
+        db.session.delete(project)
+        db.session.commit()
+        return NO_PAYLOAD
 
 
 project_api = ProjectDetailAPI.as_view('project_detail_api')
 api.add_url_rule('/projects/<int:project_id>',
                  view_func=project_api,
-                 methods=('GET', 'PUT', 'DELETE'))
+                 methods=('GET', 'PATCH', 'DELETE'))
 
 
 @api.route('/products')
