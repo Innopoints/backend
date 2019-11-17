@@ -1,7 +1,5 @@
 """Application views"""
 
-from datetime import datetime
-import json
 import os
 import mimetypes
 
@@ -12,7 +10,6 @@ from flask import Blueprint, abort, jsonify, request, current_app, url_for, redi
 from flask.views import MethodView
 from flask_login import login_user, login_required, logout_user, current_user
 from marshmallow import ValidationError
-from psycopg2.extras import DateRange
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 import werkzeug
@@ -21,8 +18,6 @@ from werkzeug.exceptions import BadRequestKeyError
 import innopoints.file_manager_s3 as file_manager
 from innopoints.models import (
     Activity,
-    Application,
-    ApplicationStatus,
     Account,
     Color,
     Competence,
@@ -174,36 +169,27 @@ class ProjectDetailAPI(MethodView):
     def get(self, project_id):
         """Get full information about the project"""
         project = Project.query.get_or_404(project_id)
-        json_data = {
-            'name': project.name,
-            'img': project.image_url,
-            'organizer': project.organizer,
-            'creation_time': project.creation_time,
-            'activities': [{
-                'id': activity.id,
-                'name': activity.name,
-                'description': activity.description,
-                'people_required': activity.people_required,
-                'reward_rate': activity.reward_rate,
-                'work_hours': activity.working_hours,
-                'has_fixed_rate': activity.fixed_reward
-            } for activity in project.activities],
-            'lifetime_stage': project.lifetime_stage.name,
-        }
+        exclude = ['image_id',
+                   'files',
+                   'moderators',
+                   'review_status',
+                   'admin_feedback',
+                   'activities.applications',
+                   'activities.applications.telegram',
+                   'activities.applications.comment']
 
         if current_user.is_authenticated:
-            for activity_obj, activity_json in zip(project.activities, json_data['activities']):
-                activity_json['existing_application'] = Application.query.filter_by(
-                    activity=activity_obj, applicant=current_user).one_or_none()
-                activity_json['accepted_applications'] = [{
-                    'applicant_name': application.applicant.full_name,
-                } for application in activity.applications
-                                          if application.status == ApplicationStatus.approved],
+            exclude.remove('moderators')
+            exclude.remove('activities.applications')
+            if current_user.email in project.moderators or current_user.is_admin:
+                exclude.remove('review_status')
+                exclude.remove('activities.applications.telegram')
+                exclude.remove('activities.applications.comment')
+                if current_user == project.creator or current_user.is_admin:
+                    exclude.remove('admin_feedback')
 
-        if current_user.is_admin:
-            json_data['review_status'] = project.review_status.name
-
-        return jsonify(json_data)
+        schema = ProjectSchema(exclude=exclude)
+        return schema.jsonify(project)
 
     @login_required
     def patch(self, project_id):

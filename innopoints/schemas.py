@@ -6,6 +6,7 @@ from marshmallow_enum import EnumField
 
 from .models import (
     Activity,
+    Application,
     LifetimeStage,
     Project,
     ReviewStatus,
@@ -14,10 +15,11 @@ from .models import (
 
 ma = Marshmallow()
 
+# pylint: disable=missing-docstring
+
 
 class ListProjectSchema(ma.ModelSchema):
-    """Schema for listing projects."""
-    class Meta:  # pylint: disable=missing-docstring
+    class Meta:
         model = Project
         ordered = True
         sqla_session = db.session
@@ -34,7 +36,7 @@ class ListProjectSchema(ma.ModelSchema):
 
     class BriefActivitySchema(ma.ModelSchema):
         """Internal schema for a brief representation of activities within a project."""
-        class Meta:  # pylint: disable=missing-docstring
+        class Meta:
             model = Activity
             ordered = True
             sqla_session = db.session
@@ -51,9 +53,9 @@ class ListProjectSchema(ma.ModelSchema):
 
 
 class ProjectSchema(ma.ModelSchema):
-    """Schema for viewing and updating projects."""
-    class Meta:  # pylint: disable=missing-docstring
+    class Meta:
         model = Project
+        ordered = True
         sqla_session = db.session
         exclude = ('notifications',)
 
@@ -69,8 +71,7 @@ class ProjectSchema(ma.ModelSchema):
 
 
 class ActivitySchema(ma.ModelSchema):
-    """Schema for activities."""
-    class Meta:  # pylint: disable=missing-docstring
+    class Meta:
         model = Activity
         ordered = True
         exclude = ('project_id', 'notifications')
@@ -116,3 +117,15 @@ class ActivitySchema(ma.ModelSchema):
     reward_rate = ma.Int(validate=validate.Range(min=1))
     people_required = ma.Int(validate=validate.Range(min=0))
     application_deadline = ma.DateTime(format='iso', data_key='application_deadline')
+    applications = ma.Nested('ApplicationSchema', many=True)
+    vacant_spots = ma.Int(dump_only=True)
+
+
+class ApplicationSchema(ma.ModelSchema):
+    class Meta:
+        model = Application
+        ordered = True
+        sqla_session = db.session
+        exclude = ('report', 'feedback')
+
+    telegram_username = ma.Str(data_key='telegram')
