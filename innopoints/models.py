@@ -188,11 +188,15 @@ class Application(db.Model):
     __tablename__ = 'applications'
 
     id = db.Column(db.Integer, primary_key=True)
-    applicant_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
-    activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=False)
-    comment = db.Column(db.String(1024), nullable=False)
+    applicant_email = db.Column(db.String(128),
+                                db.ForeignKey('accounts.email', ondelete='CASCADE'),
+                                nullable=False)
+    activity_id = db.Column(db.Integer,
+                            db.ForeignKey('activities.id', ondelete='CASCADE'),
+                            nullable=False)
+    comment = db.Column(db.String(1024), nullable=True)
     application_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    telegram_username = db.Column(db.String(32), nullable=False)
+    telegram_username = db.Column(db.String(32), nullable=True)
     status = db.Column(db.Enum(ApplicationStatus), nullable=False)
     actual_hours = db.Column(db.Integer, nullable=True)
     report = db.relationship('VolunteeringReport',
