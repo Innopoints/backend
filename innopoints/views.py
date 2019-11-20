@@ -37,18 +37,12 @@ from innopoints.schemas import (
 
 INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
 
-sso_config = requests.get(f'{INNOPOLIS_SSO_BASE}/.well-known/openid-configuration').json()
-
 api = Blueprint('api', __name__)
 
 oauth = OAuth()
 oauth.register(
     'innopolis_sso',
     server_metadata_url=f'{INNOPOLIS_SSO_BASE}/.well-known/openid-configuration',
-    access_token_url=sso_config.get('token_endpoint',
-                                    f'{INNOPOLIS_SSO_BASE}/oauth2/token'),
-    authorize_url=sso_config.get('authorization_endpoint',
-                                 f'{INNOPOLIS_SSO_BASE}/oauth2/authorize'),
     client_kwargs={'scope': 'openid'},
 )
 
