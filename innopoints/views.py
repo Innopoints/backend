@@ -135,9 +135,11 @@ def create_project():
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
+        print(err)  # TODO: replace with proper logging
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files', 'image_id'))
+    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files', 'image_id'),
+                               context={'user': current_user})
     return out_schema.jsonify(new_project)
 
 

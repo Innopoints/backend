@@ -115,23 +115,33 @@ class ActivitySchema(ma.ModelSchema):
         if start > end:
             raise ValidationError('The start date is beyond the end date.')
 
-    def get_applications(self, obj):
-        private = ['comment', 'application_time', 'telegram_username',
-                   'actual_hours', 'report', 'feedback']
-        if self.context['user'].is_authenticated:
-            applications = Application.query()
-        schema = ApplicationSchema()
+    def get_applications(self, activity):
+        fields = ['id', 'applicant']
+        filtering = {'activity_id': activity.id,
+                     'status': ApplicationStatus.approved}
 
-    def get_existing_application(self, obj):
-        print(self.context)  # {'user': user_obj}
-        print(obj)  # <Activity>
-        schema = ApplicationSchema(only=['id', 'telegram', 'comment'])
+        if not self.context['user'].is_authenticated:
+            return None
+
+        if self.context['user'] in activity.project.moderators:
+            filtering.pop('status')
+            fields.append('telegram_username')
+            fields.append('comment')
+
+        appl_schema = ApplicationSchema(only=fields, many=True)
+        applications = Application.query.filter_by(**filtering)
+        return appl_schema.dump(applications.all())
+
+    def get_existing_application(self, activity):
+        """Using the user information from the context, provide a shorthand
+        for the existing application of a volunteer."""
+        appl_schema = ApplicationSchema(only=('id', 'telegram_username', 'comment'))
         if self.context['user'].is_authenticated:
             application = Application.query.filter_by(applicant_email=self.context['user'].email,
-                                                      activity_id=obj.id + 5).one_or_none()
+                                                      activity_id=activity.id).one_or_none()
             if application is None:
                 return None
-            return schema.dump(application.one_or_none())
+            return appl_schema.dump(application)
         return None
 
     working_hours = ma.Int(validate=validate.Range(min=1))
@@ -139,10 +149,10 @@ class ActivitySchema(ma.ModelSchema):
     people_required = ma.Int(validate=validate.Range(min=0))
     application_deadline = ma.DateTime(format='iso', data_key='application_deadline')
     vacant_spots = ma.Int(dump_only=True)
-    # applications = ma.Method(serialize='get_applications',
-    #                          deserialize='create_applications')
-    # existing_application = ma.Method(serialize='get_existing_application',
-    #                                  dump_only=True)
+    applications = ma.Method(serialize='get_applications',
+                             deserialize='create_applications')
+    existing_application = ma.Method(serialize='get_existing_application',
+                                     dump_only=True)
 
 
 class ApplicationSchema(ma.ModelSchema):
