@@ -81,7 +81,7 @@ class ActivitySchema(ma.ModelSchema):
     def unwrap_dates(self, data, **kwargs):  # pylint: disable=unused-argument
         """Expand the {"start": , "end": } dates object into two separate properties."""
         try:
-            dates = data.pop('dates')
+            dates = data.pop('timeframe')
             data['start_date'] = dates['start']
             data['end_date'] = dates['end']
         except KeyError:
@@ -92,7 +92,7 @@ class ActivitySchema(ma.ModelSchema):
     @post_dump
     def wrap_dates(self, data, **kwargs):  # pylint: disable=unused-argument
         """Collapse the two date properties into the {"start": , "end": } dates object."""
-        data['dates'] = {
+        data['timeframe'] = {
             'start': data.pop('start_date'),
             'end': data.pop('end_date')
         }
