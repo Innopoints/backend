@@ -5,8 +5,10 @@ from flask_marshmallow import Marshmallow
 from marshmallow_enum import EnumField
 
 from .models import (
+    Account,
     Activity,
     Application,
+    ApplicationStatus,
     LifetimeStage,
     Project,
     ReviewStatus,
@@ -113,12 +115,34 @@ class ActivitySchema(ma.ModelSchema):
         if start > end:
             raise ValidationError('The start date is beyond the end date.')
 
+    def get_applications(self, obj):
+        private = ['comment', 'application_time', 'telegram_username',
+                   'actual_hours', 'report', 'feedbackexi']
+        if self.context['user'].is_authenticated:
+            applications = Application.query()
+        schema = ApplicationSchema()
+
+    def get_existing_application(self, obj):
+        print(self.context)  # {'user': user_obj}
+        print(obj)  # <Activity>
+        schema = ApplicationSchema(only=('id', 'telegram', 'comment'))
+        if self.context['user'].is_authenticated:
+            application = Application.query.filter_by(applicant_email=self.context['user'].email,
+                                                      activity_id=obj.id + 5).one_or_none()
+            if application is None:
+                return None
+            return schema.dump(application.one_or_none())
+        return None
+
     working_hours = ma.Int(validate=validate.Range(min=1))
     reward_rate = ma.Int(validate=validate.Range(min=1))
     people_required = ma.Int(validate=validate.Range(min=0))
     application_deadline = ma.DateTime(format='iso', data_key='application_deadline')
-    applications = ma.Nested('ApplicationSchema', many=True)
     vacant_spots = ma.Int(dump_only=True)
+    applications = ma.Method(serialize='get_applications',
+                             deserialize='create_applications')
+    existing_application = ma.Method(serialize='get_existing_application',
+                                     dump_only=True)
 
 
 class ApplicationSchema(ma.ModelSchema):
@@ -128,4 +152,13 @@ class ApplicationSchema(ma.ModelSchema):
         sqla_session = db.session
         exclude = ('report', 'feedback')
 
+    status = EnumField(ApplicationStatus)
+    applicant = ma.Nested('AccountSchema', only=('full_name', 'email'))
     telegram_username = ma.Str(data_key='telegram')
+
+
+class AccountSchema(ma.ModelSchema):
+    class Meta:
+        model = Account
+        ordered = True
+        sqla_session = db.session

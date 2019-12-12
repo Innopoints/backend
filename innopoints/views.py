@@ -182,7 +182,7 @@ class ProjectDetailAPI(MethodView):
                 if current_user == project.creator or current_user.is_admin:
                     exclude.remove('admin_feedback')
 
-        schema = ProjectSchema(exclude=exclude)
+        schema = ProjectSchema(exclude=exclude, context={'user': current_user})
         return schema.jsonify(project)
 
     @login_required

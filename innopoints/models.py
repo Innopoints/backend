@@ -169,7 +169,8 @@ class Account(UserMixin, db.Model):
     notifications = db.relationship('Notification',
                                     cascade='all, delete-orphan')
     applications = db.relationship('Application',
-                                   cascade='all, delete-orphan')
+                                   cascade='all, delete-orphan',
+                                   backref='applicant')
 
 
     def get_id(self):
@@ -191,6 +192,7 @@ class Application(db.Model):
     applicant_email = db.Column(db.String(128),
                                 db.ForeignKey('accounts.email', ondelete='CASCADE'),
                                 nullable=False)
+    # property `applicant` created with a backref
     activity_id = db.Column(db.Integer,
                             db.ForeignKey('activities.id', ondelete='CASCADE'),
                             nullable=False)
