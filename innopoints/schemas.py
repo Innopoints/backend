@@ -117,7 +117,7 @@ class ActivitySchema(ma.ModelSchema):
 
     def get_applications(self, obj):
         private = ['comment', 'application_time', 'telegram_username',
-                   'actual_hours', 'report', 'feedbackexi']
+                   'actual_hours', 'report', 'feedback']
         if self.context['user'].is_authenticated:
             applications = Application.query()
         schema = ApplicationSchema()
@@ -125,7 +125,7 @@ class ActivitySchema(ma.ModelSchema):
     def get_existing_application(self, obj):
         print(self.context)  # {'user': user_obj}
         print(obj)  # <Activity>
-        schema = ApplicationSchema(only=('id', 'telegram', 'comment'))
+        schema = ApplicationSchema(only=['id', 'telegram', 'comment'])
         if self.context['user'].is_authenticated:
             application = Application.query.filter_by(applicant_email=self.context['user'].email,
                                                       activity_id=obj.id + 5).one_or_none()
@@ -139,10 +139,10 @@ class ActivitySchema(ma.ModelSchema):
     people_required = ma.Int(validate=validate.Range(min=0))
     application_deadline = ma.DateTime(format='iso', data_key='application_deadline')
     vacant_spots = ma.Int(dump_only=True)
-    applications = ma.Method(serialize='get_applications',
-                             deserialize='create_applications')
-    existing_application = ma.Method(serialize='get_existing_application',
-                                     dump_only=True)
+    # applications = ma.Method(serialize='get_applications',
+    #                          deserialize='create_applications')
+    # existing_application = ma.Method(serialize='get_existing_application',
+    #                                  dump_only=True)
 
 
 class ApplicationSchema(ma.ModelSchema):
