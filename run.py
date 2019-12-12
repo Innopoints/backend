@@ -9,7 +9,7 @@ if __name__ == '__main__':
     app = create_app('config/dev.py')
     app.run(host='0.0.0.0', port=os.environ.get('PORT', 7507), debug=True)
 else:
-    if os.environ.get('FLASK_ENV') == 'debug':
+    if os.environ.get('FLASK_ENV') == 'development':
         config = 'config/dev.py'
     else:
         config = 'config/prod.py'

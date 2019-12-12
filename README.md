@@ -23,7 +23,7 @@ $ export DATABASE_URL='postgresql://localhost/{database_name}'
 $ export INNOPOLIS_SSO_BASE='https://sso.university.innopolis.ru/adfs'
 $ export INNOPOLIS_SSO_CLIENT_ID='{application-client-id}'
 $ export INNOPOLIS_SSO_CLIENT_SECRET='{application-secret}'
-$ export FLASK_ENV='debug'  # to use the development config
+$ export FLASK_ENV='development'  # to use the development config
 # for fish:
 #  set -x DATABASE_URL 'postgresql://localhost/{database_name}'
 #  set -x INNOPOLIS_SSO_BASE 'https://sso.university.innopolis.ru/adfs'
