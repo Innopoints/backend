@@ -242,7 +242,7 @@ def get_products():
         like_query = f'%{query}%'
         or_condition = or_(Product.name.ilike(like_query), Product.description.ilike(like_query))
         db_query = db_query.filter(or_condition)
-    db_query = db_query.order_by(Product.cost.asc())
+    db_query = db_query.order_by(Product.price.asc())
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
     # yapf: disable
@@ -251,7 +251,7 @@ def get_products():
         'name': product.name,
         'type': product.type,
         'description': product.description,
-        'price': product.cost,
+        'price': product.price,
         'varieties': [{
             'color': Color.query.get(variety.color),
             'cover_images': [image.url for image in variety.images],
