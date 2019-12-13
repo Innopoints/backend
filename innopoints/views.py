@@ -31,8 +31,10 @@ from innopoints.models import (
     IPTS_PER_HOUR,
     db
 )
+
 from innopoints.schemas import (
     ActivitySchema,
+    CompetenceSchema,
     ListProjectSchema,
     ProjectSchema,
 )
@@ -161,39 +163,6 @@ def publish_project(project_id):
     return NO_PAYLOAD
 
 
-@api.route('/projects/<int:project_id>/activity', methods=['POST'])
-@login_required
-def create_activity(project_id):
-    """Create a new activity to an existing project."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
-    project = Project.query.get_or_404(project_id)
-    if not current_user.is_admin and current_user not in project.moderators:
-        abort(401)
-
-    in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'notifications'))
-
-    try:
-        new_activity = in_schema.load(request.json)
-    except ValidationError as err:
-        abort(400, {'message': err.messages})
-
-    new_activity.project = project
-
-    try:
-        db.session.add(new_activity)
-        db.session.commit()
-    except IntegrityError as err:
-        db.session.rollback()
-        print(err)  # TODO: replace with proper logging
-        abort(400, {'message': 'Data integrity violated.'})
-
-    out_schema = ActivitySchema(exclude=('notifications', 'existing_application'),
-                                context={'user': current_user})
-    return out_schema.jsonify(new_activity)
-
-
 class ProjectDetailAPI(MethodView):
     """REST views for a particular instance of a Project model."""
 
@@ -271,6 +240,39 @@ project_api = ProjectDetailAPI.as_view('project_detail_api')
 api.add_url_rule('/projects/<int:project_id>',
                  view_func=project_api,
                  methods=('GET', 'PATCH', 'DELETE'))
+
+
+@api.route('/projects/<int:project_id>/activity', methods=['POST'])
+@login_required
+def create_activity(project_id):
+    """Create a new activity to an existing project."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    project = Project.query.get_or_404(project_id)
+    if not current_user.is_admin and current_user not in project.moderators:
+        abort(401)
+
+    in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'notifications'))
+
+    try:
+        new_activity = in_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    new_activity.project = project
+
+    try:
+        db.session.add(new_activity)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        print(err)  # TODO: replace with proper logging
+        abort(400, {'message': 'Data integrity violated.'})
+
+    out_schema = ActivitySchema(exclude=('notifications', 'existing_application'),
+                                context={'user': current_user})
+    return out_schema.jsonify(new_activity)
 
 
 class ActivityAPI(MethodView):
@@ -458,7 +460,7 @@ class ProductDetailAPI(MethodView):
         return jsonify()
 
 
-product_api = ProductDetailAPI.as_view('product_api')  # pylint: disable=invalid-name
+product_api = ProductDetailAPI.as_view('product_api')
 api.add_url_rule('/products/<int:product_id>',
                  view_func=product_api,
                  methods=('PUT', 'DELETE'))
@@ -515,74 +517,99 @@ class VarietyAPI(MethodView):
         return jsonify()
 
 
-variety_api = VarietyAPI.as_view('variety_api')  # pylint: disable=invalid-name
+variety_api = VarietyAPI.as_view('variety_api')
 api.add_url_rule('/varieties/<int:var_id>',
                  view_func=variety_api,
                  methods=('PUT', 'DELETE'))
 
 
+@api.route('/competences')
+def list_competences():
+    """List all of the existing competences."""
+
+    schema = CompetenceSchema(many=True)
+    return schema.jsonify(Competence.query.all())
+
+
+@api.route('/competences', methods=['POST'])
+@login_required
+def create_competence():
+    """Create a new competence."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if not current_user.is_admin:
+        abort(401)
+
+    in_schema = CompetenceSchema(exclude=('id',))
+
+    try:
+        new_competence = in_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    try:
+        db.session.add(new_competence)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        print(err)  # TODO: replace with proper logging
+        abort(400, {'message': 'Data integrity violated.'})
+
+    out_schema = CompetenceSchema()
+    return out_schema.jsonify(new_competence)
+
+
 class CompetenceAPI(MethodView):
-    """REST views for Competence model"""
+    """REST views for a particular instance of a Competence model."""
 
-    # pylint: disable=no-self-use
-
-    def get(self, compt_id):
-        """Get info on chosen competence"""
-        if compt_id is None:
-            competences = [{'id': compt.id, 'name': compt.name} for compt in Competence.query.all()]
-            return jsonify(competences)
-
-        competence = Competence.query.get_or_404(compt_id)
-        return jsonify({'name': competence.name})
-
-    def post(self):
-        """Create new competence"""
+    @login_required
+    def patch(self, compt_id):
+        """Edit the competence."""
         if not request.is_json:
-            abort(400)
-
-        try:
-            name = request.json['name']
-        except BadRequestKeyError:
-            abort(400)
-
-        new_competence = Competence(name=name)
-        new_competence.save()
-        return jsonify(id=new_competence.id)
-
-    def put(self, compt_id):
-        """Update (change) chosen competence"""
-        if compt_id is None or not request.is_json:
-            abort(400)
-
-        try:
-            name = request.json['name']
-        except BadRequestKeyError:
-            abort(400)
+            abort(400, {'message': 'The request should be in JSON.'})
 
         competence = Competence.query.get_or_404(compt_id)
-        competence.name = name
-        competence.save()
-        return jsonify(id=competence.id)
+        if not current_user.is_admin:
+            abort(401)
 
+        in_schema = CompetenceSchema(exclude=('id',))
+
+        try:
+            updated_competence = in_schema.load(request.json, instance=competence, partial=True)
+        except ValidationError as err:
+            abort(400, {'message': err.messages})
+
+        try:
+            db.session.add(updated_competence)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            print(err)  # TODO: replace with proper logging
+            abort(400, {'message': 'Data integrity violated.'})
+
+        out_schema = CompetenceSchema()
+        return out_schema.jsonify(updated_competence)
+
+    @login_required
     def delete(self, compt_id):
-        """Delete chosen competence"""
-        if compt_id is None:
-            abort(400)
-
+        """Delete the competence."""
         competence = Competence.query.get_or_404(compt_id)
-        competence.delete()
-        return jsonify()
+
+        try:
+            db.session.delete(competence)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            print(err)  # TODO: replace with proper logging
+            abort(400, {'message': 'Data integrity violated.'})
+        return NO_PAYLOAD
 
 
-competence_api = CompetenceAPI.as_view('competence_api')  # pylint: disable=invalid-name
-api.add_url_rule('/competences',
-                 defaults={'compt_id': None},
-                 view_func=competence_api,
-                 methods=('GET', ))
-api.add_url_rule('/competences', view_func=competence_api, methods=('POST', ))
+competence_api = CompetenceAPI.as_view('competence_api')
 api.add_url_rule('/competences/<int:compt_id>',
                  view_func=competence_api,
-                 methods=('GET', 'PUT', 'DELETE'))
+                 methods=('PATCH', 'DELETE'))
 
 
 class StaticFileAPI(MethodView):

@@ -9,6 +9,7 @@ from .models import (
     Activity,
     Application,
     ApplicationStatus,
+    Competence,
     LifetimeStage,
     Project,
     ReviewStatus,
@@ -173,3 +174,11 @@ class AccountSchema(ma.ModelSchema):
         model = Account
         ordered = True
         sqla_session = db.session
+
+
+class CompetenceSchema(ma.ModelSchema):
+    class Meta:
+        model = Competence
+        ordered = True
+        sqla_session = db.session
+        exclude = ('activities', 'feedback')

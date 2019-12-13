@@ -291,7 +291,7 @@ feedback_competence = db.Table(
               db.ForeignKey('feedback.id', ondelete='CASCADE'),
               primary_key=True),
     db.Column('competence_id', db.Integer,
-              db.ForeignKey('competences.id', ondelete='CASCADE'), 
+              db.ForeignKey('competences.id', ondelete='CASCADE'),
               primary_key=True)
 )
 
@@ -301,7 +301,7 @@ class Competence(db.Model):
     __tablename__ = 'competences'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False)
+    name = db.Column(db.String(128), nullable=False, unique=True)
 
     activities = db.relationship('Activity',
                                  secondary=activity_competence,
