@@ -378,7 +378,7 @@ class Color(db.Model):
     __tablename__ = 'colors'
 
     id = db.Column(db.Integer, primary_key=True)
-    value = db.Column(db.String(6), nullable=True)
+    value = db.Column(db.String(6), nullable=False, unique=True)
     varieties = db.relationship('Variety',
                                 cascade='all, delete-orphan')
 

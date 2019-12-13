@@ -9,6 +9,7 @@ from .models import (
     Activity,
     Application,
     ApplicationStatus,
+    Color,
     Competence,
     LifetimeStage,
     Project,
@@ -182,3 +183,34 @@ class CompetenceSchema(ma.ModelSchema):
         ordered = True
         sqla_session = db.session
         exclude = ('activities', 'feedback')
+
+
+class ColorSchema(ma.ModelSchema):
+    class Meta:
+        model = Color
+        ordered = True
+        sqla_session = db.session
+        exclude = ('varieties',)
+
+    @pre_load
+    def normalize_value(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Normalize the color value, stripping the '#' and transforming symbols to uppercase."""
+        if data['value'].startswith('#'):
+            data['value'] = data['value'][1:]
+
+        if len(data['value']) != 6:
+            raise ValidationError(
+                f'The color value is {len(data["value"])} characters long, 6 expected.')
+
+        data['value'] = data['value'].upper()
+
+        if not all(char in '0123456789ABCDEF' for char in data['value']):
+            raise ValidationError('The color value contains non-hex symbols.')
+        
+        return data
+
+    @post_dump
+    def precede_hash(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Precede the value of the color with a '#' symbol."""
+        data['value'] = '#' + data['value']
+        return data

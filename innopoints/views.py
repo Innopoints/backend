@@ -34,6 +34,7 @@ from innopoints.models import (
 
 from innopoints.schemas import (
     ActivitySchema,
+    ColorSchema,
     CompetenceSchema,
     ListProjectSchema,
     ProjectSchema,
@@ -56,7 +57,7 @@ ALLOWED_SIZES = {'XS', 'S', 'M', 'L', 'XL', 'XXL'}
 NO_PAYLOAD = ('', 204)
 
 
-# ----- Projects -----
+# ----- Project -----
 
 @api.route('/projects')
 def list_projects():
@@ -242,6 +243,8 @@ api.add_url_rule('/projects/<int:project_id>',
                  methods=('GET', 'PATCH', 'DELETE'))
 
 
+# ----- Activity -----
+
 @api.route('/projects/<int:project_id>/activity', methods=['POST'])
 @login_required
 def create_activity(project_id):
@@ -340,6 +343,8 @@ api.add_url_rule('/projects/<int:project_id>/activity/<int:activity_id>',
                  view_func=activity_api,
                  methods=('PATCH', 'DELETE'))
 
+
+# ----- Product ----- *
 
 @api.route('/products')
 def get_products():
@@ -466,6 +471,8 @@ api.add_url_rule('/products/<int:product_id>',
                  methods=('PUT', 'DELETE'))
 
 
+# ----- Variety ----- *
+
 class VarietyAPI(MethodView):
     """REST views for the Variety model"""
 
@@ -522,6 +529,8 @@ api.add_url_rule('/varieties/<int:var_id>',
                  view_func=variety_api,
                  methods=('PUT', 'DELETE'))
 
+
+# ----- Competence -----
 
 @api.route('/competences')
 def list_competences():
@@ -612,6 +621,8 @@ api.add_url_rule('/competences/<int:compt_id>',
                  methods=('PATCH', 'DELETE'))
 
 
+# ----- Static File -----
+
 def get_mimetype(file: werkzeug.FileStorage) -> str:
     """Return a MIME type of a Flask file object"""
     if file.mimetype:
@@ -663,6 +674,46 @@ def retrieve_file(file_id):
     response.headers.set('Content-Type', file.mimetype)
     return response
 
+
+# ----- Color -----
+
+@api.route('/colors')
+def list_colors():
+    """List all existing colors."""
+    schema = ColorSchema(many=True)
+    return schema.jsonify(Color.query.all())
+
+
+@api.route('/colors', methods=['POST'])
+@login_required
+def create_color():
+    """Create a new color."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if not current_user.is_admin:
+        abort(401)
+
+    in_schema = ColorSchema(exclude=('id',))
+
+    try:
+        new_color = in_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    try:
+        db.session.add(new_color)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        print(err)  # TODO: replace with proper logging
+        abort(400, {'message': 'Data integrity violated.'})
+
+    out_schema = ColorSchema()
+    return out_schema.jsonify(new_color)
+
+
+# ----- Authorization -----
 
 @api.route('/login', methods=['GET'])
 def login():
