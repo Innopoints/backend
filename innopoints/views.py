@@ -612,60 +612,56 @@ api.add_url_rule('/competences/<int:compt_id>',
                  methods=('PATCH', 'DELETE'))
 
 
-class StaticFileAPI(MethodView):
-    """REST views for StaticFile model"""
+def get_mimetype(file: werkzeug.FileStorage) -> str:
+    """Return a MIME type of a Flask file object"""
+    if file.mimetype:
+        return file.mimetype
 
-    @staticmethod
-    def get_mimetype(file: werkzeug.FileStorage) -> str:
-        """Return a MIME type of a Flask file object"""
-        if file.mimetype:
-            return file.mimetype
-
-        return mimetypes.guess_type(file.filename)[0]
-
-    # pylint: disable=no-self-use
-
-    def get(self, file_id):
-        """Get the chosen static file"""
-        file = StaticFile.query.get_or_404(file_id)
-        url = f'{file.namespace}/{file.id}'
-        response = current_app.make_response(file_manager.retrieve(url))
-        response.headers.set('Content-Type', file.mimetype)
-        return response
-
-    def post(self, namespace):
-        """Upload a new file to the given namespace"""
-        if 'file' not in request.files:
-            print('File not found')
-            abort(400)
-
-        file = request.files['file']
-
-        if not file.filename:
-            print('No filename')
-            abort(400)
-
-        mimetype = self.get_mimetype(file)
-        if mimetype not in ALLOWED_MIMETYPES:
-            print(f'Mimetype "{mimetype}" is not allowed')
-            abort(400)
-
-        new_file = StaticFile(mimetype=mimetype, namespace=namespace)
-        try:
-            new_file.save(file.stream)
-        except requests.exceptions.HTTPError as exc:
-            print('Upload failed')
-            print(exc)
-            new_file.delete()
-            abort(400)
-        return jsonify(id=new_file.id, url=f'/static/{new_file.id}')
+    return mimetypes.guess_type(file.filename)[0]
 
 
-static_file_api = StaticFileAPI.as_view('static_file_api')  # pylint: disable=invalid-name
-api.add_url_rule('/static/<namespace>', view_func=static_file_api, methods=('POST', ))
-api.add_url_rule('/static/<int:file_id>',
-                 view_func=static_file_api,
-                 methods=('GET', ))
+@api.route('/file/<namespace>', methods=['POST'])
+@login_required
+def upload_file(namespace):
+    """Upload a file to a given namespace."""
+    if 'file' not in request.files:
+        abort(400, {'message': 'No file attached.'})
+
+    file = request.files['file']
+
+    if not file.filename:
+        abort(400, {'message': 'The file doesn\'t have a name.'})
+
+    mimetype = get_mimetype(file)
+    if mimetype not in ALLOWED_MIMETYPES:
+        abort(400, {'message': f'Mimetype "{mimetype}" is not allowed'})
+
+    new_file = StaticFile(mimetype=mimetype, namespace=namespace)
+    db.session.add(new_file)
+    db.session.commit()
+    try:
+        file_manager.store(file.stream, str(new_file.id), new_file.namespace)
+    except requests.exceptions.HTTPError as exc:
+        print(exc)  # TODO: replace with proper logging
+        db.session.delete(new_file)
+        db.session.commit()
+        abort(400, {'message': 'Upload failed.'})
+    return jsonify(id=new_file.id, url=f'/file/{new_file.id}')
+
+
+@api.route('/file/<int:file_id>')
+def retrieve_file(file_id):
+    """Get the chosen static file"""
+    file = StaticFile.query.get_or_404(file_id)
+    url = f'{file.namespace}/{file.id}'
+    file_data = file_manager.retrieve(url)
+
+    if file_data is None:
+        abort(404)
+
+    response = current_app.make_response(file_data)
+    response.headers.set('Content-Type', file.mimetype)
+    return response
 
 
 @api.route('/login', methods=['GET'])

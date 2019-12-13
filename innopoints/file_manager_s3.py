@@ -10,7 +10,11 @@ S3_BUCKET_URL = 'http://innopoints.s3.amazonaws.com'
 
 def retrieve(url: str) -> bytes:
     """Get the file with a given URL from the AWS S3 bucket."""
-    return requests.get(f'{S3_BUCKET_URL}/{url}').content
+    response = requests.get(f'{S3_BUCKET_URL}/{url}')
+    if response.status_code == 404:
+        return None
+    
+    return response.content
 
 
 def store(file: io.BytesIO, handle: str, namespace: str):

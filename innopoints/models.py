@@ -400,18 +400,6 @@ class StaticFile(db.Model):
     cover_for = db.relationship('Project',
                                 uselist=False)
 
-    def save(self, file_data):
-        """Save object to database"""
-        db.session.add(self)
-        db.session.commit()
-        file_manager.store(file_data, str(self.id), self.namespace)
-
-    def delete(self):
-        """Delete object from database"""
-        file_manager.delete(str(self.id), self.namespace)
-        db.session.delete(self)
-        db.session.commit()
-
 
 class ProjectFile(db.Model):
     """Represents the files that can only be accessed by volunteers and moderators
