@@ -84,6 +84,8 @@ class Project(db.Model):
     creation_time = db.Column(db.DateTime, default=datetime.utcnow)
     organizer = db.Column(db.String(128), nullable=True)
     activities = db.relationship('Activity',
+                                 cascade="all, delete-orphan",
+                                 passive_deletes=True,
                                  backref='project')
     moderators = db.relationship('Account',
                                  secondary=project_moderation,
@@ -275,14 +277,22 @@ class StockChange(db.Model):
 
 activity_competence = db.Table(
     'activity_competence',
-    db.Column('activity_id', db.Integer, db.ForeignKey('activities.id'), primary_key=True),
-    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True)
+    db.Column('activity_id', db.Integer,
+              db.ForeignKey('activities.id', ondelete='CASCADE'),
+              primary_key=True),
+    db.Column('competence_id', db.Integer,
+              db.ForeignKey('competences.id', ondelete='CASCADE'),
+              primary_key=True)
 )
 
 feedback_competence = db.Table(
     'feedback_competence',
-    db.Column('feedback_id', db.Integer, db.ForeignKey('feedback.id'), primary_key=True),
-    db.Column('competence_id', db.Integer, db.ForeignKey('competences.id'), primary_key=True)
+    db.Column('feedback_id', db.Integer,
+              db.ForeignKey('feedback.id', ondelete='CASCADE'),
+              primary_key=True),
+    db.Column('competence_id', db.Integer,
+              db.ForeignKey('competences.id', ondelete='CASCADE'), 
+              primary_key=True)
 )
 
 

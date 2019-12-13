@@ -70,6 +70,7 @@ class ProjectSchema(ma.ModelSchema):
     review_status = EnumField(ReviewStatus)
     lifetime_stage = EnumField(LifetimeStage)
     activities = ma.Nested('ActivitySchema', many=True)
+    moderators = ma.Nested('AccountSchema', only=('full_name', 'email'), many=True)
 
 
 class ActivitySchema(ma.ModelSchema):
