@@ -16,6 +16,10 @@ def create_app(config='config/prod.py'):
     app.secret_key = os.urandom(16)
     app.config.from_pyfile(config)
 
+    # Import DB models. Flask-SQLAlchemy doesn't do this automatically.
+    with app.app_context():
+        import_module('innopoints.models')
+
     # Initialize extensions/add-ons/plugins.
     db.init_app(app)
     Migrate(app, db)
