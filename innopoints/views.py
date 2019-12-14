@@ -4,7 +4,7 @@ import os
 import mimetypes
 
 import requests
-from authlib.integrations.flask_client import OAuth
+from innopoints.extensions import oauth
 from innopoints.blueprints import api
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
 from flask import Blueprint, abort, jsonify, request, current_app, url_for, redirect
@@ -39,15 +39,6 @@ from innopoints.schemas import (
     CompetenceSchema,
     ListProjectSchema,
     ProjectSchema,
-)
-
-INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
-
-oauth = OAuth()
-oauth.register(
-    'innopolis_sso',
-    server_metadata_url=f'{INNOPOLIS_SSO_BASE}/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid'},
 )
 
 

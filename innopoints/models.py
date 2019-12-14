@@ -3,20 +3,16 @@
 from datetime import datetime
 from enum import Enum, auto
 
-from flask_login import LoginManager
 from flask_login.mixins import UserMixin
-from flask_sqlalchemy import SQLAlchemy
 
 import innopoints.file_manager_s3 as file_manager
+from innopoints.extensions import db, login_manager
 
 
 IPTS_PER_HOUR = 70
 DEFAULT_QUESTIONS = ("What did you learn from this volunteering opportunity?",
                      "What could be improved in the organization?")
 
-db = SQLAlchemy()
-login_manager = LoginManager()
-login_manager.session_protection = 'strong'
 # TODO: set passive_deletes
 
 class ReviewStatus(Enum):
