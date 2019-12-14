@@ -1,6 +1,6 @@
 from innopoints.extensions import db
 
-from . import Application, ApplicationStatus
+from .application import Application, ApplicationStatus
 
 IPTS_PER_HOUR = 70
 
