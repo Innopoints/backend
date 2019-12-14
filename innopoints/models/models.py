@@ -33,21 +33,6 @@ class NotificationType(Enum):
 
 
 
-class Product(db.Model):
-    """Product describes an item in the InnoStore that a user may purchase"""
-    __tablename__ = 'products'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False)
-    type = db.Column(db.String(128), nullable=True)
-    description = db.Column(db.String(1024), nullable=False)
-    varieties = db.relationship('Variety',
-                                cascade='all, delete-orphan')
-    price = db.Column(db.Integer, nullable=False)
-    addition_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    notifications = db.relationship('Notification',
-                                    cascade='all, delete-orphan')
-
 
 class Variety(db.Model):
     """Represents various types of one product"""
@@ -158,4 +143,3 @@ class StaticFile(db.Model):
                                    cascade='all, delete-orphan')
     cover_for = db.relationship('Project',
                                 uselist=False)
-
