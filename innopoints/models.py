@@ -7,8 +7,6 @@ from flask_login import LoginManager
 from flask_login.mixins import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
-import innopoints.file_manager_s3 as file_manager
-
 
 IPTS_PER_HOUR = 70
 DEFAULT_QUESTIONS = ("What did you learn from this volunteering opportunity?",
@@ -84,7 +82,7 @@ class Project(db.Model):
     creation_time = db.Column(db.DateTime, default=datetime.utcnow)
     organizer = db.Column(db.String(128), nullable=True)
     activities = db.relationship('Activity',
-                                 cascade="all, delete-orphan",
+                                 cascade='all, delete-orphan',
                                  passive_deletes=True,
                                  backref='project')
     moderators = db.relationship('Account',
@@ -220,7 +218,9 @@ class Product(db.Model):
     type = db.Column(db.String(128), nullable=True)
     description = db.Column(db.String(1024), nullable=False)
     varieties = db.relationship('Variety',
-                                cascade='all, delete-orphan')
+                                cascade='all, delete-orphan',
+                                passive_deletes=True,
+                                backref='product')
     price = db.Column(db.Integer, nullable=False)
     addition_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     notifications = db.relationship('Notification',
@@ -230,15 +230,41 @@ class Product(db.Model):
 class Variety(db.Model):
     """Represents various types of one product"""
     __tablename__ = 'varieties'
+    __table_args__ = (
+        # Warning: this index requires a manually written migration.
+        # In upgrade() use:
+        #   op.create_index('unique_varieties', 'varieties',
+        #                   ['product_id',
+        #                    sa.text("coalesce(color_value, '')"),
+        #                    sa.text("coalesce(size_id, '')")],
+        #                   unique=True)
+        #
+        # In downgrade() use:
+        #   op.drop_index('unique_varieties', 'varieties')
+        db.Index('unique_varieties',
+                 'product_id',
+                 db.text("coalesce(color_value, '')"),
+                 db.text("coalesce(size_id, '')"),
+                 unique=True),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
-    size = db.Column(db.String(3), nullable=True)
-    color_id = db.Column(db.Integer, db.ForeignKey('colors.id'), nullable=True)
+    product_id = db.Column(db.Integer,
+                           db.ForeignKey('products.id', ondelete='CASCADE'),
+                           nullable=False)
+    # property `product` created with a backref
+    size_id = db.Column(db.String(3),
+                        db.ForeignKey('sizes.value', ondelete='CASCADE'),
+                        nullable=True)
+    color_value = db.Column(db.String(6),
+                            db.ForeignKey('colors.value', ondelete='CASCADE'),
+                            nullable=True)
     images = db.relationship('ProductImage',
-                             cascade='all, delete-orphan')
+                             cascade='all, delete-orphan',
+                             passive_deletes=True)
     stock_changes = db.relationship('StockChange',
-                                    cascade='all, delete-orphan')
+                                    cascade='all, delete-orphan',
+                                    passive_deletes=True)
 
     @property
     def amount(self):
@@ -247,7 +273,7 @@ class Variety(db.Model):
         return db.session.query(
             db.func.sum(StockChange.amount)
         ).filter(
-            StockChange.variety == self,
+            StockChange.variety_id == self.id,
             StockChange.status != StockChangeStatus.rejected
         ).scalar()
 
@@ -257,8 +283,12 @@ class ProductImage(db.Model):
     __tablename__ = 'product_images'
 
     id = db.Column(db.Integer, primary_key=True)
-    variety_id = db.Column(db.Integer, db.ForeignKey('varieties.id'), nullable=False)
-    image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=False)
+    variety_id = db.Column(db.Integer,
+                           db.ForeignKey('varieties.id', ondelete='CASCADE'),
+                           nullable=False)
+    image_id = db.Column(db.Integer,
+                         db.ForeignKey('static_files.id', ondelete='CASCADE'),
+                         nullable=False)
     order = db.Column(db.Integer, nullable=False)
 
 
@@ -270,9 +300,13 @@ class StockChange(db.Model):
     amount = db.Column(db.Integer, nullable=False)
     time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     status = db.Column(db.Enum(StockChangeStatus), nullable=False)
-    account_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
-    variety_id = db.Column(db.Integer, db.ForeignKey('varieties.id'), nullable=False)
-    transaction = db.relationship('Transaction')
+    account_email = db.Column(db.String(128),
+                              db.ForeignKey('accounts.email', ondelete='CASCADE'),
+                              nullable=False)
+    variety_id = db.Column(db.Integer,
+                           db.ForeignKey('varieties.id', ondelete='CASCADE'),
+                           nullable=False)
+    transaction = db.relationship('Transaction', uselist=False)
 
 
 activity_competence = db.Table(
@@ -374,13 +408,23 @@ class Notification(db.Model):
 
 
 class Color(db.Model):
-    """Represents colors of items in the store"""
+    """Represents colors of items in the store."""
     __tablename__ = 'colors'
 
-    id = db.Column(db.Integer, primary_key=True)
-    value = db.Column(db.String(6), nullable=False, unique=True)
+    value = db.Column(db.String(6), primary_key=True)
     varieties = db.relationship('Variety',
-                                cascade='all, delete-orphan')
+                                cascade='all, delete-orphan',
+                                passive_deletes=True)
+
+
+class Size(db.Model):
+    """Represents sizes of items in the store."""
+    __tablename__ = 'sizes'
+
+    value = db.Column(db.String(3), primary_key=True)
+    varieties = db.relationship('Variety',
+                                cascade='all, delete-orphan',
+                                passive_deletes=True)
 
 
 class StaticFile(db.Model):

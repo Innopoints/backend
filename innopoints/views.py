@@ -24,6 +24,7 @@ from innopoints.models import (
     LifetimeStage,
     Product,
     Project,
+    Size,
     StaticFile,
     StockChange,
     StockChangeStatus,
@@ -37,7 +38,9 @@ from innopoints.schemas import (
     ColorSchema,
     CompetenceSchema,
     ListProjectSchema,
+    ProductSchema,
     ProjectSchema,
+    SizeSchema,
 )
 
 INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
@@ -53,7 +56,6 @@ oauth.register(
 
 
 ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp'}
-ALLOWED_SIZES = {'XS', 'S', 'M', 'L', 'XL', 'XXL'}
 NO_PAYLOAD = ('', 204)
 
 
@@ -347,87 +349,81 @@ api.add_url_rule('/projects/<int:project_id>/activity/<int:activity_id>',
 # ----- Product ----- *
 
 @api.route('/products')
-def get_products():
-    """List products available in InnoStore"""
+def list_products():
+    """List products available in InnoStore."""
+    default_limit = 3
+    default_page = 1
+    default_order = 'time'
+    ordering = {
+        'time': Product.addition_time,
+        'price': Product.price
+    }
+
     try:
-        limit = int(request.args['limit'])
-        page = int(request.args['page'])
-        query = request.json.get('q')
-    except (BadRequestKeyError, ValueError):
-        abort(400, {'message': 'Missing required query parameters.'})
+        limit = int(request.args.get('limit', default_limit))
+        page = int(request.args.get('page', default_page))
+        search_query = request.args.get('q')
+        order = request.args.get('order', default_order)
+    except ValueError:
+        abort(400, {'message': 'Bad query parameters.'})
+
+    if limit < 1 or page < 1:
+        abort(400, {'message': 'Limit and page number must be positive.'})
 
     db_query = Product.query
-    if query is not None:
-        like_query = f'%{query}%'
-        or_condition = or_(Product.name.ilike(like_query), Product.description.ilike(like_query))
+    if search_query is not None:
+        like_query = f'%{search_query}%'
+        or_condition = or_(Product.name.ilike(like_query),
+                           Product.description.ilike(like_query))
         db_query = db_query.filter(or_condition)
-    db_query = db_query.order_by(Product.price.asc())
+    db_query = db_query.order_by(ordering[order].asc())
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
-    # yapf: disable
-    products = [{
-        'id': product.id,
-        'name': product.name,
-        'type': product.type,
-        'description': product.description,
-        'price': product.price,
-        'varieties': [{
-            'color': Color.query.get(variety.color),
-            'cover_images': [image.url for image in variety.images],
-            'background': Color.query.get(variety.color).background,
-            'amount': product.amount,
-        } for variety in product.varieties],
-    } for product in db_query.all()]
-    # yapf: enable
-
-    return jsonify(products)
+    schema = ProductSchema(many=True, exclude=('notifications', 'description'))
+    return schema.jsonify(db_query.all())
 
 
 @api.route('/products', methods=['POST'])
+@login_required
 def create_product():
-    """Create a new product"""
-    # pylint: disable=no-member
+    """Create a new product."""
     if not request.is_json:
         abort(400, {'message': 'The request should be in JSON.'})
 
+    if not current_user.is_admin:
+        abort(401)
+
+    in_schema = ProductSchema(exclude=('id', 'addition_time', 'notifications',
+                                       'varieties.stock_changes.variety_id',
+                                       'varieties.product_id',
+                                       'varieties.images.variety_id'),
+                              context={'user': current_user})
+
     try:
-        if request.json['price'] <= 0:
-            abort(400, {'message': 'The price must be strictly positive.'})
+        new_product = in_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
 
-        new_product = Product(name=request.json['name'],
-                              type=request.json['type'],
-                              description=request.json['description'],
-                              price=request.json['price'])
+    try:
+        for variety in new_product.varieties:
+            variety.product = new_product
+            for stock_change in variety.stock_changes:
+                stock_change.variety_id = variety.id
+
         db.session.add(new_product)
-
-        for variety_data in request.json['varieties']:
-            if Color.query.get(variety_data['color']) is None:
-                abort(400, {'message', 'Specify a valid color.'})
-
-            if variety_data.get('size') not in ALLOWED_SIZES:
-                abort(400, {'message', 'Specify a valid size: XS, S, M, L, XL, XXL.'})
-
-            if not variety_data['images']:
-                abort(400, {'message', 'Specify at least one image.'})
-
-            new_variety = Variety(color=variety_data['color'],
-                                  size=variety_data.get('size'),
-                                  images=variety_data['images'],
-                                  product=new_product)
-            db.session.add(new_variety)
-
-            stock = StockChange(amount=variety_data['amount'],
-                                status=StockChangeStatus.carried_out,
-                                account=1,  # to be replaced by the current user
-                                variety=new_variety)
-            db.session.add(stock)
-
-    except (KeyError, ValueError) as exc:
+        db.session.commit()
+    except IntegrityError as err:
         db.session.rollback()
-        abort(400, {'message': str(exc)})
+        print(err)  # TODO: replace with proper logging
+        abort(400, {'message': 'Data integrity violated.'})
 
-    db.session.commit()
-    return jsonify(id=new_product.id)
+    out_schema = ProductSchema(exclude=('notifications',
+                                        'varieties.product_id',
+                                        'varieties.product',
+                                        'varieties.images.variety_id',
+                                        'varieties.images.id',
+                                        'varieties.stock_changes'))
+    return out_schema.jsonify(new_product)
 
 
 class ProductDetailAPI(MethodView):
@@ -694,10 +690,10 @@ def create_color():
     if not current_user.is_admin:
         abort(401)
 
-    in_schema = ColorSchema(exclude=('id',))
+    in_out_schema = ColorSchema()
 
     try:
-        new_color = in_schema.load(request.json)
+        new_color = in_out_schema.load(request.json)
     except ValidationError as err:
         abort(400, {'message': err.messages})
 
@@ -709,8 +705,44 @@ def create_color():
         print(err)  # TODO: replace with proper logging
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ColorSchema()
-    return out_schema.jsonify(new_color)
+    return in_out_schema.jsonify(new_color)
+
+
+# ----- Size -----
+
+@api.route('/sizes')
+def list_sizes():
+    """List all existing sizes."""
+    schema = SizeSchema(many=True)
+    return schema.jsonify(Size.query.all())
+
+
+@api.route('/sizes', methods=['POST'])
+@login_required
+def create_size():
+    """Create a new size."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if not current_user.is_admin:
+        abort(401)
+
+    in_out_schema = SizeSchema()
+
+    try:
+        new_size = in_out_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    try:
+        db.session.add(new_size)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        print(err)  # TODO: replace with proper logging
+        abort(400, {'message': 'Data integrity violated.'})
+
+    return in_out_schema.jsonify(new_size)
 
 
 # ----- Authorization -----

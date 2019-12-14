@@ -12,8 +12,14 @@ from .models import (
     Color,
     Competence,
     LifetimeStage,
+    Product,
+    ProductImage,
     Project,
     ReviewStatus,
+    Size,
+    StockChange,
+    StockChangeStatus,
+    Variety,
     db
 )
 
@@ -153,7 +159,7 @@ class ActivitySchema(ma.ModelSchema):
     application_deadline = ma.DateTime(format='iso', data_key='application_deadline')
     vacant_spots = ma.Int(dump_only=True)
     applications = ma.Method(serialize='get_applications',
-                             deserialize='create_applications')
+                             dump_only=True)
     existing_application = ma.Method(serialize='get_existing_application',
                                      dump_only=True)
 
@@ -175,6 +181,85 @@ class AccountSchema(ma.ModelSchema):
         model = Account
         ordered = True
         sqla_session = db.session
+
+
+class ProductSchema(ma.ModelSchema):
+    class Meta:
+        model = Product
+        ordered = True
+        sqla_session = db.session
+
+    varieties = ma.Nested('VarietySchema', many=True)
+    name = ma.Str(validate=validate.Length(min=1, max=128))
+    type = ma.Str(validate=validate.Length(min=1, max=128), allow_none=True)
+    description = ma.Str(validate=validate.Length(max=1024))
+    price = ma.Int(validate=validate.Range(min=1))
+
+
+class VarietySchema(ma.ModelSchema):
+    class Meta:
+        model = Variety
+        ordered = True
+        include_fk = True
+        sqla_session = db.session
+
+    @pre_load
+    def create_stock_change(self, data, **kwargs):  # pylint: disable=unused-argument
+        if 'amount' not in data:
+            raise ValidationError('The amount for a variety is not specified.')
+
+        amount = data.pop('amount')
+        data['stock_changes'] = [{
+            'amount': amount,
+            'account_email': self.context['user'].email,
+            'status': 'carried_out',
+        }]
+        return data
+
+    @pre_load
+    def wire_color_size(self, data, **kwargs):  # pylint: disable=unused-argument
+        data['size_id'] = data.pop('size')
+        data['color_value'] = data.pop('color')
+        if data['color_value'] is None:
+            return data
+
+        if data['color_value'].startswith('#'):
+            data['color_value'] = data['color_value'][1:].upper()
+
+        if len(data['color_value']) != 6:
+            raise ValidationError(
+                f'The color value is {len(data["color_value"])} characters long, 6 expected.')
+
+        return data
+
+    @pre_load
+    def enumerate_images(self, data, **kwargs):  # pylint: disable=unused-argument
+        data['images'] = [{'order': idx, 'image_id': int(url.split('/')[2])}
+                          for (idx, url) in enumerate(data['images'], start=1)]
+        return data
+
+    @post_dump
+    def unwire_color_size(self, data, **kwargs):  # pylint: disable=unused-argument
+        data['size'] = data.pop('size_id')
+        if data['color_value'] is None:
+            data['color'] = data.pop('color_value')
+        else:
+            data['color'] = '#' + data.pop('color_value')
+        return data
+
+    @post_dump
+    def flatten_images(self, data, **kwargs):  # pylint: disable=unused-argument
+        data['images'] = [f'/file/{image["image_id"]}'
+                          for image in sorted(data['images'],
+                                              key=lambda x: x['order'])]
+        return data
+
+    def compute_amount(self, variety):
+        return variety.amount
+
+    images = ma.Nested('ProductImageSchema', many=True)
+    stock_changes = ma.Nested('StockChangeSchema', many=True)
+    amount = ma.Method(serialize='compute_amount')
 
 
 class CompetenceSchema(ma.ModelSchema):
@@ -206,7 +291,7 @@ class ColorSchema(ma.ModelSchema):
 
         if not all(char in '0123456789ABCDEF' for char in data['value']):
             raise ValidationError('The color value contains non-hex symbols.')
-        
+
         return data
 
     @post_dump
@@ -214,3 +299,29 @@ class ColorSchema(ma.ModelSchema):
         """Precede the value of the color with a '#' symbol."""
         data['value'] = '#' + data['value']
         return data
+
+
+class SizeSchema(ma.ModelSchema):
+    class Meta:
+        model = Size
+        ordered = True
+        sqla_session = db.session
+        exclude = ('varieties',)
+
+
+class StockChangeSchema(ma.ModelSchema):
+    class Meta:
+        model = StockChange
+        ordered = True
+        include_fk = True
+        sqla_session = db.session
+
+    status = EnumField(StockChangeStatus)
+
+
+class ProductImageSchema(ma.ModelSchema):
+    class Meta:
+        model = ProductImage
+        ordered = True
+        include_fk = True
+        sqla_session = db.session
