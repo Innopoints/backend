@@ -159,11 +159,3 @@ class StaticFile(db.Model):
     cover_for = db.relationship('Project',
                                 uselist=False)
 
-
-class ProjectFile(db.Model):
-    """Represents the files that can only be accessed by volunteers and moderators
-       of a certain project"""
-    __tablename__ = 'project_files'
-
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
-    file_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), primary_key=True)
