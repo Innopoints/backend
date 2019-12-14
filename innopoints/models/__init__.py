@@ -5,3 +5,4 @@ from .activity import *
 from .application import *
 from .product import *
 from .variety import *
+from .notification import *
