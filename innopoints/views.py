@@ -5,6 +5,7 @@ import mimetypes
 
 import requests
 from authlib.integrations.flask_client import OAuth
+from innopoints.blueprints import api
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
 from flask import Blueprint, abort, jsonify, request, current_app, url_for, redirect
 from flask.views import MethodView
@@ -41,8 +42,6 @@ from innopoints.schemas import (
 )
 
 INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
-
-api = Blueprint('api', __name__)
 
 oauth = OAuth()
 oauth.register(

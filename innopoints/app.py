@@ -1,13 +1,12 @@
 """Flask application factory"""
 
 import os
+from importlib import import_module
 
 from flask import Flask
 from flask_migrate import Migrate
 
-from innopoints.views import api, oauth
-from innopoints.models import db, login_manager
-from innopoints.schemas import ma
+from innopoints.blueprints import all_blueprints
 
 
 def create_app(config='config/prod.py'):
@@ -22,7 +21,9 @@ def create_app(config='config/prod.py'):
 
     login_manager.init_app(app)
 
-    app.register_blueprint(api)
+    for bp in all_blueprints:
+        import_module(bp.import_name)
+        app.register_blueprint(bp)
     oauth.init_app(app)
 
     return app
