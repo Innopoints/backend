@@ -1,9 +1,7 @@
 """Application configuration for development"""
 
 import os
-
-SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
-SQLALCHEMY_TRACK_MODIFICATIONS = False
+from innopoints.config.common import *
 
 INNOPOLIS_SSO_CLIENT_ID = os.environ.get('INNOPOLIS_SSO_CLIENT_ID')
 INNOPOLIS_SSO_CLIENT_SECRET = os.environ.get('INNOPOLIS_SSO_CLIENT_SECRET')
