@@ -20,7 +20,7 @@ marshmallow-sqlalchemy = "*"
 marshmallow-enum = "*"
 marshmallow = "*"
 flask-migrate = "*"
-pylint-flask = "*"
+pylint-flask-sqlalchemy = "*"
 
 [requires]
 python_version = "3.7"
