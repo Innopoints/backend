@@ -23,20 +23,6 @@ class NotificationType(Enum):
     proj_final_review = auto()
 
 
-class Transaction(db.Model):
-    """Represents a change in the innopoints balance for a certain user"""
-    __tablename__ = 'transactions'
-    __table_args__ = (
-        db.CheckConstraint('(stock_change_id IS NULL) != (feedback_id IS NULL)',
-                           name='feedback xor stock_change'),
-    )
-
-    id = db.Column(db.Integer, primary_key=True)
-    account_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
-    change = db.Column(db.Integer, nullable=False)
-    stock_change_id = db.Column(db.Integer, db.ForeignKey('stock_changes.id'), nullable=True)
-    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=True)
-
 
 class Notification(db.Model):
     """Represents a notification about a certain event"""
