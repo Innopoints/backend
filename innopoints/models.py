@@ -5,7 +5,6 @@ from enum import Enum, auto
 
 from flask_login.mixins import UserMixin
 
-import innopoints.file_manager_s3 as file_manager
 from innopoints.extensions import db, login_manager
 
 

@@ -1,7 +1,7 @@
 """Model schemas for serialization."""
 
 from marshmallow import validate, validates_schema, ValidationError, pre_load, post_dump
-from innopoints.extensions import ma
+from innopoints.extensions import ma, db
 from marshmallow_enum import EnumField
 
 from .models import (
@@ -14,7 +14,6 @@ from .models import (
     LifetimeStage,
     Project,
     ReviewStatus,
-    db
 )
 
 

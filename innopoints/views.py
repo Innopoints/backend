@@ -4,10 +4,10 @@ import os
 import mimetypes
 
 import requests
-from innopoints.extensions import oauth
+from innopoints.extensions import oauth, db
 from innopoints.blueprints import api
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
-from flask import Blueprint, abort, jsonify, request, current_app, url_for, redirect
+from flask import abort, jsonify, request, current_app, url_for, redirect
 from flask.views import MethodView
 from flask_login import login_user, login_required, logout_user, current_user
 from marshmallow import ValidationError
@@ -30,7 +30,6 @@ from innopoints.models import (
     StockChangeStatus,
     Variety,
     IPTS_PER_HOUR,
-    db
 )
 
 from innopoints.schemas import (
