@@ -1,7 +1,7 @@
 """Model schemas for serialization."""
 
 from marshmallow import validate, validates_schema, ValidationError, pre_load, post_dump
-from flask_marshmallow import Marshmallow
+from innopoints.extensions import ma, db
 from marshmallow_enum import EnumField
 
 from .models import (
@@ -23,7 +23,6 @@ from .models import (
     db
 )
 
-ma = Marshmallow()
 
 # pylint: disable=missing-docstring
 # pylint: disable=no-member

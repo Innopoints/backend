@@ -5,7 +5,6 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
-pylint-flask = "*"
 pylint_flask_sqlalchemy = "*"
 
 [packages]

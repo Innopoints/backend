@@ -4,9 +4,10 @@ import os
 import mimetypes
 
 import requests
-from authlib.integrations.flask_client import OAuth
+from innopoints.extensions import oauth, db
+from innopoints.blueprints import api
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
-from flask import Blueprint, abort, jsonify, request, current_app, url_for, redirect
+from flask import abort, jsonify, request, current_app, url_for, redirect
 from flask.views import MethodView
 from flask_login import login_user, login_required, logout_user, current_user
 from marshmallow import ValidationError
@@ -29,7 +30,6 @@ from innopoints.models import (
     StockChangeStatus,
     Variety,
     IPTS_PER_HOUR,
-    db
 )
 
 from innopoints.schemas import (
@@ -41,17 +41,6 @@ from innopoints.schemas import (
     ProjectSchema,
     SizeSchema,
     VarietySchema,
-)
-
-INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
-
-api = Blueprint('api', __name__)
-
-oauth = OAuth()
-oauth.register(
-    'innopolis_sso',
-    server_metadata_url=f'{INNOPOLIS_SSO_BASE}/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid'},
 )
 
 
