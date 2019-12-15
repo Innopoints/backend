@@ -26,6 +26,7 @@ from .models import (
 ma = Marshmallow()
 
 # pylint: disable=missing-docstring
+# pylint: disable=no-member
 
 
 class ListProjectSchema(ma.ModelSchema):
@@ -205,6 +206,12 @@ class VarietySchema(ma.ModelSchema):
 
     @pre_load
     def create_stock_change(self, data, **kwargs):  # pylint: disable=unused-argument
+        if 'stock_changes' in data:
+            raise ValidationError('The stock changes are not to be specified explicitly.')
+
+        if self.context.get('update', False):
+            return data
+
         if 'amount' not in data:
             raise ValidationError('The amount for a variety is not specified.')
 
@@ -218,9 +225,19 @@ class VarietySchema(ma.ModelSchema):
 
     @pre_load
     def wire_color_size(self, data, **kwargs):  # pylint: disable=unused-argument
-        data['size_id'] = data.pop('size')
-        data['color_value'] = data.pop('color')
-        if data['color_value'] is None:
+        if self.context.get('update', False):
+            if 'size' in data:
+                data['size_id'] = data.pop('size')
+            if 'color' in data:
+                data['color_value'] = data.pop('color')
+        else:
+            try:
+                data['size_id'] = data.pop('size')
+                data['color_value'] = data.pop('color')
+            except KeyError:
+                raise ValidationError('Size and color must be specified.')
+
+        if 'color_value' not in data or data['color_value'] is None:
             return data
 
         if data['color_value'].startswith('#'):
@@ -234,8 +251,16 @@ class VarietySchema(ma.ModelSchema):
 
     @pre_load
     def enumerate_images(self, data, **kwargs):  # pylint: disable=unused-argument
-        data['images'] = [{'order': idx, 'image_id': int(url.split('/')[2])}
-                          for (idx, url) in enumerate(data['images'], start=1)]
+        if self.context.get('update', False):
+            if 'images' in data:
+                data['images'] = [{'order': idx, 'image_id': int(url.split('/')[2])}
+                                  for (idx, url) in enumerate(data['images'], start=1)]
+        else:
+            try:
+                data['images'] = [{'order': idx, 'image_id': int(url.split('/')[2])}
+                                  for (idx, url) in enumerate(data['images'], start=1)]
+            except KeyError:
+                raise ValidationError('Images must be specified.')
         return data
 
     @post_dump
@@ -254,12 +279,10 @@ class VarietySchema(ma.ModelSchema):
                                               key=lambda x: x['order'])]
         return data
 
-    def compute_amount(self, variety):
-        return variety.amount
-
     images = ma.Nested('ProductImageSchema', many=True)
     stock_changes = ma.Nested('StockChangeSchema', many=True)
-    amount = ma.Method(serialize='compute_amount')
+    amount = ma.Int(dump_only=True)
+    purchases = ma.Int(dump_only=True)
 
 
 class CompetenceSchema(ma.ModelSchema):

@@ -13,7 +13,6 @@ from marshmallow import ValidationError
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 import werkzeug
-from werkzeug.exceptions import BadRequestKeyError
 
 import innopoints.file_manager_s3 as file_manager
 from innopoints.models import (
@@ -41,6 +40,7 @@ from innopoints.schemas import (
     ProductSchema,
     ProjectSchema,
     SizeSchema,
+    VarietySchema,
 )
 
 INNOPOLIS_SSO_BASE = os.environ['INNOPOLIS_SSO_BASE']
@@ -77,6 +77,7 @@ def list_projects():
 
     db_query = Project.query.filter_by(lifetime_stage=lifetime_stage)
     if 'q' in request.args:
+        # pylint: disable=no-member
         like_query = f'%{request.args["query"]}%'
         db_query = db_query.join(Project.activities)
         or_condition = or_(Project.title.ilike(like_query),
@@ -85,6 +86,7 @@ def list_projects():
         db_query = db_query.filter(or_condition).distinct()
 
     if lifetime_stage == LifetimeStage.past:
+        # pylint: disable=no-member
         page = int(request.args.get('page', 1))
         db_query = db_query.order_by(Project.id.desc())
         db_query = db_query.offset(10 * (page - 1)).limit(10)
@@ -346,7 +348,7 @@ api.add_url_rule('/projects/<int:project_id>/activity/<int:activity_id>',
                  methods=('PATCH', 'DELETE'))
 
 
-# ----- Product ----- *
+# ----- Product -----
 
 @api.route('/products')
 def list_products():
@@ -372,6 +374,7 @@ def list_products():
 
     db_query = Product.query
     if search_query is not None:
+        # pylint: disable=no-member
         like_query = f'%{search_query}%'
         or_condition = or_(Product.name.ilike(like_query),
                            Product.description.ilike(like_query))
@@ -379,7 +382,10 @@ def list_products():
     db_query = db_query.order_by(ordering[order].asc())
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
-    schema = ProductSchema(many=True, exclude=('notifications', 'description'))
+    schema = ProductSchema(many=True, exclude=('notifications', 'description',
+                                               'varieties.stock_changes',
+                                               'varieties.product',
+                                               'varieties.product_id'))
     return schema.jsonify(db_query.all())
 
 
@@ -429,101 +435,168 @@ def create_product():
 class ProductDetailAPI(MethodView):
     """REST views for the Product model"""
 
-    # pylint: disable=no-self-use
-
-    def put(self, product_id):
-        """Edit the product with the given ID"""
-        product = Product.query.get_or_404(product_id)
+    @login_required
+    def patch(self, product_id):
+        """Edit the product."""
         if not request.is_json:
             abort(400, {'message': 'The request should be in JSON.'})
 
-        try:
-            if request.get('price', 1) <= 0:
-                abort(400, {'message': 'The request should be in JSON.'})
-
-            product.name = request.get('name', product.name)
-            product.type = request.get('type', product.type)
-            product.description = request.get('description', product.description)
-            product.price = request.get('price', product.price)
-        except (KeyError, ValueError) as exc:
-            abort(400, {'message': str(exc)})
-
-        db.session.add(product)  # pylint: disable=no-member
-        db.session.commit()
-        return jsonify()
-
-    def delete(self, product_id):
-        """Delete the product entirely"""
+        if not current_user.is_admin:
+            abort(401)
         product = Product.query.get_or_404(product_id)
 
-        db.session.delete(product)  # pylint: disable=no-member
-        db.session.commit()  # pylint: disable=no-member
-        return jsonify()
+        in_out_schema = ProductSchema(exclude=('id', 'varieties', 'notifications', 'addition_time'))
+
+        try:
+            updated_product = in_out_schema.load(request.json, instance=product, partial=True)
+        except ValidationError as err:
+            abort(400, {'message': err.messages})
+
+        try:
+            db.session.add(updated_product)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            print(err)  # TODO: replace with proper logging
+            abort(400, {'message': 'Data integrity violated.'})
+
+        return in_out_schema.jsonify(updated_product)
+
+    @login_required
+    def delete(self, product_id):
+        """Delete the product."""
+        if not current_user.is_admin:
+            abort(401)
+        product = Product.query.get_or_404(product_id)
+
+        try:
+            db.session.delete(product)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            print(err)  # TODO: replace with proper logging
+            abort(400, {'message': 'Data integrity violated.'})
+        return NO_PAYLOAD
 
 
 product_api = ProductDetailAPI.as_view('product_api')
 api.add_url_rule('/products/<int:product_id>',
                  view_func=product_api,
-                 methods=('PUT', 'DELETE'))
+                 methods=('PATCH', 'DELETE'))
 
 
-# ----- Variety ----- *
+# ----- Variety -----
+
+@api.route('/products/<int:product_id>/variety', methods=['POST'])
+@login_required
+def create_variety(product_id):
+    """Create a new variety."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if not current_user.is_admin:
+        abort(401)
+
+    product = Product.query.get_or_404(product_id)
+
+    in_schema = VarietySchema(exclude=('id', 'product_id', 'product',
+                                       'images.variety_id', 'stock_changes.variety_id',),
+                              context={'user': current_user})
+
+    try:
+        new_variety = in_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    try:
+        new_variety.product = product
+
+        db.session.add(new_variety)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        print(err)  # TODO: replace with proper logging
+        abort(400, {'message': 'Data integrity violated.'})
+
+    out_schema = VarietySchema(exclude=('product_id',
+                                        'product',
+                                        'images.variety_id',
+                                        'images.id'))
+    return out_schema.jsonify(new_variety)
+
 
 class VarietyAPI(MethodView):
-    """REST views for the Variety model"""
+    """REST views for a particular instance of the Variety model."""
 
-    # pylint: disable=no-self-use
-
-    def put(self, var_id):
-        """Update the given variety"""
-        variety = Variety.query.get_or_404(var_id)
-
+    @login_required
+    def patch(self, product_id, variety_id):
+        """Update the given variety."""
         if not request.is_json:
             abort(400, {'message': 'The request should be in JSON.'})
 
+        if not current_user.is_admin:
+            abort(401)
+
+        product = Product.query.get_or_404(product_id)
+        variety = Variety.query.get_or_404(variety_id)
+        if variety.product != product:
+            abort(400, {'message': 'The specified product and variety are unrelated.'})
+
+        in_schema = VarietySchema(exclude=('id', 'product_id', 'stock_changes.variety_id'),
+                                  context={'update': True})
+
+        amount = request.json.pop('amount', None)
+
         try:
-            if 'color' in request.json and Color.query.get(request.json['color']) is None:
-                abort(400, {'message', 'Specify a valid color.'})
+            updated_variety = in_schema.load(request.json, instance=variety, partial=True)
+        except ValidationError as err:
+            abort(400, {'message': err.messages})
 
-            if 'size' in request.json and request.json['size'] not in ALLOWED_SIZES:
-                abort(400, {'message', 'Specify a valid size: XS, S, M, L, XL, XXL.'})
+        if amount is not None:
+            diff = amount - variety.amount
+            if diff != 0:
+                stock_change = StockChange(amount=diff,
+                                           status=StockChangeStatus.carried_out,
+                                           account=current_user,
+                                           variety_id=updated_variety.id)
+                db.session.add(stock_change)
 
-            if 'images' in request.json and not request.json['images']:
-                abort(400, {'message', 'Specify at least one image.'})
+        try:
+            db.session.add(updated_variety)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            print(err)  # TODO: replace with proper logging
+            abort(400, {'message': 'Data integrity violated.'})
 
-            variety.color = request.get('color', variety.color)
-            variety.size = request.get('size', variety.size)
-            variety.images = request.get('images', variety.images)
+        out_schema = VarietySchema(exclude=('product_id', 'stock_changes', 'product', 'purchases'))
+        return out_schema.jsonify(updated_variety)
 
-            if 'amount' in request.json:
-                diff = request.json['amount'] - variety.amount
-                if diff != 0:
-                    stock = StockChange(amount=diff,
-                                        status=StockChangeStatus.carried_out,
-                                        account=1,  # to be replaced by the current user
-                                        variety=variety)
-                    db.session.add(stock)
+    @login_required
+    def delete(self, product_id, variety_id):
+        """Delete the variety."""
+        if not current_user.is_admin:
+            abort(401)
 
-        except (KeyError, ValueError) as exc:
-            abort(400, {'message': str(exc)})
+        product = Product.query.get_or_404(product_id)
+        variety = Variety.query.get_or_404(variety_id)
+        if variety.product != product:
+            abort(400, {'message': 'The specified product and variety are unrelated.'})
 
-        db.session.add(variety)  # pylint: disable=no-member
-        db.session.commit()
-        return jsonify()
-
-    def delete(self, var_id):
-        """Delete the variety entirely"""
-        variety = Variety.query.get_or_404(var_id)
-
-        db.session.delete(variety)  # pylint: disable=no-member
-        db.session.commit()  # pylint: disable=no-member
-        return jsonify()
+        try:
+            db.session.delete(variety)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            print(err)  # TODO: replace with proper logging
+            abort(400, {'message': 'Data integrity violated.'})
+        return NO_PAYLOAD
 
 
 variety_api = VarietyAPI.as_view('variety_api')
-api.add_url_rule('/varieties/<int:var_id>',
+api.add_url_rule('/products/<int:product_id>/variety/<int:variety_id>',
                  view_func=variety_api,
-                 methods=('PUT', 'DELETE'))
+                 methods=('PATCH', 'DELETE'))
 
 
 # ----- Competence -----
@@ -619,7 +692,7 @@ api.add_url_rule('/competences/<int:compt_id>',
 
 # ----- Static File -----
 
-def get_mimetype(file: werkzeug.FileStorage) -> str:
+def get_mimetype(file: werkzeug.FileStorage) -> str:  # pylint: disable=no-member
     """Return a MIME type of a Flask file object"""
     if file.mimetype:
         return file.mimetype

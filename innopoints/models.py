@@ -140,6 +140,7 @@ class Activity(db.Model):
     @property
     def dates(self):
         """Return the activity dates as a single JSON object"""
+        # pylint: disable=no-member
         return {'start': self.start_date.isoformat(),
                 'end': self.end_date.isoformat()}
 
@@ -164,7 +165,10 @@ class Account(UserMixin, db.Model):
                                        cascade='all, delete-orphan',
                                        backref='creator')
     # property `moderated_projects` created with a backref
-    stock_changes = db.relationship('StockChange')
+    stock_changes = db.relationship('StockChange',
+                                    cascade='all, delete-orphan',
+                                    passive_deletes=True,
+                                    backref='account')
     transactions = db.relationship('Transaction')
     notifications = db.relationship('Notification',
                                     cascade='all, delete-orphan')
@@ -269,13 +273,29 @@ class Variety(db.Model):
     @property
     def amount(self):
         """Return the amount of items of this variety, computed
-           from the StockChange instances"""
+           from the StockChange instances."""
+        # pylint: disable=no-member
         return db.session.query(
             db.func.sum(StockChange.amount)
         ).filter(
             StockChange.variety_id == self.id,
             StockChange.status != StockChangeStatus.rejected
         ).scalar()
+
+    @property
+    def purchases(self):
+        """Return the amount of purchases of this variety, computed
+           from the StockChange instances."""
+        # pylint: disable=no-member
+        return -(db.session.query(
+            db.func.sum(StockChange.amount)
+        ).join(Account).filter(
+            StockChange.variety_id == self.id,
+            StockChange.status != StockChangeStatus.rejected,
+            StockChange.amount < 0,
+            Account.email == StockChange.account_email,
+            not Account.is_admin
+        ).scalar() or 0)
 
 
 class ProductImage(db.Model):
@@ -303,6 +323,7 @@ class StockChange(db.Model):
     account_email = db.Column(db.String(128),
                               db.ForeignKey('accounts.email', ondelete='CASCADE'),
                               nullable=False)
+    # property `account` created with a backref
     variety_id = db.Column(db.Integer,
                            db.ForeignKey('varieties.id', ondelete='CASCADE'),
                            nullable=False)
