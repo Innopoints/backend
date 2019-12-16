@@ -121,12 +121,6 @@ class ApplicationSchema(ma.ModelSchema):
     telegram_username = ma.Str(data_key='telegram')
 
 
-class AccountSchema(ma.ModelSchema):
-    class Meta:
-        model = Account
-        ordered = True
-        sqla_session = db.session
-
 
 class ProductSchema(ma.ModelSchema):
     class Meta:
