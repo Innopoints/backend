@@ -4,7 +4,7 @@ from marshmallow import validate, validates_schema, ValidationError, pre_load, p
 from innopoints.extensions import ma, db
 from marshmallow_enum import EnumField
 
-from .models import (
+from innopoints.models import (
     Account,
     Activity,
     Application,
