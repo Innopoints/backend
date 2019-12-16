@@ -2,7 +2,7 @@ from marshmallow import validate, validates_schema, ValidationError, pre_load, p
 
 from innopoints.extensions import ma, db
 from innopoints.models import Activity, Application, ApplicationStatus, Competence
-from . import ApplicationSchema
+from .application import ApplicationSchema
 
 class ActivitySchema(ma.ModelSchema):
     class Meta:
