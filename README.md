@@ -12,7 +12,7 @@ $ pacman -S python-pipenv
 ## Install the dependencies
 
 ```bash
-$ pipenv install
+$ pipenv install --dev
 ```
 
 ## Run the server
@@ -25,8 +25,7 @@ $ export INNOPOLIS_SSO_CLIENT_ID='{application-client-id}'
 $ export INNOPOLIS_SSO_CLIENT_SECRET='{application-secret}'
 $ export FLASK_ENV='development'  # to use the development config
 # for fish:
-#  set -x DATABASE_URL 'postgresql://localhost/{database_name}'
-#  set -x INNOPOLIS_SSO_BASE 'https://sso.university.innopolis.ru/adfs'
+#  set -x VAR_NAME 'value'
 
-$ pipenv run gunicorn run:app
+$ pipenv run python run.py
 ```
