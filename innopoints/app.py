@@ -27,8 +27,8 @@ def create_app(config='config/prod.py'):
     oauth.init_app(app)
     login_manager.init_app(app)
 
-    for bp in all_blueprints:
-        import_module(bp.import_name)
-        app.register_blueprint(bp)
+    for blueprint in all_blueprints:
+        import_module(blueprint.import_name)
+        app.register_blueprint(blueprint)
 
     return app

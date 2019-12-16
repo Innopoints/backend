@@ -1,11 +1,9 @@
 """Application views"""
 
-import os
 import mimetypes
 
 import requests
-from innopoints.extensions import oauth, db
-from innopoints.blueprints import api
+import werkzeug
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
 from flask import abort, jsonify, request, current_app, url_for, redirect
 from flask.views import MethodView
@@ -13,8 +11,9 @@ from flask_login import login_user, login_required, logout_user, current_user
 from marshmallow import ValidationError
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
-import werkzeug
 
+from innopoints.extensions import oauth, db
+from innopoints.blueprints import api
 import innopoints.file_manager_s3 as file_manager
 from innopoints.models import (
     Activity,
@@ -31,7 +30,6 @@ from innopoints.models import (
     Variety,
     IPTS_PER_HOUR,
 )
-
 from innopoints.schemas import (
     ActivitySchema,
     ColorSchema,
