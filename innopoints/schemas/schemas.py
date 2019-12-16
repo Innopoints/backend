@@ -1,12 +1,11 @@
 """Model schemas for serialization."""
 
-from marshmallow import validate, ValidationError, pre_load, post_dump
+from marshmallow import ValidationError, pre_load, post_dump
 from innopoints.extensions import ma, db
 from marshmallow_enum import EnumField
 
 from innopoints.models import (
     Color,
-    Product,
     ProductImage,
     Size,
     StockChange,
@@ -21,18 +20,6 @@ from innopoints.models import (
 
 
 
-
-class ProductSchema(ma.ModelSchema):
-    class Meta:
-        model = Product
-        ordered = True
-        sqla_session = db.session
-
-    varieties = ma.Nested('VarietySchema', many=True)
-    name = ma.Str(validate=validate.Length(min=1, max=128))
-    type = ma.Str(validate=validate.Length(min=1, max=128), allow_none=True)
-    description = ma.Str(validate=validate.Length(max=1024))
-    price = ma.Int(validate=validate.Range(min=1))
 
 
 class VarietySchema(ma.ModelSchema):
