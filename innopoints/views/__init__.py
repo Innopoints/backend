@@ -4,5 +4,3 @@ from .activity import *
 from .file import *
 from .product import *
 from .variety import *
-
-from .views import *  # temporary, until all views have been moved
