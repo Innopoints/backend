@@ -54,7 +54,7 @@ def authorize():
 def logout():
     """Log out the currently signed in user"""
     logout_user()
-    return '', 204
+    return NO_PAYLOAD
 
 
 @api.route('/login_cheat')
