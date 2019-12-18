@@ -57,8 +57,9 @@ def logout():
     return NO_PAYLOAD
 
 
-@api.route('/login_cheat')
-def login_cheat():
+@api.route('/login_cheat/', defaults={'index': 0})
+@api.route('/login_cheat/<int:index>')
+def login_cheat(index):
     """Bypass OAuth"""
     # TODO: remove this
     users = Account.query.all()
@@ -70,7 +71,7 @@ def login_cheat():
         db.session.add(user)
         db.session.commit()
     else:
-        user = users[0]
+        user = users[index]
     login_user(user, remember=True)
 
     return NO_PAYLOAD
