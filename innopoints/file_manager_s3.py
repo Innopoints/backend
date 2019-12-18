@@ -13,7 +13,7 @@ def retrieve(url: str) -> bytes:
     response = requests.get(f'{S3_BUCKET_URL}/{url}')
     if response.status_code == 404:
         return None
-    
+
     return response.content
 
 

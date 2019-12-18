@@ -1,7 +1,7 @@
-"""Flask and other extensions instantiated here.
+"""Flask extensions are instantiated here.
 
-To avoid circular imports with views and create_app(), extensions are instantiated here. They will be initialized
-(calling init_app()) in application.py.
+To avoid circular imports with views and create_app(), extensions are instantiated here.
+They will be initialized (calling init_app()) in app.py.
 """
 
 import os
