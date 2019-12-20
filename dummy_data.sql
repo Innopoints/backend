@@ -40,4 +40,58 @@ INSERT INTO activity_competence (activity_id, competence_id)
 INSERT INTO reports (id, application_id, rating, content)
 	VALUES (1, 1, 4, 'Great volunteer. Nice to work with.');
 
--- TODO: products and varieties. project moderators. feedback. stock_changes. transactions.
+INSERT INTO products (id, name, type, description, price, addition_time)
+	VALUES (1, 'T-shirt', 'clothes', '', 1337, NOW());
+INSERT INTO products (id, name, type, description, price, addition_time)
+	VALUES (2, 'stickers', 'collectibles', 'to stick on your laptop', 200, NOW());
+INSERT INTO products (id, name, type, description, price, addition_time)
+	VALUES (3, 'Meal plan (7 days)', 'food', 'Lunch 7days/week 1 month effective next month', 5000, NOW());
+
+INSERT INTO varieties (id, product_id, size_id, color_value)
+	VALUES (1, 1, 'XS', '000000');
+INSERT INTO varieties (id, product_id, size_id, color_value)
+	VALUES (2, 1, 'XS', '387800');
+INSERT INTO varieties (id, product_id, size_id, color_value)
+	VALUES (3, 1, 'M', '387800');
+INSERT INTO varieties (id, product_id, size_id, color_value)
+	VALUES (4, 2, null, 'FFFFFF');
+INSERT INTO varieties (id, product_id, size_id, color_value)
+	VALUES (5, 2, null, '1A17D5');
+INSERT INTO varieties (id, product_id, size_id, color_value)
+	VALUES (6, 3, null, null);
+
+INSERT INTO stock_changes (id, amount, time, status, account_email, variety_id)
+	VALUES (1, 20, NOW(), 'carried_out', 'admin@innopolis.university', 1);
+INSERT INTO stock_changes (id, amount, time, status, account_email, variety_id)
+	VALUES (2, 30, NOW(), 'carried_out', 'admin@innopolis.university', 3);
+INSERT INTO stock_changes (id, amount, time, status, account_email, variety_id)
+	VALUES (3, 100, NOW(), 'carried_out', 'admin@innopolis.university', 4);
+INSERT INTO stock_changes (id, amount, time, status, account_email, variety_id)
+	VALUES (4, 99999, NOW(), 'carried_out', 'admin@innopolis.university', 6);
+INSERT INTO stock_changes (id, amount, time, status, account_email, variety_id)
+	VALUES (5, -1, NOW(), 'pending', 'student1@innopolis.university', 2);
+INSERT INTO stock_changes (id, amount, time, status, account_email, variety_id)
+	VALUES (6, -1, NOW(), 'ready_for_pickup', 'student2@innopolis.university', 1);
+INSERT INTO stock_changes (id, amount, time, status, account_email, variety_id)
+	VALUES (7, -5, NOW(), 'rejected', 'student1@innopolis.university', 6);
+
+INSERT INTO transactions (id, account_email, change, stock_change_id, feedback_id)
+	VALUES (1, 'student1@innopolis.university', 5321, null, null);
+INSERT INTO transactions (id, account_email, change, stock_change_id, feedback_id)
+	VALUES (2, 'student2@innopolis.university', 1234, null, null);
+INSERT INTO transactions (id, account_email, change, stock_change_id, feedback_id)
+	VALUES (3, 'student1@innopolis.university', -1337, 5, null);
+INSERT INTO transactions (id, account_email, change, stock_change_id, feedback_id)
+	VALUES (4, 'student1@innopolis.university', 0, 7, null);
+INSERT INTO transactions (id, account_email, change, stock_change_id, feedback_id)
+	VALUES (5, 'student2@innopolis.university', -1337, 6, null);
+
+INSERT INTO project_moderation (project_id, account_email)
+	VALUES (1, 'admin@innopolis.university');
+INSERT INTO project_moderation (project_id, account_email)
+	VALUES (2, 'student1@innopolis.university');
+INSERT INTO project_moderation (project_id, account_email)
+	VALUES (3, 'student2@innopolis.university');
+
+INSERT INTO feedback (id, application_id, answers)
+	VALUES (1, 1, '[{"question": "how are you", "answer": "fine"}]');
