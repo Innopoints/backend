@@ -1,30 +1,44 @@
 """Manages static files. This particular module uses the AWS S3 to store files"""
 
-import io
+import os
+from werkzeug.datastructures import FileStorage
 
-import requests
+STORAGE_BASE = './static_files'
+
+if not os.path.exists(STORAGE_BASE):
+    os.makedirs(STORAGE_BASE)
+
+def _join_base(*paths: str) -> str:
+    """Helper function to join path to base and normalize it according to OS."""
+    return os.path.normpath(os.path.join(STORAGE_BASE, *paths))
 
 
-S3_BUCKET_URL = 'http://innopoints.s3.amazonaws.com'
-
-
-def retrieve(url: str) -> bytes:
+def retrieve(path: str) -> bytes:
     """Get the file with a given URL from the AWS S3 bucket."""
-    response = requests.get(f'{S3_BUCKET_URL}/{url}')
-    if response.status_code == 404:
-        return None
+    path = _join_base(path)
+    if not os.path.exists(path):
+        raise FileNotFoundError()
+    file = open(path, 'rb')
+    return file.read()
 
-    return response.content
 
-
-def store(file: io.BytesIO, handle: str, namespace: str):
+def store(file: FileStorage, handle: str, namespace: str):
     """Upload the given file with the handle to the namespace directory
        of the AWS S3 bucket. Will raise a requests.exceptions.HTTPError on errors"""
-    filename = f'{namespace}/{handle}'
-    response = requests.post(S3_BUCKET_URL, data={'key': filename}, files={'file': file})
-    response.raise_for_status()
+    folder = _join_base(namespace)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    filename = os.path.join(folder, handle)
+    file.save(filename)
 
 
 def delete(handle: str, namespace: str):
     """Delete the file with a given handle from the namespace of the AWS S3 bucket."""
-    requests.delete(f'{S3_BUCKET_URL}/{namespace}/{handle}')
+    folder = _join_base(namespace)
+    if not os.path.exists(folder):
+        raise FileNotFoundError()
+    filename = os.path.join(folder, handle)
+    os.remove(filename)
+    # directory is now empty ?
+    if not os.listdir(folder):
+        os.rmdir(folder)
