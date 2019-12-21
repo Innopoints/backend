@@ -41,8 +41,8 @@ def upload_file(namespace):
     db.session.add(new_file)
     db.session.commit()
     try:
-        file_manager.store(file, str(new_file.id), new_file.namespace)
-    except Exception as exc:
+        file_manager.store(file.stream, str(new_file.id), new_file.namespace)
+    except requests.exceptions.HTTPError as exc:
         print(exc)  # TODO: replace with proper logging
         db.session.delete(new_file)
         db.session.commit()
@@ -55,9 +55,9 @@ def retrieve_file(file_id):
     """Get the chosen static file"""
     file = StaticFile.query.get_or_404(file_id)
     url = f'{file.namespace}/{file.id}'
-    try:
-        file_data = file_manager.retrieve(url)
-    except FileNotFoundError:
+    file_data = file_manager.retrieve(url)
+
+    if file_data is None:
         abort(404)
 
     response = current_app.make_response(file_data)
