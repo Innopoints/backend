@@ -13,9 +13,9 @@ def _join_base(*paths: str) -> str:
     return os.path.normpath(os.path.join(STORAGE_BASE, *paths))
 
 
-def retrieve(path: str) -> bytes:
+def retrieve(handle: str, namespace: str) -> bytes:
     """Get the file with a given URL from the AWS S3 bucket."""
-    path = _join_base(path)
+    path = _join_base(namespace, handle)
     if not os.path.exists(path):
         raise FileNotFoundError()
     file = open(path, 'rb')
