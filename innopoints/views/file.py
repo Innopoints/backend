@@ -54,8 +54,9 @@ def upload_file(namespace):
 def retrieve_file(file_id):
     """Get the chosen static file"""
     file = StaticFile.query.get_or_404(file_id)
+    url = f'{file.namespace}/{file.id}'
     try:
-        file_data = file_manager.retrieve(str(file.id), file.namespace)
+        file_data = file_manager.retrieve(url)
     except FileNotFoundError:
         abort(404)
 
