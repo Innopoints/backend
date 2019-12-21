@@ -1,5 +1,4 @@
 import mimetypes
-import requests
 import werkzeug
 from flask import abort, jsonify, request, current_app
 from flask_login import login_required
@@ -11,6 +10,7 @@ from innopoints.models import StaticFile
 
 
 ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp'}
+NO_PAYLOAD = ('', 204)
 
 
 def get_mimetype(file: werkzeug.FileStorage) -> str:  # pylint: disable=no-member
@@ -62,3 +62,17 @@ def retrieve_file(file_id):
     response = current_app.make_response(file_data)
     response.headers.set('Content-Type', file.mimetype)
     return response
+
+
+@api.route('/file/<int:file_id>', methods=['DELETE'])
+@login_required
+def delete_file(file_id):
+    """Delete the given file by id"""
+    file = StaticFile.query.get_or_404(file_id)
+    try:
+        file_manager.delete(str(file_id), file.namespace)
+    except FileNotFoundError:
+        abort(404, 'File not found on storage')
+    db.session.delete(file)
+    db.session.commit()
+    return NO_PAYLOAD
