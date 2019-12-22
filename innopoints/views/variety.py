@@ -1,3 +1,19 @@
+"""Views related to the Variety model.
+
+Variety:
+- POST /products/{product_id}/variety
+- PATCH /products/{product_id}/variety/{variety_id}
+- DELETE /products/{product_id}/variety/{variety_id}
+
+Size:
+- GET /sizes
+- POST /sizes
+
+Color:
+- GET /colors
+- POST /colors
+"""
+
 import logging
 
 from flask import abort, request

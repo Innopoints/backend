@@ -1,3 +1,12 @@
+"""Views related to the Product model.
+
+Product:
+- GET /products
+- POST /products
+- PATCH /products/{product_id}
+- DELETE /products/{product_id}
+"""
+
 import logging
 
 from flask import abort, request

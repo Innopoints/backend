@@ -1,3 +1,17 @@
+"""Views related to the Activity model.
+
+Activity:
+- POST /projects/{project_id}/activity
+- PATCH /projects/{project_id}/activity/{activity_id}
+- DELETE /projects/{project_id}/activity/{activity_id}
+
+Competence:
+- GET /competences
+- POST /competences
+- PATCH /competences/{competence_id}
+- DELETE /competences/{competence_id}
+"""
+
 import logging
 
 from flask import abort, request
@@ -113,12 +127,12 @@ api.add_url_rule('/projects/<int:project_id>/activity/<int:activity_id>',
                  view_func=activity_api,
                  methods=('PATCH', 'DELETE'))
 
+
 # ----- Competence -----
 
 @api.route('/competences')
 def list_competences():
     """List all of the existing competences."""
-
     schema = CompetenceSchema(many=True)
     return schema.jsonify(Competence.query.all())
 
