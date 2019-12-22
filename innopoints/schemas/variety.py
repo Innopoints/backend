@@ -1,8 +1,13 @@
+"""Schema for the Variety, Color, Size, StockChange and ProductImage models."""
+
 from marshmallow_enum import EnumField
 from marshmallow import ValidationError, pre_load, post_dump
 
 from innopoints.extensions import ma, db
 from innopoints.models import Variety, Color, Size, StockChange, StockChangeStatus, ProductImage
+
+
+# pylint: disable=missing-docstring
 
 class VarietySchema(ma.ModelSchema):
     class Meta:
@@ -13,6 +18,7 @@ class VarietySchema(ma.ModelSchema):
 
     @pre_load
     def create_stock_change(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Convert the integer `amount` property into a stock change."""
         if 'stock_changes' in data:
             raise ValidationError('The stock changes are not to be specified explicitly.')
 
@@ -32,6 +38,7 @@ class VarietySchema(ma.ModelSchema):
 
     @pre_load
     def wire_color_size(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Rename `size` to `size_id`, `color` to `color_value`, and normalize the color."""
         if self.context.get('update', False):
             if 'size' in data:
                 data['size_id'] = data.pop('size')
@@ -58,6 +65,7 @@ class VarietySchema(ma.ModelSchema):
 
     @pre_load
     def enumerate_images(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Convert the array of URL strings to an array of image objects with order."""
         if self.context.get('update', False):
             if 'images' in data:
                 data['images'] = [{'order': idx, 'image_id': int(url.split('/')[2])}
@@ -72,6 +80,7 @@ class VarietySchema(ma.ModelSchema):
 
     @post_dump
     def unwire_color_size(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Rename `size_id` to `size`, `color_value` to `color`, add a '#' to the color."""
         data['size'] = data.pop('size_id')
         if data['color_value'] is None:
             data['color'] = data.pop('color_value')
@@ -81,11 +90,13 @@ class VarietySchema(ma.ModelSchema):
 
     @post_dump
     def flatten_images(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Convert an array of image objects with order into a flat array of URL strings."""
         data['images'] = [f'/file/{image["image_id"]}'
                           for image in sorted(data['images'],
                                               key=lambda x: x['order'])]
         return data
 
+    # pylint: disable=no-member
     images = ma.Nested('ProductImageSchema', many=True)
     stock_changes = ma.Nested('StockChangeSchema', many=True)
     amount = ma.Int(dump_only=True)
