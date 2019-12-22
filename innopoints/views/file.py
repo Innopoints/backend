@@ -1,3 +1,5 @@
+import logging
+
 import mimetypes
 import werkzeug
 from flask import abort, jsonify, request, current_app
@@ -11,6 +13,7 @@ from innopoints.models import StaticFile
 
 ALLOWED_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp'}
 NO_PAYLOAD = ('', 204)
+log = logging.getLogger(__name__)
 
 
 def get_mimetype(file: werkzeug.FileStorage) -> str:  # pylint: disable=no-member
@@ -43,7 +46,7 @@ def upload_file(namespace):
     try:
         file_manager.store(file, str(new_file.id), new_file.namespace)
     except Exception as exc:
-        print(exc)  # TODO: replace with proper logging
+        log.error(str(err))
         db.session.delete(new_file)
         db.session.commit()
         abort(400, {'message': 'Upload failed.'})

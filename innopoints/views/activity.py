@@ -1,3 +1,5 @@
+import logging
+
 from flask import abort, request
 from flask.views import MethodView
 from flask_login import login_required, current_user
@@ -10,6 +12,7 @@ from innopoints.models import Activity, Project, IPTS_PER_HOUR, Competence
 from innopoints.schemas import ActivitySchema, CompetenceSchema
 
 NO_PAYLOAD = ('', 204)
+log = logging.getLogger(__name__)
 
 
 @api.route('/projects/<int:project_id>/activity', methods=['POST'])
@@ -37,7 +40,7 @@ def create_activity(project_id):
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        print(err)  # TODO: replace with proper logging
+        log.error(str(err))
         abort(400, {'message': 'Data integrity violated.'})
 
     out_schema = ActivitySchema(exclude=('notifications', 'existing_application'),
@@ -77,7 +80,7 @@ class ActivityAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            print(err)  # TODO: replace with proper logging
+            log.error(str(err))
             abort(400, {'message': 'Data integrity violated.'})
 
         out_schema = ActivitySchema(exclude=('notifications', 'existing_application'),
@@ -100,7 +103,7 @@ class ActivityAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            print(err)  # TODO: replace with proper logging
+            log.error(str(err))
             abort(400, {'message': 'Data integrity violated.'})
         return NO_PAYLOAD
 
@@ -142,7 +145,7 @@ def create_competence():
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        print(err)  # TODO: replace with proper logging
+        log.error(str(err))
         abort(400, {'message': 'Data integrity violated.'})
 
     out_schema = CompetenceSchema()
@@ -174,7 +177,7 @@ class CompetenceAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            print(err)  # TODO: replace with proper logging
+            log.error(str(err))
             abort(400, {'message': 'Data integrity violated.'})
 
         out_schema = CompetenceSchema()
@@ -190,7 +193,7 @@ class CompetenceAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            print(err)  # TODO: replace with proper logging
+            log.error(str(err))
             abort(400, {'message': 'Data integrity violated.'})
         return NO_PAYLOAD
 
