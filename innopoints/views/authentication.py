@@ -1,3 +1,10 @@
+"""Views responsible for authentication.
+
+- GET /login
+- GET /authorize
+- GET /logout
+"""
+
 from flask import abort, current_app, url_for, redirect
 from flask_login import login_user, logout_user
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
@@ -8,22 +15,23 @@ from innopoints.models import Account
 
 NO_PAYLOAD = ('', 204)
 
-@api.route('/login', methods=['GET'])
+
+@api.route('/login')
 def login():
-    """Redirect the user to the Innopolis SSO login page"""
+    """Redirect the user to the Innopolis SSO login page."""
     redirect_uri = url_for('api.authorize', _external=True)
     return oauth.innopolis_sso.authorize_redirect(redirect_uri)
 
 
 @api.route('/authorize')
 def authorize():
-    """Catch the user after the back-redirect and fetch the essential info"""
+    """Catch the user after the back-redirect and fetch the essential info."""
     token = oauth.innopolis_sso.authorize_access_token(
         redirect_uri=url_for('api.authorize', _external=True))
     try:
         userinfo = oauth.innopolis_sso.parse_id_token(token)
     except (MissingClaimError, InvalidClaimError):
-        return abort(401)
+        abort(401)
 
     user = Account.query.get(userinfo['email'])
     if user is None:
@@ -52,7 +60,7 @@ def authorize():
 
 @api.route('/logout')
 def logout():
-    """Log out the currently signed in user"""
+    """Log out the currently signed in user."""
     logout_user()
     return NO_PAYLOAD
 
@@ -60,7 +68,7 @@ def logout():
 @api.route('/login_cheat/', defaults={'index': 0})
 @api.route('/login_cheat/<int:index>')
 def login_cheat(index):
-    """Bypass OAuth"""
+    """Bypass OAuth."""
     # TODO: remove this
     users = Account.query.all()
     if not users:

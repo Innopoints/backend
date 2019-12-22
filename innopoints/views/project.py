@@ -1,3 +1,15 @@
+"""Views related to the Project model.
+
+Project:
+- GET /projects
+- GET /projects/drafts
+- POST /projects
+- POST /projects/{project_id}/publish
+- GET /projects/{project_id}
+- PATCH /projects/{project_id}
+- DELETE /projects/{project_id}
+"""
+
 import logging
 
 from flask import abort, request

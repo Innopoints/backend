@@ -1,6 +1,15 @@
+"""Views related to file management.
+
+StaticFile:
+- POST /file/{namespace}
+- GET /file/{file_id}
+- DELETE /file/{file_id}
+"""
+
 import logging
 
 import mimetypes
+import requests
 import werkzeug
 from flask import abort, jsonify, request, current_app
 from flask_login import login_required
@@ -45,7 +54,7 @@ def upload_file(namespace):
     db.session.commit()
     try:
         file_manager.store(file, str(new_file.id), new_file.namespace)
-    except Exception as exc:
+    except (OSError, requests.exceptions.HTTPError) as err:
         log.error(str(err))
         db.session.delete(new_file)
         db.session.commit()
@@ -55,7 +64,7 @@ def upload_file(namespace):
 
 @api.route('/file/<int:file_id>')
 def retrieve_file(file_id):
-    """Get the chosen static file"""
+    """Get the chosen static file."""
     file = StaticFile.query.get_or_404(file_id)
     try:
         file_data = file_manager.retrieve(str(file.id), file.namespace)
@@ -70,7 +79,7 @@ def retrieve_file(file_id):
 @api.route('/file/<int:file_id>', methods=['DELETE'])
 @login_required
 def delete_file(file_id):
-    """Delete the given file by id"""
+    """Delete the given file by ID."""
     file = StaticFile.query.get_or_404(file_id)
     try:
         file_manager.delete(str(file_id), file.namespace)
