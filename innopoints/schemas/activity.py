@@ -1,8 +1,13 @@
+"""Schema for the Activity and Competence models."""
+
 from marshmallow import validate, validates_schema, ValidationError, pre_load, post_dump
 
 from innopoints.extensions import ma, db
 from innopoints.models import Activity, Application, ApplicationStatus, Competence
 from .application import ApplicationSchema
+
+
+# pylint: disable=missing-docstring
 
 class ActivitySchema(ma.ModelSchema):
     class Meta:
@@ -48,6 +53,7 @@ class ActivitySchema(ma.ModelSchema):
             raise ValidationError('The start date is beyond the end date.')
 
     def get_applications(self, activity):
+        """Retrieve the applications for a particular activity."""
         fields = ['id', 'applicant']
         filtering = {'activity_id': activity.id,
                      'status': ApplicationStatus.approved}
@@ -76,6 +82,7 @@ class ActivitySchema(ma.ModelSchema):
             return appl_schema.dump(application)
         return None
 
+    # pylint: disable=no-member
     working_hours = ma.Int(validate=validate.Range(min=1))
     reward_rate = ma.Int(validate=validate.Range(min=1))
     people_required = ma.Int(validate=validate.Range(min=0))
@@ -85,6 +92,7 @@ class ActivitySchema(ma.ModelSchema):
                              dump_only=True)
     existing_application = ma.Method(serialize='get_existing_application',
                                      dump_only=True)
+
 
 class CompetenceSchema(ma.ModelSchema):
     class Meta:

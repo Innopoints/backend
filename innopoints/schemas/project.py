@@ -1,8 +1,13 @@
+"""Schema for the Project model."""
+
 from marshmallow_enum import EnumField
 from marshmallow import validate
 
 from innopoints.extensions import ma, db
 from innopoints.models import Project, Activity, ReviewStatus, LifetimeStage
+
+
+# pylint: disable=missing-docstring
 
 class ListProjectSchema(ma.ModelSchema):
     class Meta:
@@ -34,6 +39,7 @@ class ListProjectSchema(ma.ModelSchema):
                 'competences',
             )
 
+    # pylint: disable=no-member
     review_status = EnumField(ReviewStatus)
     activities = ma.Nested(BriefActivitySchema, many=True)
 
@@ -45,6 +51,7 @@ class ProjectSchema(ma.ModelSchema):
         sqla_session = db.session
         exclude = ('notifications',)
 
+    # pylint: disable=no-member
     name = ma.Str(required=True,
                   validate=validate.Length(min=1, max=128),
                   error_messages={'required': 'A project name is required.',
