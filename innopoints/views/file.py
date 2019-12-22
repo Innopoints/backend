@@ -5,7 +5,7 @@ from flask_login import login_required
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-import innopoints.core.file_manager as file_manager
+from innopoints.core.file_manager import file_manager
 from innopoints.models import StaticFile
 
 
@@ -41,7 +41,7 @@ def upload_file(namespace):
     db.session.add(new_file)
     db.session.commit()
     try:
-        file_manager.store(file.stream, str(new_file.id), new_file.namespace)
+        file_manager.store(file, str(new_file.id), new_file.namespace)
     except requests.exceptions.HTTPError as exc:
         print(exc)  # TODO: replace with proper logging
         db.session.delete(new_file)
@@ -54,8 +54,7 @@ def upload_file(namespace):
 def retrieve_file(file_id):
     """Get the chosen static file"""
     file = StaticFile.query.get_or_404(file_id)
-    url = f'{file.namespace}/{file.id}'
-    file_data = file_manager.retrieve(url)
+    file_data = file_manager.retrieve(str(file.id), file.namespace)
 
     if file_data is None:
         abort(404)

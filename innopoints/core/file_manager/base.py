@@ -5,7 +5,10 @@ from werkzeug.datastructures import FileStorage
 
 class FileManagerBase(ABC):
     """Base abstract class as an interface for file managers"""
-    BASE_PATH = ''
+    @abstractmethod
+    def __init__(self, url = ''):
+        super().__init__()
+        self.BASE_PATH = url
 
     @abstractmethod
     def retrieve(self, handle: str, namespace: str) -> bytes:

@@ -1,1 +1,3 @@
-from .file_manager_s3 import *
+from .s3 import FileManagerS3
+
+file_manager = FileManagerS3()
