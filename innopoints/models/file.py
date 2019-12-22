@@ -1,3 +1,5 @@
+"""The StaticFile model."""
+
 from innopoints.extensions import db
 
 

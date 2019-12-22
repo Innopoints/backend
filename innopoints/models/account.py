@@ -1,3 +1,7 @@
+"""The Account and Transaction models.
+
+Also contains the function to load the user for the login manager."""
+
 from flask_login.mixins import UserMixin
 
 from innopoints.extensions import db, login_manager
