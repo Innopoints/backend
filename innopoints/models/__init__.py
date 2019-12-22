@@ -1,8 +1,10 @@
-from .project import *
+"""This module contains all the models for the database."""
+
 from .account import *
 from .activity import *
 from .application import *
-from .product import *
-from .variety import *
-from .notification import *
 from .file import *
+from .notification import *
+from .product import *
+from .project import *
+from .variety import *

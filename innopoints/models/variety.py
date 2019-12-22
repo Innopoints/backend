@@ -1,3 +1,5 @@
+"""The Variety, ProductImage, StockChange, Color and Size models."""
+
 from datetime import datetime
 from enum import Enum, auto
 

@@ -1,3 +1,5 @@
+"""The Activity and Competence models."""
+
 from innopoints.extensions import db
 
 from .application import Application, ApplicationStatus

@@ -1,3 +1,5 @@
+"""The Notification model."""
+
 from enum import Enum, auto
 
 from innopoints.extensions import db

@@ -1,3 +1,5 @@
+"""The Product model."""
+
 from datetime import datetime
 
 from innopoints.extensions import db
