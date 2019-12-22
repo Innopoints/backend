@@ -5,7 +5,7 @@ from flask_login import login_required
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-import innopoints.file_manager_s3 as file_manager
+import innopoints.core.file_manager as file_manager
 from innopoints.models import StaticFile
 
 
