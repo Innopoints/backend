@@ -1,4 +1,10 @@
+"""Blueprint creation module. Allows specifying the name and the URL prefix.
+
+To register a blueprint, add it to the `all_blueprints` tuple.
+"""
+
 from flask import Blueprint
+
 
 def _factory(partial_module_string, url_prefix='/'):
     """Generates blueprint objects for view modules.
