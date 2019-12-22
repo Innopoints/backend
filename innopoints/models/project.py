@@ -36,7 +36,7 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False, unique=True)
     image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=True)
-    creation_time = db.Column(db.DateTime, default=datetime.utcnow)
+    creation_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     organizer = db.Column(db.String(128), nullable=True)
     activities = db.relationship('Activity',
                                  cascade='all, delete-orphan',
@@ -50,7 +50,7 @@ class Project(db.Model):
     # property `creator` created with a backref
     admin_feedback = db.Column(db.String(1024), nullable=True)
     review_status = db.Column(db.Enum(ReviewStatus), nullable=True)
-    lifetime_stage = db.Column(db.Enum(LifetimeStage), nullable=False)
+    lifetime_stage = db.Column(db.Enum(LifetimeStage), nullable=False, default=LifetimeStage.draft)
 
     files = db.relationship('ProjectFile',
                             cascade='all, delete-orphan',

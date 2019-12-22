@@ -22,7 +22,7 @@ activity_competence = db.Table(
 feedback_competence = db.Table(
     'feedback_competence',
     db.Column('feedback_id', db.Integer,
-              db.ForeignKey('feedback.id', ondelete='CASCADE'),
+              db.ForeignKey('feedback.application_id', ondelete='CASCADE'),
               primary_key=True),
     db.Column('competence_id', db.Integer,
               db.ForeignKey('competences.id', ondelete='CASCADE'),
@@ -43,8 +43,8 @@ class Activity(db.Model):
                            db.ForeignKey('projects.id', ondelete='CASCADE'),
                            nullable=False)
     # property `project` created with a backref
-    working_hours = db.Column(db.Integer, nullable=True)
-    reward_rate = db.Column(db.Integer, nullable=True, default=IPTS_PER_HOUR)
+    working_hours = db.Column(db.Integer, nullable=False, default=1)
+    reward_rate = db.Column(db.Integer, nullable=False, default=IPTS_PER_HOUR)
     fixed_reward = db.Column(db.Boolean, nullable=False)
     people_required = db.Column(db.Integer, nullable=False, default=0)
     telegram_required = db.Column(db.Boolean, nullable=False, default=False)

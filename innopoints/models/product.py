@@ -6,6 +6,10 @@ from innopoints.extensions import db
 class Product(db.Model):
     """Product describes an item in the InnoStore that a user may purchase."""
     __tablename__ = 'products'
+    __table_args__ = __table_args__ = (
+        db.UniqueConstraint('name', 'type',
+                            name='unique product'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
@@ -15,7 +19,9 @@ class Product(db.Model):
                                 cascade='all, delete-orphan',
                                 passive_deletes=True,
                                 backref='product')
-    price = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Integer,
+                      db.CheckConstraint('price >= 0', name='non-negative price'),
+                      nullable=False)
     addition_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     notifications = db.relationship('Notification',
                                     cascade='all, delete-orphan')

@@ -20,7 +20,8 @@ class Account(UserMixin, db.Model):
                                     cascade='all, delete-orphan',
                                     passive_deletes=True,
                                     backref='account')
-    transactions = db.relationship('Transaction')
+    transactions = db.relationship('Transaction',
+                                    cascade='all, delete-orphan')
     notifications = db.relationship('Notification',
                                     cascade='all, delete-orphan')
     applications = db.relationship('Application',
@@ -42,12 +43,14 @@ class Transaction(db.Model):
     """Represents a change in the innopoints balance for a certain user."""
     __tablename__ = 'transactions'
     __table_args__ = (
-        db.CheckConstraint('(stock_change_id IS NULL) != (feedback_id IS NULL)',
-                           name='feedback xor stock_change'),
+        db.CheckConstraint('(stock_change_id IS NULL) OR (feedback_id IS NULL)',
+                           name='not(feedback and stock_change)'),
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    account_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
+    account_email = db.Column(db.String(128),
+                              db.ForeignKey('accounts.email', ondelete='CASCADE'),
+                              nullable=False)
     change = db.Column(db.Integer, nullable=False)
     stock_change_id = db.Column(db.Integer, db.ForeignKey('stock_changes.id'), nullable=True)
-    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=True)
+    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.application_id'), nullable=True)
