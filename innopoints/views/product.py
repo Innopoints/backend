@@ -1,3 +1,5 @@
+import logging
+
 from flask import abort, request
 from flask.views import MethodView
 from flask_login import login_required, current_user
@@ -11,6 +13,7 @@ from innopoints.models import Product
 from innopoints.schemas import ProductSchema
 
 NO_PAYLOAD = ('', 204)
+log = logging.getLogger(__name__)
 
 
 @api.route('/products')
@@ -83,7 +86,7 @@ def create_product():
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        print(err)  # TODO: replace with proper logging
+        log.error(str(err))
         abort(400, {'message': 'Data integrity violated.'})
 
     out_schema = ProductSchema(exclude=('notifications',
@@ -120,7 +123,7 @@ class ProductDetailAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            print(err)  # TODO: replace with proper logging
+            log.error(str(err))
             abort(400, {'message': 'Data integrity violated.'})
 
         return in_out_schema.jsonify(updated_product)
@@ -137,7 +140,7 @@ class ProductDetailAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            print(err)  # TODO: replace with proper logging
+            log.error(str(err))
             abort(400, {'message': 'Data integrity violated.'})
         return NO_PAYLOAD
 
