@@ -1,4 +1,7 @@
-"""Run script"""
+"""The run script.
+
+May be executed directly to start a development server
+or fed to servers like gunicorn using `run:app`."""
 
 import os
 
