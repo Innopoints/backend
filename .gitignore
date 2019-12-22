@@ -134,3 +134,6 @@ dmypy.json
 
 # Local setup script
 init.sh
+
+# static files
+static_files

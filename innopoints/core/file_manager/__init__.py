@@ -1,3 +1,5 @@
+"""File manager module."""
 from .s3 import FileManagerS3
+from .local import FileManagerLocal
 
-file_manager = FileManagerS3()
+file_manager = FileManagerLocal()
