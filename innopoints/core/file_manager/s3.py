@@ -12,7 +12,7 @@ class FileManagerS3(FileManagerBase):
         """Get the file with a given URL from the AWS S3 bucket."""
         response = requests.get(f'{self.BASE_PATH}/{namespace}/{handle}')
         if response.status_code == 404:
-            return None
+            raise FileNotFoundError()
 
         return response.content
 
@@ -28,4 +28,6 @@ class FileManagerS3(FileManagerBase):
 
     def delete(self, handle: str, namespace: str):
         """Delete the file with a given handle from the namespace of the AWS S3 bucket."""
-        requests.delete(f'{self.BASE_PATH}/{namespace}/{handle}')
+        response = requests.delete(f'{self.BASE_PATH}/{namespace}/{handle}')
+        if response.status_code == 404:
+            raise FileNotFoundError()
