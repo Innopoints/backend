@@ -82,7 +82,6 @@ class ActivitySchema(ma.ModelSchema):
             return appl_schema.dump(application)
         return None
 
-    # pylint: disable=no-member
     working_hours = ma.Int(validate=validate.Range(min=1))
     reward_rate = ma.Int(validate=validate.Range(min=1))
     people_required = ma.Int(validate=validate.Range(min=0))

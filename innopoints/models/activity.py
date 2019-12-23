@@ -63,7 +63,6 @@ class Activity(db.Model):
     @property
     def dates(self):
         """Return the activity dates as a single JSON object"""
-        # pylint: disable=no-member
         return {'start': self.start_date.isoformat(),
                 'end': self.end_date.isoformat()}
 

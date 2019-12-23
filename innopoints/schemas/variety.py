@@ -96,7 +96,6 @@ class VarietySchema(ma.ModelSchema):
                                               key=lambda x: x['order'])]
         return data
 
-    # pylint: disable=no-member
     images = ma.Nested('ProductImageSchema', many=True)
     stock_changes = ma.Nested('StockChangeSchema', many=True)
     amount = ma.Int(dump_only=True)

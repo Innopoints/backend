@@ -58,7 +58,6 @@ class Variety(db.Model):
     def amount(self):
         """Return the amount of items of this variety, computed
            from the StockChange instances."""
-        # pylint: disable=no-member
         return db.session.query(
             db.func.sum(StockChange.amount)
         ).filter(
@@ -70,7 +69,6 @@ class Variety(db.Model):
     def purchases(self):
         """Return the amount of purchases of this variety, computed
            from the StockChange instances."""
-        # pylint: disable=no-member
         return -(db.session.query(
             db.func.sum(StockChange.amount)
         ).join(Account).filter(
