@@ -46,8 +46,18 @@ class VolunteeringReport(db.Model):
     """Represents a moderator's report about a certain occurence of work
        done by a volunteer."""
     __tablename__ = 'reports'
+    __table_args__ = (
+        db.UniqueConstraint('application_id', 'reporter_email',
+                            name='only one report per moderator'),
+    )
 
-    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), unique=True, primary_key=True)
+    application_id = db.Column(db.Integer,
+                               db.ForeignKey('applications.id'),
+                               unique=True,
+                               primary_key=True)
+    reporter_email = db.Column(db.String(128),
+                               db.ForeignKey('accounts.email', ondelete='CASCADE'),
+                               nullable=False)
     rating = db.Column(db.Integer,
                        db.CheckConstraint('rating <= 5 AND rating >= 1'),
                        nullable=False)
@@ -58,7 +68,10 @@ class Feedback(db.Model):
     """Represents a volunteer's feedback on an activity."""
     __tablename__ = 'feedback'
 
-    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), unique=True, primary_key=True)
+    application_id = db.Column(db.Integer,
+                               db.ForeignKey('applications.id'),
+                               unique=True,
+                               primary_key=True)
     # property `competences` created with a backref
     answers = db.Column(db.ARRAY(db.String(1024)), nullable=False)
     transaction = db.relationship('Transaction')

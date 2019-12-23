@@ -21,12 +21,14 @@ class Account(UserMixin, db.Model):
                                     passive_deletes=True,
                                     backref='account')
     transactions = db.relationship('Transaction',
-                                    cascade='all, delete-orphan')
+                                   cascade='all, delete-orphan')
     notifications = db.relationship('Notification',
                                     cascade='all, delete-orphan')
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan',
                                    backref='applicant')
+    reports = db.relationship('VolunteeringReport',
+                              cascade='all, delete-orphan')
 
     def get_id(self):
         """Return the user's e-mail."""
