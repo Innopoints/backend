@@ -45,8 +45,8 @@ def authorize():
     if user.full_name != userinfo['commonname']:
         user.full_name = userinfo['commonname']
 
-    if user.university_status != userinfo['role']:
-        user.university_status = userinfo['role']
+    if user.group != userinfo['role']:
+        user.group = userinfo['role']
 
     if user.is_admin != current_app.config['IS_ADMIN'](userinfo):
         user.is_admin = current_app.config['IS_ADMIN'](userinfo)

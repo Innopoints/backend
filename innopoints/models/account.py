@@ -12,7 +12,7 @@ class Account(UserMixin, db.Model):
     __tablename__ = 'accounts'
 
     full_name = db.Column(db.String(256), nullable=False)
-    university_status = db.Column(db.String(64), nullable=True)
+    group = db.Column(db.String(64), nullable=True)
     email = db.Column(db.String(128), primary_key=True)
     telegram_username = db.Column(db.String(32), nullable=True)
     is_admin = db.Column(db.Boolean, nullable=False)
