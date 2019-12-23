@@ -22,7 +22,7 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.models import Activity, LifetimeStage, Project
-from innopoints.schemas import ListProjectSchema, ProjectSchema
+from innopoints.schemas import ProjectSchema
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -56,13 +56,19 @@ def list_projects():
         db_query = db_query.order_by(Project.id.desc())
         db_query = db_query.offset(10 * (page - 1)).limit(10)
 
-    exclude = ['review_status', 'moderators']
+    conditional_exclude = ['review_status', 'moderators']
     if current_user.is_authenticated:
-        exclude.remove('moderators')
+        conditional_exclude.remove('moderators')
         if not current_user.is_admin:
-            exclude.remove('review_status')
-
-    schema = ListProjectSchema(many=True, exclude=exclude)
+            conditional_exclude.remove('review_status')
+    exclude = ['admin_feedback', 'review_status', 'files', 'image_id',
+               'lifetime_stage', 'admin_feedback']
+    activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
+                                                            "fixed_reward", "working_hours",
+                                                            "reward_rate", "people_required",
+                                                            "application_deadline",
+                                                            "feedback_questions")]
+    schema = ProjectSchema(many=True, exclude=exclude + activity_exclude + conditional_exclude)
     return schema.jsonify(db_query.all())
 
 
@@ -72,13 +78,7 @@ def list_drafts():
     """Return a list of drafts for the logged in user."""
     db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.draft,
                                        creator=current_user)
-    schema = ListProjectSchema(many=True, exclude=(
-        'image_url',
-        'organizer',
-        'moderators',
-        'review_status',
-        'activities',
-    ))
+    schema = ProjectSchema(many=True, only=('id', 'name', 'creation_time'))
     return schema.jsonify(db_query.all())
 
 

@@ -4,44 +4,10 @@ from marshmallow_enum import EnumField
 from marshmallow import validate
 
 from innopoints.extensions import ma, db
-from innopoints.models import Project, Activity, ReviewStatus, LifetimeStage
+from innopoints.models import Project, ReviewStatus, LifetimeStage
 
 
 # pylint: disable=missing-docstring
-
-class ListProjectSchema(ma.ModelSchema):
-    class Meta:
-        model = Project
-        ordered = True
-        sqla_session = db.session
-        fields = (
-            'id',
-            'name',
-            'image_url',
-            'creation_time',
-            'organizer',
-            'moderators',
-            'review_status',
-            'activities',
-        )
-
-    class BriefActivitySchema(ma.ModelSchema):
-        """Internal schema for a brief representation of activities within a project."""
-        class Meta:
-            model = Activity
-            ordered = True
-            sqla_session = db.session
-            fields = (
-                'id',
-                'name',
-                'dates',
-                'vacant_spots',
-                'competences',
-            )
-
-    review_status = EnumField(ReviewStatus)
-    activities = ma.Nested(BriefActivitySchema, many=True)
-
 
 class ProjectSchema(ma.ModelSchema):
     class Meta:

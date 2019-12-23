@@ -58,7 +58,7 @@ class ActivitySchema(ma.ModelSchema):
         filtering = {'activity_id': activity.id,
                      'status': ApplicationStatus.approved}
 
-        if not self.context['user'].is_authenticated:
+        if 'user' not in self.context or not self.context['user'].is_authenticated:
             return None
 
         if self.context['user'] in activity.project.moderators:
@@ -74,7 +74,7 @@ class ActivitySchema(ma.ModelSchema):
         """Using the user information from the context, provide a shorthand
         for the existing application of a volunteer."""
         appl_schema = ApplicationSchema(only=('id', 'telegram_username', 'comment'))
-        if self.context['user'].is_authenticated:
+        if 'user' in self.context and self.context['user'].is_authenticated:
             application = Application.query.filter_by(applicant_email=self.context['user'].email,
                                                       activity_id=activity.id).one_or_none()
             if application is None:
