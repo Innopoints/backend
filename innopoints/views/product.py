@@ -73,6 +73,10 @@ def create_product():
     except ValidationError as err:
         abort(400, {'message': err.messages})
 
+    duplicate = Product.query.filter_by(name=new_product.name, type=new_product.type)
+    if db.session.query(duplicate.exists()).scalar():  # pylint: disable=no-member
+        abort(400, {'message': 'A product with this name and type exists.'})
+
     try:
         for variety in new_product.varieties:
             variety.product = new_product
