@@ -49,7 +49,6 @@ def list_products():
 
     db_query = Product.query
     if search_query is not None:
-        # pylint: disable=no-member
         like_query = f'%{search_query}%'
         or_condition = or_(Product.name.ilike(like_query),
                            Product.description.ilike(like_query))
@@ -99,7 +98,7 @@ def create_product():
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        log.error(str(err))
+        log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
     out_schema = ProductSchema(exclude=('notifications',
@@ -136,7 +135,7 @@ class ProductDetailAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
         return in_out_schema.jsonify(updated_product)
@@ -153,7 +152,7 @@ class ProductDetailAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
         return NO_PAYLOAD
 

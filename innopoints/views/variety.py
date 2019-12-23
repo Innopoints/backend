@@ -70,7 +70,7 @@ def create_variety(product_id):
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        log.error(str(err))
+        log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
     out_schema = VarietySchema(exclude=('product_id',
@@ -121,7 +121,7 @@ class VarietyAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
         out_schema = VarietySchema(exclude=('product_id', 'stock_changes', 'product', 'purchases'))
@@ -143,7 +143,7 @@ class VarietyAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
         return NO_PAYLOAD
 
@@ -185,7 +185,7 @@ def create_size():
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        log.error(str(err))
+        log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
     return in_out_schema.jsonify(new_size)
@@ -222,7 +222,7 @@ def create_color():
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        log.error(str(err))
+        log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
     return in_out_schema.jsonify(new_color)
