@@ -49,14 +49,11 @@ class VolunteeringReport(db.Model):
        done by a volunteer."""
     __tablename__ = 'reports'
     __table_args__ = (
-        db.UniqueConstraint('application_id', 'reporter_email',
-                            name='only one report per moderator'),
+        db.PrimaryKeyConstraint('application_id', 'reporter_email'),
     )
 
     application_id = db.Column(db.Integer,
-                               db.ForeignKey('applications.id'),
-                               unique=True,
-                               primary_key=True)
+                               db.ForeignKey('applications.id'))
     reporter_email = db.Column(db.String(128),
                                db.ForeignKey('accounts.email', ondelete='CASCADE'),
                                nullable=False)
