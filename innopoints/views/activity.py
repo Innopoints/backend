@@ -54,7 +54,7 @@ def create_activity(project_id):
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        log.error(str(err))
+        log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
     out_schema = ActivitySchema(exclude=('notifications', 'existing_application'),
@@ -94,7 +94,7 @@ class ActivityAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
         out_schema = ActivitySchema(exclude=('notifications', 'existing_application'),
@@ -117,7 +117,7 @@ class ActivityAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
         return NO_PAYLOAD
 
@@ -159,7 +159,7 @@ def create_competence():
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        log.error(str(err))
+        log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
     out_schema = CompetenceSchema()
@@ -191,7 +191,7 @@ class CompetenceAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
         out_schema = CompetenceSchema()
@@ -207,7 +207,7 @@ class CompetenceAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
         return NO_PAYLOAD
 

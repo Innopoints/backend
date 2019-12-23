@@ -7,8 +7,8 @@ StaticFile:
 """
 
 import logging
-
 import mimetypes
+
 import requests
 import werkzeug
 from flask import abort, jsonify, request, current_app
@@ -25,7 +25,7 @@ NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
 
 
-def get_mimetype(file: werkzeug.FileStorage) -> str:  # pylint: disable=no-member
+def get_mimetype(file: werkzeug.FileStorage) -> str:
     """Return a MIME type of a Flask file object"""
     if file.mimetype:
         return file.mimetype
@@ -55,7 +55,7 @@ def upload_file(namespace):
     try:
         file_manager.store(file, str(new_file.id), new_file.namespace)
     except (OSError, requests.exceptions.HTTPError) as err:
-        log.error(str(err))
+        log.exception(err)
         db.session.delete(new_file)
         db.session.commit()
         abort(400, {'message': 'Upload failed.'})

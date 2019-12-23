@@ -44,7 +44,6 @@ def list_projects():
 
     db_query = Project.query.filter_by(lifetime_stage=lifetime_stage)
     if 'q' in request.args:
-        # pylint: disable=no-member
         like_query = f'%{request.args["query"]}%'
         db_query = db_query.join(Project.activities)
         or_condition = or_(Project.title.ilike(like_query),
@@ -53,7 +52,6 @@ def list_projects():
         db_query = db_query.filter(or_condition).distinct()
 
     if lifetime_stage == LifetimeStage.past:
-        # pylint: disable=no-member
         page = int(request.args.get('page', 1))
         db_query = db_query.order_by(Project.id.desc())
         db_query = db_query.offset(10 * (page - 1)).limit(10)
@@ -111,7 +109,7 @@ def create_project():
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
-        log.error(str(err))
+        log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
     out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files', 'image_id'),
@@ -185,7 +183,7 @@ class ProjectDetailAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
         out_schema = ProjectSchema(only=('id', 'name', 'image_url', 'organizer', 'moderators'))
@@ -203,7 +201,7 @@ class ProjectDetailAPI(MethodView):
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()
-            log.error(str(err))
+            log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
         return NO_PAYLOAD
 
