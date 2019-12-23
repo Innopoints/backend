@@ -35,6 +35,11 @@ feedback_competence = db.Table(
 class Activity(db.Model):
     """Represents a volunteering activity in the project."""
     __tablename__ = 'activities'
+    __table_args__ = (
+        db.CheckConstraint(f'(fixed_reward AND working_hours = 1) '
+                           f'OR (NOT fixed_reward AND reward_rate = {IPTS_PER_HOUR})',
+                           name='reward policy'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=True)
@@ -47,7 +52,7 @@ class Activity(db.Model):
     # property `project` created with a backref
     working_hours = db.Column(db.Integer, nullable=False, default=1)
     reward_rate = db.Column(db.Integer, nullable=False, default=IPTS_PER_HOUR)
-    fixed_reward = db.Column(db.Boolean, nullable=False)
+    fixed_reward = db.Column(db.Boolean, nullable=False, default=False)
     people_required = db.Column(db.Integer, nullable=False, default=0)
     telegram_required = db.Column(db.Boolean, nullable=False, default=False)
     # property `competences` created with a backref
