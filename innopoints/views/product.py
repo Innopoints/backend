@@ -85,7 +85,7 @@ def create_product():
         abort(400, {'message': err.messages})
 
     duplicate = Product.query.filter_by(name=new_product.name, type=new_product.type)
-    if db.session.query(duplicate.exists()).scalar():  # pylint: disable=no-member
+    if db.session.query(duplicate.exists()).scalar():
         abort(400, {'message': 'A product with this name and type exists.'})
 
     try:

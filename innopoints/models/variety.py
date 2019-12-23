@@ -41,12 +41,12 @@ class Variety(db.Model):
                            db.ForeignKey('products.id', ondelete='CASCADE'),
                            nullable=False)
     # property `product` created with a backref
-    size_id = db.Column(db.String(3),
-                        db.ForeignKey('sizes.value', ondelete='CASCADE'),
-                        nullable=True)
-    color_value = db.Column(db.String(6),
-                            db.ForeignKey('colors.value', ondelete='CASCADE'),
-                            nullable=True)
+    size = db.Column(db.String(3),
+                     db.ForeignKey('sizes.value', ondelete='CASCADE'),
+                     nullable=True)
+    color = db.Column(db.String(6),
+                      db.ForeignKey('colors.value', ondelete='CASCADE'),
+                      nullable=True)
     images = db.relationship('ProductImage',
                              cascade='all, delete-orphan',
                              passive_deletes=True)

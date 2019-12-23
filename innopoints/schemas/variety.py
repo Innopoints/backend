@@ -37,29 +37,19 @@ class VarietySchema(ma.ModelSchema):
         return data
 
     @pre_load
-    def wire_color_size(self, data, **kwargs):  # pylint: disable=unused-argument
-        """Rename `size` to `size_id`, `color` to `color_value`, and normalize the color."""
-        if self.context.get('update', False):
-            if 'size' in data:
-                data['size_id'] = data.pop('size')
-            if 'color' in data:
-                data['color_value'] = data.pop('color')
-        else:
-            try:
-                data['size_id'] = data.pop('size')
-                data['color_value'] = data.pop('color')
-            except KeyError:
-                raise ValidationError('Size and color must be specified.')
+    def normalize_color(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Normalize the color value."""
+        if 'color' not in data:
+            if self.context.get('update', False):
+                return data
+            raise ValidationError('The color must be specified.')
 
-        if 'color_value' not in data or data['color_value'] is None:
-            return data
+        if data['color'].startswith('#'):
+            data['color'] = data['color'][1:].upper()
 
-        if data['color_value'].startswith('#'):
-            data['color_value'] = data['color_value'][1:].upper()
-
-        if len(data['color_value']) != 6:
+        if len(data['color']) != 6:
             raise ValidationError(
-                f'The color value is {len(data["color_value"])} characters long, 6 expected.')
+                f'The color value is {len(data["color"])} characters long, 6 expected.')
 
         return data
 
@@ -79,13 +69,10 @@ class VarietySchema(ma.ModelSchema):
         return data
 
     @post_dump
-    def unwire_color_size(self, data, **kwargs):  # pylint: disable=unused-argument
-        """Rename `size_id` to `size`, `color_value` to `color`, add a '#' to the color."""
-        data['size'] = data.pop('size_id')
-        if data['color_value'] is None:
-            data['color'] = data.pop('color_value')
-        else:
-            data['color'] = '#' + data.pop('color_value')
+    def format_color(self, data, **kwargs):  # pylint: disable=unused-argument
+        """Add a '#' to the color value."""
+        if data['color'] is not None:
+            data['color'] = '#' + data['color']
         return data
 
     @post_dump
