@@ -28,7 +28,7 @@ class Application(db.Model):
                             db.ForeignKey('activities.id', ondelete='CASCADE'),
                             nullable=False)
     comment = db.Column(db.String(1024), nullable=True)
-    application_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    application_time = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.now)
     telegram_username = db.Column(db.String(32), nullable=True)
     status = db.Column(db.Enum(ApplicationStatus),
                        nullable=False,

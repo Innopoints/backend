@@ -37,8 +37,8 @@ class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=True)
     description = db.Column(db.String(1024), nullable=True)
-    start_date = db.Column(db.DateTime, nullable=True)
-    end_date = db.Column(db.DateTime, nullable=True)
+    start_date = db.Column(db.DateTime(timezone=True), nullable=True)
+    end_date = db.Column(db.DateTime(timezone=True), nullable=True)
     project_id = db.Column(db.Integer,
                            db.ForeignKey('projects.id', ondelete='CASCADE'),
                            nullable=False)
@@ -49,7 +49,7 @@ class Activity(db.Model):
     people_required = db.Column(db.Integer, nullable=False, default=0)
     telegram_required = db.Column(db.Boolean, nullable=False, default=False)
     # property `competences` created with a backref
-    application_deadline = db.Column(db.DateTime, nullable=True)
+    application_deadline = db.Column(db.DateTime(timezone=True), nullable=True)
     feedback_questions = db.Column(db.ARRAY(db.String(1024)),
                                    nullable=False,
                                    default=DEFAULT_QUESTIONS)

@@ -108,7 +108,7 @@ class StockChange(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Integer, nullable=False)
-    time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    time = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.now)
     status = db.Column(db.Enum(StockChangeStatus), nullable=False)
     account_email = db.Column(db.String(128),
                               db.ForeignKey('accounts.email', ondelete='CASCADE'),
