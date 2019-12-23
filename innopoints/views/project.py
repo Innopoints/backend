@@ -111,6 +111,9 @@ def publish_project(project_id):
 
     project = Project.query.get_or_404(project_id)
 
+    if project.lifetime_stage != LifetimeStage.draft:
+        abort(400, {'message': 'Only draft projects can be published.'})
+
     if current_user.is_admin or project.creator == current_user:
         project.lifetime_stage = LifetimeStage.ongoing
         db.session.commit()
