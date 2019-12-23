@@ -15,7 +15,6 @@ class ApplicationSchema(ma.ModelSchema):
         sqla_session = db.session
         exclude = ('report', 'feedback')
 
-    # pylint: disable=no-member
     status = EnumField(ApplicationStatus)
     applicant = ma.Nested('AccountSchema', only=('full_name', 'email'))
     telegram_username = ma.Str(data_key='telegram')

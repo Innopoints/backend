@@ -39,7 +39,6 @@ class ListProjectSchema(ma.ModelSchema):
                 'competences',
             )
 
-    # pylint: disable=no-member
     review_status = EnumField(ReviewStatus)
     activities = ma.Nested(BriefActivitySchema, many=True)
 
@@ -51,7 +50,6 @@ class ProjectSchema(ma.ModelSchema):
         sqla_session = db.session
         exclude = ('notifications',)
 
-    # pylint: disable=no-member
     name = ma.Str(required=True,
                   validate=validate.Length(min=1, max=128),
                   error_messages={'required': 'A project name is required.',

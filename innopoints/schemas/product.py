@@ -14,7 +14,6 @@ class ProductSchema(ma.ModelSchema):
         ordered = True
         sqla_session = db.session
 
-    # pylint: disable=no-member
     varieties = ma.Nested('VarietySchema', many=True)
     name = ma.Str(validate=validate.Length(min=1, max=128))
     type = ma.Str(validate=validate.Length(min=1, max=128), allow_none=True)
