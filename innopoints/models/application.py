@@ -72,5 +72,6 @@ class Feedback(db.Model):
                                unique=True,
                                primary_key=True)
     # property `competences` created with a backref
+    time = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.now)
     answers = db.Column(db.ARRAY(db.String(1024)), nullable=False)
     transaction = db.relationship('Transaction')

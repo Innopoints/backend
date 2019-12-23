@@ -95,5 +95,5 @@ INSERT INTO project_moderation (project_id, account_email)
 INSERT INTO project_moderation (project_id, account_email)
 	VALUES (3, 'student2@innopolis.university'), (3, 'events@innopolis.university');
 
-INSERT INTO feedback (application_id, answers)
-	VALUES (1, ARRAY['fine']);
+INSERT INTO feedback (application_id, answers, "time")
+	VALUES (1, ARRAY['fine'], NOW());
