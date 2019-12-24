@@ -1,6 +1,6 @@
 """Schema for a notification."""
 
-from marshmallow import pre_dump, post_dump
+from marshmallow import pre_dump
 from marshmallow_enum import EnumField
 
 from innopoints.extensions import ma
@@ -13,14 +13,7 @@ from innopoints.models import (
     Account,
     Application,
 )
-from innopoints.schemas import (
-    ProjectSchema,
-    ActivitySchema,
-    ProductSchema,
-    VarietySchema,
-    AccountSchema,
-    ApplicationSchema,
-)
+
 
 # pylint: disable=missing-docstring
 
@@ -30,11 +23,10 @@ class PayloadSchema(ma.Schema):
     product = ma.Nested('ProductSchema', only=('id', 'name', 'type'))
     variety = ma.Nested('VarietySchema', only=('id', 'size', 'color'))
     account = ma.Nested('AccountSchema', only=('email', 'full_name'))
-    application = ma.Nested('ApplicationSchema', only=('applicant_email', 'status'))
+    application = ma.Nested('ApplicationSchema', only=('applicant', 'status'))
 
     @pre_dump
-    def fill_data(self, data, **kwargs):
-        print(data)
+    def fill_data(self, data, **kwargs): # pylint: disable=unused-argument
         if 'project_id' in data:
             data['project'] = Project.query.get(data.pop('project_id'))
         if 'activity_id' in data:
