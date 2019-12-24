@@ -1,10 +1,10 @@
-INSERT INTO accounts (full_name, university_status, email, telegram_username, is_admin)
+INSERT INTO accounts (full_name, group, email, telegram_username, is_admin)
 	VALUES ('Admin', 'admin', 'admin@innopolis.university', null, true);
-INSERT INTO accounts (full_name, university_status, email, telegram_username, is_admin)
+INSERT INTO accounts (full_name, group, email, telegram_username, is_admin)
 	VALUES ('Events department', 'projects_creator', 'events@innopolis.university', null, false);
-INSERT INTO accounts (full_name, university_status, email, telegram_username, is_admin)
+INSERT INTO accounts (full_name, group, email, telegram_username, is_admin)
 	VALUES ('Student 1', 'student', 'student1@innopolis.university', 'a_student', false);
-INSERT INTO accounts (full_name, university_status, email, telegram_username, is_admin)
+INSERT INTO accounts (full_name, group, email, telegram_username, is_admin)
 	VALUES ('Student 2', 'student', 'student2@innopolis.university', 'another_student', false);
 
 INSERT INTO projects (name, image_id, creation_time, organizer, creator_email, admin_feedback, review_status, lifetime_stage)

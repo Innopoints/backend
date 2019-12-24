@@ -37,7 +37,7 @@ def authorize():
     if user is None:
         user = Account(email=userinfo['email'],
                        full_name=userinfo['commonname'],
-                       university_status=userinfo['role'],
+                       group=userinfo['role'],
                        is_admin=current_app.config['IS_ADMIN'](userinfo))
         db.session.add(user)
         db.session.commit()
@@ -74,7 +74,7 @@ def login_cheat(index):
     if not users:
         user = Account(email='debug@only.com',
                        full_name='Cheat Account',
-                       university_status='hacker',
+                       group='hacker',
                        is_admin=True)
         db.session.add(user)
         db.session.commit()
