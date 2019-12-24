@@ -1,5 +1,6 @@
 """This module contains the views (API endpoints)."""
 
+from .account import *
 from .activity import *
 from .authentication import *
 from .file import *
