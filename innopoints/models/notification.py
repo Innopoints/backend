@@ -1,5 +1,6 @@
 """The Notification model."""
 
+from datetime import datetime
 from enum import Enum, auto
 
 from innopoints.extensions import db
@@ -28,4 +29,5 @@ class Notification(db.Model):
     recipient_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     is_read = db.Column(db.Boolean, nullable=False, default=False)
     payload = db.Column(db.JSON, nullable=True)
+    timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.now)
     type = db.Column(db.Enum(NotificationType), nullable=False)
