@@ -47,7 +47,7 @@ class Account(UserMixin, db.Model):
             db.func.sum(Transaction.change)
         ).filter(
             Transaction.account_email == self.email
-        ).scalar()
+        ).scalar() or 0
 
 
 @login_manager.user_loader

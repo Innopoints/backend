@@ -13,16 +13,28 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.models import Transaction, Account
+from innopoints.schemas import AccountSchema
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
 
 
-@api.route('/account')
+@api.route('/account', defaults={'email': None})
+@api.route('/account/<email>')
 @login_required
-def check_balance():
-    """Check own balance (WIP)."""
-    return jsonify(balance=current_user.balance)
+def get_info(email):
+    """Get information about an account.
+    If the e-mail is not passed, return information about self."""
+    if email is None:
+        user = current_user
+    else:
+        if not current_user.is_admin:
+            abort(401)
+        user = Account.query.get_or_404(email)
+
+    out_schema = AccountSchema(exclude=('moderated_projects', 'created_projects', 'stock_changes',
+                                        'transactions', 'applications', 'reports'))
+    return out_schema.jsonify(user)
 
 
 @api.route('/account/<string:email>/balance', methods=['POST'])
