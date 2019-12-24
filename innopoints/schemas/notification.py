@@ -19,12 +19,12 @@ from innopoints.models import (
 # pylint: disable=missing-docstring
 
 class PayloadSchema(ma.Schema):
-    project = ma.Nested('ProjectSchema', only=('id', 'name'))
+    project = ma.Nested('ProjectSchema', only=('id', 'name', 'review_status', 'lifetime_stage'))
     activity = ma.Nested('ActivitySchema', only=('id', 'name'))
-    product = ma.Nested('ProductSchema', only=('id', 'name', 'type'))
+    product = ma.Nested('ProductSchema', only=('id', 'name', 'type', 'price'))
     variety = ma.Nested('VarietySchema', only=('id', 'size', 'color'))
     account = ma.Nested('AccountSchema', only=('email', 'full_name'))
-    application = ma.Nested('ApplicationSchema', only=('applicant', 'status'))
+    application = ma.Nested('ApplicationSchema', only=('id', 'status', 'actual_hours'))
     stock_change = ma.Nested('StockChange', only=('id', 'amount', 'status'))
 
     @pre_dump
