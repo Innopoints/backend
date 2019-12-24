@@ -25,5 +25,3 @@ class Product(db.Model):
                       db.CheckConstraint('price >= 0', name='non-negative price'),
                       nullable=False)
     addition_time = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.now)
-    notifications = db.relationship('Notification',
-                                    cascade='all, delete-orphan')

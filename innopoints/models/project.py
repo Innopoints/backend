@@ -57,8 +57,6 @@ class Project(db.Model):
     files = db.relationship('ProjectFile',
                             cascade='all, delete-orphan',
                             backref='project')
-    notifications = db.relationship('Notification',
-                                    cascade='all, delete-orphan')
 
     @property
     def image_url(self):

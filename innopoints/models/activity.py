@@ -62,8 +62,6 @@ class Activity(db.Model):
                                    default=DEFAULT_QUESTIONS)
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan')
-    notifications = db.relationship('Notification',
-                                    cascade='all, delete-orphan')
 
     @property
     def dates(self):
