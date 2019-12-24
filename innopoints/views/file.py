@@ -25,7 +25,7 @@ NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
 
 
-def get_mimetype(file: werkzeug.FileStorage) -> str:
+def get_mimetype(file: werkzeug.datastructures.FileStorage) -> str:
     """Return a MIME type of a Flask file object"""
     if file.mimetype:
         return file.mimetype
