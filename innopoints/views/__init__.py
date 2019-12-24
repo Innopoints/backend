@@ -6,3 +6,4 @@ from .file import *
 from .product import *
 from .project import *
 from .variety import *
+from .notification import *
