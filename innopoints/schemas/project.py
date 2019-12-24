@@ -14,7 +14,6 @@ class ProjectSchema(ma.ModelSchema):
         model = Project
         ordered = True
         sqla_session = db.session
-        exclude = ('notifications',)
 
     name = ma.Str(required=True,
                   validate=validate.Length(min=1, max=128),
