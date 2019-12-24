@@ -56,7 +56,7 @@ def list_products():
     db_query = db_query.order_by(ordering[order].asc())
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
-    schema = ProductSchema(many=True, exclude=('notifications', 'description',
+    schema = ProductSchema(many=True, exclude=('description',
                                                'varieties.stock_changes',
                                                'varieties.product',
                                                'varieties.product_id'))
@@ -73,7 +73,7 @@ def create_product():
     if not current_user.is_admin:
         abort(401)
 
-    in_schema = ProductSchema(exclude=('id', 'addition_time', 'notifications',
+    in_schema = ProductSchema(exclude=('id', 'addition_time',
                                        'varieties.stock_changes.variety_id',
                                        'varieties.product_id',
                                        'varieties.images.variety_id'),
@@ -101,8 +101,7 @@ def create_product():
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ProductSchema(exclude=('notifications',
-                                        'varieties.product_id',
+    out_schema = ProductSchema(exclude=('varieties.product_id',
                                         'varieties.product',
                                         'varieties.images.variety_id',
                                         'varieties.images.id',
@@ -123,7 +122,7 @@ class ProductDetailAPI(MethodView):
             abort(401)
         product = Product.query.get_or_404(product_id)
 
-        in_out_schema = ProductSchema(exclude=('id', 'varieties', 'notifications', 'addition_time'))
+        in_out_schema = ProductSchema(exclude=('id', 'varieties', 'addition_time'))
 
         try:
             updated_product = in_out_schema.load(request.json, instance=product, partial=True)
