@@ -78,6 +78,11 @@ class Activity(db.Model):
                                                status=ApplicationStatus.approved).count()
         return max(self.people_required - accepted, -1)
 
+    def has_application_from(self, user):
+        """Return whether the given user has applied for this activity."""
+        application = Application.query.filter_by(applicant=user, activity_id=self.id)
+        return db.session.query(application.exists()).scalar()
+
 
 class Competence(db.Model):
     """Represents volunteers' competences."""

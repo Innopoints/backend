@@ -2,6 +2,7 @@
 
 from .account import *
 from .activity import *
+from .application import *
 from .authentication import *
 from .file import *
 from .product import *
