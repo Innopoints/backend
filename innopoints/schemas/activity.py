@@ -19,6 +19,9 @@ class ActivitySchema(ma.ModelSchema):
     @pre_load
     def unwrap_dates(self, data, **kwargs):  # pylint: disable=unused-argument
         """Expand the {"start": , "end": } dates object into two separate properties."""
+        if 'timeframe' not in data:
+            return data
+
         try:
             dates = data.pop('timeframe')
             data['start_date'] = dates['start']
@@ -46,11 +49,9 @@ class ActivitySchema(ma.ModelSchema):
     @validates_schema
     def valid_date_range(self, data, **kwargs):  # pylint: disable=unused-argument
         """Ensure that the start date is not beyond the end date."""
-        start = data['start_date']
-        end = data['end_date']
-
-        if start > end:
-            raise ValidationError('The start date is beyond the end date.')
+        if 'start_date' in data and 'end_date' in data:
+            if data['start_date'] > data['end_date']:
+                raise ValidationError('The start date is beyond the end date.')
 
     def get_applications(self, activity):
         """Retrieve the applications for a particular activity."""
