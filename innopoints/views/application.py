@@ -19,7 +19,7 @@ from innopoints.schemas import ApplicationSchema
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
 
-@api.route('/projects/<int:project_id>/activity/<int:activity_id>/apply', methods=['POST'])
+@api.route('/projects/<int:project_id>/activity/<int:activity_id>/application', methods=['POST'])
 @login_required
 def apply_for_activity(project_id, activity_id):
     """Apply for volunteering on a particular activity."""
@@ -54,7 +54,7 @@ def apply_for_activity(project_id, activity_id):
     return out_schema.jsonify(new_application)
 
 
-@api.route('/projects/<int:project_id>/activity/<int:activity_id>/apply', methods=['DELETE'])
+@api.route('/projects/<int:project_id>/activity/<int:activity_id>/application', methods=['DELETE'])
 @login_required
 def take_back_application(project_id, activity_id):
     """Take back a volunteering application on a particular activity."""
