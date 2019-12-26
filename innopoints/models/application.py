@@ -1,8 +1,8 @@
 """The Application, VolunteeringReport and Feedback models."""
 
-from datetime import datetime
 from enum import Enum, auto
 
+from innopoints.core.timezone import tz_aware_now
 from innopoints.extensions import db
 
 
@@ -30,7 +30,7 @@ class Application(db.Model):
                             db.ForeignKey('activities.id', ondelete='CASCADE'),
                             nullable=False)
     comment = db.Column(db.String(1024), nullable=True)
-    application_time = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.now)
+    application_time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     telegram_username = db.Column(db.String(32), nullable=True)
     status = db.Column(db.Enum(ApplicationStatus),
                        nullable=False,
@@ -72,6 +72,6 @@ class Feedback(db.Model):
                                unique=True,
                                primary_key=True)
     # property `competences` created with a backref
-    time = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.now)
+    time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     answers = db.Column(db.ARRAY(db.String(1024)), nullable=False)
     transaction = db.relationship('Transaction')

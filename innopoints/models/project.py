@@ -1,8 +1,8 @@
 """The Project and ProjectFile models."""
 
-from datetime import datetime
 from enum import Enum, auto
 
+from innopoints.core.timezone import tz_aware_now
 from innopoints.extensions import db
 
 
@@ -38,7 +38,7 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False, unique=True)
     image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=True)
-    creation_time = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.now)
+    creation_time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     organizer = db.Column(db.String(128), nullable=True)
     activities = db.relationship('Activity',
                                  cascade='all, delete-orphan',

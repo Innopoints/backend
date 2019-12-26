@@ -65,21 +65,12 @@ def logout():
     return NO_PAYLOAD
 
 
-@api.route('/login_cheat/', defaults={'index': 0})
-@api.route('/login_cheat/<int:index>')
-def login_cheat(index):
+@api.route('/login_cheat/', defaults={'email': 'admin@innopolis.university'})
+@api.route('/login_cheat/<email>')
+def login_cheat(email):
     """Bypass OAuth."""
     # TODO: remove this
-    users = Account.query.all()
-    if not users:
-        user = Account(email='debug@only.com',
-                       full_name='Cheat Account',
-                       group='hacker',
-                       is_admin=True)
-        db.session.add(user)
-        db.session.commit()
-    else:
-        user = users[index]
+    user = Account.query.get_or_404(email)
     login_user(user, remember=True)
 
     return NO_PAYLOAD

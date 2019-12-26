@@ -25,7 +25,9 @@ class Account(UserMixin, db.Model):
                                     passive_deletes=True,
                                     backref='account')
     transactions = db.relationship('Transaction',
-                                   cascade='all, delete-orphan')
+                                   cascade='all, delete-orphan',
+                                   passive_deletes=True,
+                                   backref='account')
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan',
                                    backref='applicant')
@@ -35,6 +37,15 @@ class Account(UserMixin, db.Model):
     def get_id(self):
         """Return the user's e-mail."""
         return self.email
+
+    @property
+    def balance(self):
+        """Return the user's innopoints balance."""
+        return db.session.query(
+            db.func.sum(Transaction.change)
+        ).filter(
+            Transaction.account_email == self.email
+        ).scalar() or 0
 
 
 @login_manager.user_loader
@@ -55,6 +66,7 @@ class Transaction(db.Model):
     account_email = db.Column(db.String(128),
                               db.ForeignKey('accounts.email', ondelete='CASCADE'),
                               nullable=False)
+    # property `account` created with a backref
     change = db.Column(db.Integer, nullable=False)
     stock_change_id = db.Column(db.Integer, db.ForeignKey('stock_changes.id'), nullable=True)
     feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.application_id'), nullable=True)

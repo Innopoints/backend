@@ -11,3 +11,6 @@ class AccountSchema(ma.ModelSchema):
         model = Account
         ordered = True
         sqla_session = db.session
+        exclude = ('notifications',)
+
+    balance = ma.Int()

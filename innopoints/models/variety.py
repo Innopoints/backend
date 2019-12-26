@@ -1,8 +1,8 @@
 """The Variety, ProductImage, StockChange, Color and Size models."""
 
-from datetime import datetime
 from enum import Enum, auto
 
+from innopoints.core.timezone import tz_aware_now
 from innopoints.extensions import db
 from .account import Account
 
@@ -108,7 +108,7 @@ class StockChange(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Integer, nullable=False)
-    time = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.now)
+    time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     status = db.Column(db.Enum(StockChangeStatus), nullable=False)
     account_email = db.Column(db.String(128),
                               db.ForeignKey('accounts.email', ondelete='CASCADE'),

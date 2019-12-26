@@ -30,11 +30,13 @@ from innopoints.models import (
     Size,
     StockChange,
     StockChangeStatus,
+    Transaction,
     Variety,
 )
 from innopoints.schemas import (
     ColorSchema,
     SizeSchema,
+    StockChangeSchema,
     VarietySchema,
 )
 
@@ -152,6 +154,53 @@ variety_api = VarietyAPI.as_view('variety_api')
 api.add_url_rule('/products/<int:product_id>/variety/<int:variety_id>',
                  view_func=variety_api,
                  methods=('PATCH', 'DELETE'))
+
+
+@api.route('/products/<int:product_id>/variety/<int:variety_id>/purchase', methods=['POST'])
+@login_required
+def purchase_variety(product_id, variety_id):
+    """Purchase a particular variety of a product."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    purchased_amount = request.json.get('amount')
+    if not isinstance(purchased_amount, int):
+        abort(400, {'message': 'The purchase amount must be specified as an integer.'})
+
+    if purchased_amount <= 0:
+        abort(400, {'message': 'The purchase amount must be positive.'})
+
+    product = Product.query.get_or_404(product_id)
+    variety = Variety.query.get_or_404(variety_id)
+
+    if variety.product != product:
+        abort(400, {'message': 'The specified product and variety are unrelated.'})
+
+    print(current_user.balance)
+    print(product.price * purchased_amount)
+    if current_user.balance < product.price * purchased_amount:
+        abort(400, {'message': 'Insufficient funds.'})
+
+    new_stock_change = StockChange(amount=purchased_amount,
+                                   status=StockChangeStatus.pending,
+                                   account=current_user,
+                                   variety_id=variety_id)
+    db.session.add(new_stock_change)
+    new_transaction = Transaction(account=current_user,
+                                  change=-product.price * purchased_amount,
+                                  stock_change_id=new_stock_change)
+    new_stock_change.transaction = new_transaction
+    db.session.add(new_transaction)
+
+    try:
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email'))
+    return out_schema.jsonify(new_stock_change)
 
 
 # ----- Size -----
