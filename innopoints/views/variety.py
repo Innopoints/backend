@@ -1,9 +1,10 @@
 """Views related to the Variety model.
 
 Variety:
-- POST /products/{product_id}/variety
-- PATCH /products/{product_id}/variety/{variety_id}
+- POST   /products/{product_id}/variety
+- PATCH  /products/{product_id}/variety/{variety_id}
 - DELETE /products/{product_id}/variety/{variety_id}
+- POST   /products/{product_id}/variety/{variety_id}/purchase
 
 Size:
 - GET /sizes
@@ -176,9 +177,11 @@ def purchase_variety(product_id, variety_id):
     if variety.product != product:
         abort(400, {'message': 'The specified product and variety are unrelated.'})
 
-    print(current_user.balance)
-    print(product.price * purchased_amount)
+    log.debug(f'User with balance {current_user.balance} is trying to buy {purchased_amount} of a '
+              f'product with a price of {product.price}. '
+              f'Total = {product.price * purchased_amount}')
     if current_user.balance < product.price * purchased_amount:
+        log.debug('Purchase refused')
         abort(400, {'message': 'Insufficient funds.'})
 
     new_stock_change = StockChange(amount=purchased_amount,
@@ -198,6 +201,7 @@ def purchase_variety(product_id, variety_id):
         db.session.rollback()
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
+    log.debug('Purchase successful')
 
     out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email'))
     return out_schema.jsonify(new_stock_change)

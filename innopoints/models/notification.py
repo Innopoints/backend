@@ -1,6 +1,5 @@
 """The Notification model."""
 
-from datetime import datetime
 from enum import Enum, auto
 
 from innopoints.extensions import db
