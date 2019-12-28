@@ -1,4 +1,8 @@
-"""Views related to notifications."""
+"""Views related to notifications.
+
+- GET   /notifications
+- PATCH /notifications/{notification_id}/read
+"""
 
 from flask import abort
 from flask_login import login_required, current_user
