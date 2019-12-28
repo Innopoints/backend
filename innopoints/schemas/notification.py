@@ -25,7 +25,7 @@ class PayloadSchema(ma.Schema):
     variety = ma.Nested('VarietySchema', only=('id', 'size', 'color'))
     account = ma.Nested('AccountSchema', only=('email', 'full_name'))
     application = ma.Nested('ApplicationSchema', only=('id', 'status', 'actual_hours'))
-    stock_change = ma.Nested('StockChange', only=('id', 'amount', 'status'))
+    stock_change = ma.Nested('StockChangeSchema', only=('id', 'amount', 'status'))
 
     @pre_dump
     def fill_data(self, data, **kwargs): # pylint: disable=unused-argument

@@ -26,6 +26,7 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.models import (
+    Account,
     Color,
     Product,
     Size,
@@ -40,6 +41,7 @@ from innopoints.schemas import (
     StockChangeSchema,
     VarietySchema,
 )
+from innopoints.core.notifications import notify_all
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -181,10 +183,14 @@ def purchase_variety(product_id, variety_id):
               f'product with a price of {product.price}. '
               f'Total = {product.price * purchased_amount}')
     if current_user.balance < product.price * purchased_amount:
-        log.debug('Purchase refused')
+        log.debug('Purchase refused: not enough points')
         abort(400, {'message': 'Insufficient funds.'})
 
-    new_stock_change = StockChange(amount=purchased_amount,
+    if purchased_amount > variety.amount:
+        log.debug('Purchase refused: not enough stock')
+        abort(400, {'message': 'Insufficient stock'})
+
+    new_stock_change = StockChange(amount=-purchased_amount,
                                    status=StockChangeStatus.pending,
                                    account=current_user,
                                    variety_id=variety_id)
@@ -202,6 +208,15 @@ def purchase_variety(product_id, variety_id):
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
     log.debug('Purchase successful')
+
+    admins = Account.query.filter_by(is_admin=True).all()
+    admin_emails = [admin.email for admin in admins]
+    notify_all(admin_emails, 'new_purchase', {
+        'account_email': current_user.email,
+        'product_id': product.id,
+        'variety_id': variety.id,
+        'stock_change_id': new_stock_change.id,
+    })
 
     out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email'))
     return out_schema.jsonify(new_stock_change)
