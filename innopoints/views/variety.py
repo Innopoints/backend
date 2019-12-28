@@ -217,6 +217,11 @@ def purchase_variety(product_id, variety_id):
         'variety_id': variety.id,
         'stock_change_id': new_stock_change.id,
     })
+    if variety.amount <= 0:
+        notify_all(admin_emails, 'out_of_stock', {
+            'product_id': product.id,
+            'variety_id': variety.id,
+        })
 
     out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email'))
     return out_schema.jsonify(new_stock_change)
