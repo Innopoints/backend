@@ -8,6 +8,7 @@ Product:
 """
 
 import logging
+from datetime import date
 
 from flask import abort, request
 from flask.views import MethodView
@@ -18,8 +19,9 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-from innopoints.models import Product
+from innopoints.models import Product, Notification, Account
 from innopoints.schemas import ProductSchema
+from innopoints.core.notifications import notify_all
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -88,6 +90,8 @@ def create_product():
     if db.session.query(duplicate.exists()).scalar():
         abort(400, {'message': 'A product with this name and type exists.'})
 
+    if len(new_product.varieties) == 0:
+        abort(400, {'message': 'Please provide at least one variety'})
     try:
         for variety in new_product.varieties:
             variety.product = new_product
@@ -100,6 +104,17 @@ def create_product():
         db.session.rollback()
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
+
+    # TODO: replace the following with proper debounce
+    # Check if a notification has been sent today
+    query = Notification.query.filter(
+        Notification.type == 'new_arrivals',
+        Notification.timestamp >= date.today()
+    )
+    if query.count() == 0:
+        users = Account.query.filter_by(is_admin=False).all()
+        emails = [user.email for user in users]
+        notify_all(emails, 'new_arrivals')
 
     out_schema = ProductSchema(exclude=('varieties.product_id',
                                         'varieties.product',
