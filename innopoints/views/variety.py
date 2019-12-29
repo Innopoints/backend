@@ -44,7 +44,7 @@ from innopoints.schemas import (
     StockChangeSchema,
     VarietySchema,
 )
-from innopoints.core.notifications import notify_all
+from innopoints.core.notifications import notify_all, notify
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -249,16 +249,23 @@ def edit_purchase_status(stock_change_id):
 
     stock_change = StockChange.query.get_or_404(stock_change_id)
     if stock_change.status != status:
+        variety = Variety.query.get(stock_change.variety_id)
+        product = variety.product
         if status == StockChangeStatus.rejected:
             db.session.delete(stock_change.transaction)
         elif stock_change.status == StockChangeStatus.rejected:
-            product = Variety.query.get(stock_change.variety_id).product
             new_transaction = Transaction(account=stock_change.account,
                                           change=product.price * stock_change.amount,
                                           stock_change_id=stock_change.id)
             stock_change.transaction = new_transaction
             db.session.add(new_transaction)
         stock_change.status = status
+
+        notify(stock_change.account_email, 'purchas_status_changed', {
+            'stock_change_id': stock_change.id,
+            'product_id': product.id,
+            'variety_id': variety.id,
+        })
 
         try:
             db.session.commit()
