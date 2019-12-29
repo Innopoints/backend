@@ -64,10 +64,11 @@ def list_projects():
     exclude = ['admin_feedback', 'review_status', 'files', 'image_id',
                'lifetime_stage', 'admin_feedback']
     activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
-                                                            "fixed_reward", "working_hours",
-                                                            "reward_rate", "people_required",
-                                                            "application_deadline",
-                                                            "feedback_questions")]
+                                                            'fixed_reward', 'working_hours',
+                                                            'reward_rate', 'people_required',
+                                                            'application_deadline', 'project',
+                                                            'applications', 'existing_application',
+                                                            'feedback_questions')]
     schema = ProjectSchema(many=True, exclude=exclude + activity_exclude + conditional_exclude)
     return schema.jsonify(db_query.all())
 
@@ -148,12 +149,14 @@ class ProjectDetailAPI(MethodView):
                    'review_status',
                    'admin_feedback',
                    'activities.applications',
+                   'activities.existing_application',
                    'activities.applications.telegram',
                    'activities.applications.comment']
 
         if current_user.is_authenticated:
             exclude.remove('moderators')
             exclude.remove('activities.applications')
+            exclude.remove('activities.existing_application')
             if current_user.email in project.moderators or current_user.is_admin:
                 exclude.remove('review_status')
                 exclude.remove('activities.applications.telegram')

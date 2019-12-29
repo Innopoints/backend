@@ -54,7 +54,7 @@ class ActivitySchema(ma.ModelSchema):
                 raise ValidationError('The start date is beyond the end date.')
 
     def get_applications(self, activity):
-        """Retrieve the applications for a particular activity."""
+        """Retrieve the approved applications for a particular activity."""
         fields = ['id', 'applicant']
         filtering = {'activity_id': activity.id,
                      'status': ApplicationStatus.approved}
