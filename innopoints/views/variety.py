@@ -1,9 +1,13 @@
-"""Views related to the Variety model.
+"""Views related to the Variety, StockChange, Size and Color models.
 
 Variety:
 - POST /products/{product_id}/variety
 - PATCH /products/{product_id}/variety/{variety_id}
 - DELETE /products/{product_id}/variety/{variety_id}
+- POST /products/{product_id}/variety/{variety_id}/purchase
+
+StockChange:
+- PATCH /stock_changes/{stock_change_id}
 
 Size:
 - GET /sizes
@@ -176,8 +180,6 @@ def purchase_variety(product_id, variety_id):
     if variety.product != product:
         abort(400, {'message': 'The specified product and variety are unrelated.'})
 
-    print(current_user.balance)
-    print(product.price * purchased_amount)
     if current_user.balance < product.price * purchased_amount:
         abort(400, {'message': 'Insufficient funds.'})
 
@@ -201,6 +203,47 @@ def purchase_variety(product_id, variety_id):
 
     out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email'))
     return out_schema.jsonify(new_stock_change)
+
+
+# ----- StockChange -----
+
+@api.route('/stock_changes/<int:stock_change_id>', methods=['PATCH'])
+@login_required
+def edit_purchase_status(stock_change_id):
+    """Edit the status of a particular purchase."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if not current_user.is_admin:
+        abort(401)
+
+    try:
+        status = getattr(StockChangeStatus, request.json['status'])
+    except (KeyError, AttributeError):
+        abort(400, {'message': 'A valid stock change status must be specified.'})
+
+    stock_change = StockChange.query.get_or_404(stock_change_id)
+    if stock_change.status != status:
+        if status == StockChangeStatus.rejected:
+            db.session.delete(stock_change.transaction)
+        elif stock_change.status == StockChangeStatus.rejected:
+            product = Variety.query.get(stock_change.variety_id).product
+            new_transaction = Transaction(account=stock_change.account,
+                                          change=product.price * stock_change.amount,
+                                          stock_change_id=stock_change.id)
+            stock_change.transaction = new_transaction
+            db.session.add(new_transaction)
+        stock_change.status = status
+
+        try:
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            log.exception(err)
+            abort(400, {'message': 'Data integrity violated.'})
+
+    out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email'))
+    return out_schema.jsonify(stock_change)
 
 
 # ----- Size -----
