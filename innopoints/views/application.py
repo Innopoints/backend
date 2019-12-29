@@ -1,7 +1,7 @@
 """Views related to the Application model.
 
-- POST /projects/{project_id}/activity/{activity_id}/apply
-- DELETE /projects/{project_id}/activity/{activity_id}/apply
+- POST /projects/{project_id}/activity/{activity_id}/application
+- DELETE /projects/{project_id}/activity/{activity_id}/application
 """
 
 import logging
