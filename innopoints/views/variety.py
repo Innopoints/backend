@@ -213,15 +213,14 @@ def purchase_variety(product_id, variety_id):
     log.debug('Purchase successful')
 
     admins = Account.query.filter_by(is_admin=True).all()
-    admin_emails = [admin.email for admin in admins]
-    notify_all(admin_emails, 'new_purchase', {
+    notify_all(admins, 'new_purchase', {
         'account_email': current_user.email,
         'product_id': product.id,
         'variety_id': variety.id,
         'stock_change_id': new_stock_change.id,
     })
     if variety.amount <= 0:
-        notify_all(admin_emails, 'out_of_stock', {
+        notify_all(admins, 'out_of_stock', {
             'product_id': product.id,
             'variety_id': variety.id,
         })

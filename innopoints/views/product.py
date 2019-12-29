@@ -114,8 +114,7 @@ def create_product():
     )
     if query.count() == 0:
         users = Account.query.filter_by(is_admin=False).all()
-        emails = [user.email for user in users]
-        notify_all(emails, 'new_arrivals')
+        notify_all(users, 'new_arrivals')
 
     out_schema = ProductSchema(exclude=('varieties.product_id',
                                         'varieties.product',

@@ -6,7 +6,7 @@ from typing import List
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
-from innopoints.models import Notification
+from innopoints.models import Notification, Account
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,8 @@ def notify(recipient_email: str, notification_type: str, payload=None):
         db.session.rollback()
         log.exception(exc)
 
-def notify_all(recipient_emails: List[str], notification_type: str, payload=None):
+def notify_all(recipients: List[Account], notification_type: str, payload=None):
     """Sends the same notification to each of the emails in the given list."""
-    for email in recipient_emails:
+    emails = [account.email for account in recipients]
+    for email in emails:
         notify(email, notification_type, payload)

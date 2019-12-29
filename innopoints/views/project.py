@@ -135,8 +135,7 @@ def publish_project(project_id):
     else:
         abort(401)
 
-    emails = [mod.email for mod in project.moderators]
-    notify_all(emails, 'added_as_moderator', {
+    notify_all(project.moderators, 'added_as_moderator', {
         'project_id': project.id,
         'account_email': current_user.email,
     })
