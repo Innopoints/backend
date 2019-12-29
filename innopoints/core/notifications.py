@@ -26,6 +26,7 @@ def notify(recipient_email: str, notification_type: str, payload=None):
         db.session.commit()
         log.info(f'Sent a notification to {recipient_email}')
     except IntegrityError as exc:
+        db.session.rollback()
         log.exception(exc)
 
 def notify_all(recipient_emails: List[str], notification_type: str, payload=None):
