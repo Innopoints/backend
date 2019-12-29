@@ -19,7 +19,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-from innopoints.models import Product, Notification, Account
+from innopoints.models import Product, Notification, Account, NotificationType
 from innopoints.schemas import ProductSchema
 from innopoints.core.notifications import notify_all
 
@@ -90,8 +90,9 @@ def create_product():
     if db.session.query(duplicate.exists()).scalar():
         abort(400, {'message': 'A product with this name and type exists.'})
 
-    if len(new_product.varieties) == 0:
-        abort(400, {'message': 'Please provide at least one variety'})
+    if not new_product.varieties:
+        abort(400, {'message': 'Please provide at least one variety.'})
+
     try:
         for variety in new_product.varieties:
             variety.product = new_product
@@ -108,7 +109,7 @@ def create_product():
     # TODO: replace the following with proper debounce
     # Check if a notification has been sent today
     query = Notification.query.filter(
-        Notification.type == 'new_arrivals',
+        Notification.type == NotificationType.new_arrivals,
         Notification.timestamp >= date.today()
     )
     if query.count() == 0:

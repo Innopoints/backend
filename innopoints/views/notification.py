@@ -18,9 +18,7 @@ from innopoints.schemas import NotificationSchema
 def get_notifications():
     """Gets all notifications of the current user."""
     query = Notification.query.filter_by(recipient_email=current_user.email)
-    notifications = query.all()
-    schema = NotificationSchema(many=True)
-    return schema.jsonify(notifications)
+    return NotificationSchema(many=True).jsonify(query.all())
 
 @api.route('/notifications/<int:notification_id>/read', methods=['PATCH'])
 @login_required

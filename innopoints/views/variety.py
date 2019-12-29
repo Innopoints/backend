@@ -191,7 +191,7 @@ def purchase_variety(product_id, variety_id):
 
     if purchased_amount > variety.amount:
         log.debug('Purchase refused: not enough stock')
-        abort(400, {'message': 'Insufficient stock'})
+        abort(400, {'message': 'Insufficient stock.'})
 
     new_stock_change = StockChange(amount=-purchased_amount,
                                    status=StockChangeStatus.pending,

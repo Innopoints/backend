@@ -135,12 +135,11 @@ def publish_project(project_id):
     else:
         abort(401)
 
-    if isinstance(project.moderators, list):
-        emails = [mod.email for mod in project.moderators]
-        notify_all(emails, 'added_as_moderator', {
-            'project_id': project.id,
-            'account_email': current_user.email,
-        })
+    emails = [mod.email for mod in project.moderators]
+    notify_all(emails, 'added_as_moderator', {
+        'project_id': project.id,
+        'account_email': current_user.email,
+    })
 
     return NO_PAYLOAD
 

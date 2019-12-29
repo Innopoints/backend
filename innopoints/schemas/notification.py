@@ -28,7 +28,7 @@ class PayloadSchema(ma.Schema):
     stock_change = ma.Nested('StockChangeSchema', only=('id', 'amount', 'status'))
 
     @pre_dump
-    def fill_data(self, data, **kwargs): # pylint: disable=unused-argument
+    def fill_data(self, data, **kwargs):  # pylint: disable=unused-argument
         if 'project_id' in data:
             data['project'] = Project.query.get(data.pop('project_id'))
         if 'activity_id' in data:
