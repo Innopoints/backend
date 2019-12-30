@@ -19,6 +19,7 @@ NO_PAYLOAD = ('', 204)
 @api.after_request
 def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = 'https://innopoints-frontend.herokuapp.com'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
 @api.route('/login')
