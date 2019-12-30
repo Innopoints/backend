@@ -60,7 +60,7 @@ def create_app(config='config/prod.py'):
     db.init_app(app)
     Migrate(app, db)
     ma.init_app(app)
-    cors.init_app(app, origins=app.config['CORS_ORIGINS'])
+    cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     oauth.init_app(app)
     login_manager.init_app(app)
 
