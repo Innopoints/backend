@@ -21,7 +21,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-from innopoints.models import Activity, LifetimeStage, Project
+from innopoints.models import Activity, LifetimeStage, NotificationType, Project
 from innopoints.schemas import ProjectSchema
 from innopoints.core.notifications import notify_all
 
@@ -135,7 +135,7 @@ def publish_project(project_id):
     else:
         abort(401)
 
-    notify_all(project.moderators, 'added_as_moderator', {
+    notify_all(project.moderators, NotificationType.added_as_moderator, {
         'project_id': project.id,
         'account_email': current_user.email,
     })

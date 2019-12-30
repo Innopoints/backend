@@ -31,6 +31,7 @@ from innopoints.blueprints import api
 from innopoints.models import (
     Account,
     Color,
+    NotificationType,
     Product,
     Size,
     StockChange,
@@ -213,14 +214,14 @@ def purchase_variety(product_id, variety_id):
     log.debug('Purchase successful')
 
     admins = Account.query.filter_by(is_admin=True).all()
-    notify_all(admins, 'new_purchase', {
+    notify_all(admins, NotificationType.new_purchase, {
         'account_email': current_user.email,
         'product_id': product.id,
         'variety_id': variety.id,
         'stock_change_id': new_stock_change.id,
     })
     if variety.amount <= 0:
-        notify_all(admins, 'out_of_stock', {
+        notify_all(admins, NotificationType.out_of_stock, {
             'product_id': product.id,
             'variety_id': variety.id,
         })
@@ -260,7 +261,7 @@ def edit_purchase_status(stock_change_id):
             db.session.add(new_transaction)
         stock_change.status = status
 
-        notify(stock_change.account_email, 'purchas_status_changed', {
+        notify(stock_change.account_email, NotificationType.purchase_status_changed, {
             'stock_change_id': stock_change.id,
             'product_id': product.id,
             'variety_id': variety.id,
