@@ -31,6 +31,5 @@ def notify(recipient_email: str, notification_type: str, payload=None):
 
 def notify_all(recipients: List[Account], notification_type: str, payload=None):
     """Sends the same notification to each of the emails in the given list."""
-    emails = [account.email for account in recipients]
-    for email in emails:
-        notify(email, notification_type, payload)
+    for recipient in recipients:
+        notify(recipient.email, notification_type, payload)
