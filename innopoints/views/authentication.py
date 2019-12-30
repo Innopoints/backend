@@ -19,8 +19,11 @@ NO_PAYLOAD = ('', 204)
 @api.route('/login')
 def login():
     """Redirect the user to the Innopolis SSO login page."""
-    redirect_uri = url_for('api.authorize', _external=True)
-    return oauth.innopolis_sso.authorize_redirect(redirect_uri)
+    try:
+        redirect_uri = url_for('api.authorize', _external=True)
+        return oauth.innopolis_sso.authorize_redirect(redirect_uri)
+    except Exception as exc:
+        print(exc)
 
 
 @api.route('/authorize')
