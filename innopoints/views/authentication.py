@@ -55,7 +55,9 @@ def authorize():
 
     login_user(user, remember=True)
 
-    return redirect(url_for('api.list_projects'))
+    # return redirect(url_for('api.list_projects'))
+    # TODO: find a better solution
+    return redirect('https://innopoints-frontend.herokuapp.com/')
 
 
 @api.route('/logout')
