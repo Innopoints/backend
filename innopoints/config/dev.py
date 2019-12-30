@@ -9,4 +9,6 @@ INNOPOLIS_SSO_CLIENT_SECRET = os.getenv('INNOPOLIS_SSO_CLIENT_SECRET')
 
 JSON_SORT_KEYS = False
 
+CORS_ORIGINS = '*'
+
 IS_ADMIN = lambda userinfo: True

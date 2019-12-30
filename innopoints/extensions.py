@@ -5,15 +5,19 @@ They will be initialized (calling init_app()) in app.py.
 """
 
 import os
-from flask_login import LoginManager
-from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
+
 from authlib.integrations.flask_client import OAuth
+from flask_cors import CORS
+from flask_login import LoginManager
+from flask_marshmallow import Marshmallow
+from flask_sqlalchemy import SQLAlchemy
 
 
 db = SQLAlchemy()
 
 ma = Marshmallow()
+
+cors = CORS()
 
 oauth = OAuth()
 oauth.register(

@@ -7,6 +7,8 @@ from innopoints.config.common import *
 INNOPOLIS_SSO_CLIENT_ID = os.environ['INNOPOLIS_SSO_CLIENT_ID']
 INNOPOLIS_SSO_CLIENT_SECRET = os.environ['INNOPOLIS_SSO_CLIENT_SECRET']
 
+CORS_ORIGINS = 'https://innopoints-frontend.herokuapp.com'
+
 def is_admin(userinfo):  # pylint: disable=unused-argument
     """Determine if the user is an administrator by a dictionary of claims."""
     return False

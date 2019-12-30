@@ -7,7 +7,7 @@ import os
 from flask import Flask
 from flask_migrate import Migrate
 
-from innopoints.extensions import db, ma, oauth, login_manager
+from innopoints.extensions import db, ma, cors, oauth, login_manager
 from innopoints.blueprints import all_blueprints
 
 
@@ -60,6 +60,7 @@ def create_app(config='config/prod.py'):
     db.init_app(app)
     Migrate(app, db)
     ma.init_app(app)
+    cors.init_app(app, origins=app.config['CORS_ORIGINS'])
     oauth.init_app(app)
     login_manager.init_app(app)
 
