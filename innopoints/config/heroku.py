@@ -9,7 +9,7 @@ INNOPOLIS_SSO_CLIENT_SECRET = os.getenv('INNOPOLIS_SSO_CLIENT_SECRET')
 
 JSON_SORT_KEYS = False
 
-CORS_ORIGINS = 'https://innopoints-frontend.herokuapp.com'
+CORS_ORIGINS = ['https://innopoints-frontend.herokuapp.com', 'localhost:3000']
 
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
