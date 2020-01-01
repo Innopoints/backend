@@ -63,7 +63,7 @@ def authorize():
     login_user(user, remember=True)
 
     final_redirect_uri = session.pop('final_redirect_uri', '/')
-    frontend_base = session.pop('frontend_base', None) or current_app.config['FRONTEND_BASE']
+    frontend_base = session.pop('frontend_base', current_app.config['FRONTEND_BASE'])
     return redirect(urljoin(frontend_base, final_redirect_uri))
 
 
