@@ -7,7 +7,7 @@ from innopoints.config.common import *
 INNOPOLIS_SSO_CLIENT_ID = os.environ['INNOPOLIS_SSO_CLIENT_ID']
 INNOPOLIS_SSO_CLIENT_SECRET = os.environ['INNOPOLIS_SSO_CLIENT_SECRET']
 
-CORS_ORIGINS = 'https://innopoints-frontend.herokuapp.com'
+CORS_ORIGINS = ['https://innopoints-frontend.herokuapp.com']
 
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
