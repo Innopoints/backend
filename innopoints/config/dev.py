@@ -12,4 +12,6 @@ JSON_SORT_KEYS = False
 
 CORS_ORIGINS = [re.compile(r'https?://(?:localhost|0.0.0.0):\d{4}')]
 
+FRONTEND_BASE = 'http://0.0.0.0:3000'
+
 IS_ADMIN = lambda userinfo: True

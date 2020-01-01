@@ -19,4 +19,6 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = None
 REMEMBER_COOKIE_SECURE = True
 
+FRONTEND_BASE = 'https://innopoints-frontend.herokuapp.com'
+
 IS_ADMIN = lambda userinfo: True
