@@ -1,10 +1,10 @@
 """Views related to the Variety, StockChange, Size and Color models.
 
 Variety:
-- POST /products/{product_id}/variety
-- PATCH /products/{product_id}/variety/{variety_id}
+- POST   /products/{product_id}/variety
+- PATCH  /products/{product_id}/variety/{variety_id}
 - DELETE /products/{product_id}/variety/{variety_id}
-- POST /products/{product_id}/variety/{variety_id}/purchase
+- POST   /products/{product_id}/variety/{variety_id}/purchase
 
 StockChange:
 - PATCH /stock_changes/{stock_change_id}
@@ -29,7 +29,9 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.models import (
+    Account,
     Color,
+    NotificationType,
     Product,
     Size,
     StockChange,
@@ -43,6 +45,7 @@ from innopoints.schemas import (
     StockChangeSchema,
     VarietySchema,
 )
+from innopoints.core.notifications import notify_all, notify
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -180,10 +183,18 @@ def purchase_variety(product_id, variety_id):
     if variety.product != product:
         abort(400, {'message': 'The specified product and variety are unrelated.'})
 
+    log.debug(f'User with balance {current_user.balance} is trying to buy {purchased_amount} of a '
+              f'product with a price of {product.price}. '
+              f'Total = {product.price * purchased_amount}')
     if current_user.balance < product.price * purchased_amount:
+        log.debug('Purchase refused: not enough points')
         abort(400, {'message': 'Insufficient funds.'})
 
-    new_stock_change = StockChange(amount=purchased_amount,
+    if purchased_amount > variety.amount:
+        log.debug('Purchase refused: not enough stock')
+        abort(400, {'message': 'Insufficient stock.'})
+
+    new_stock_change = StockChange(amount=-purchased_amount,
                                    status=StockChangeStatus.pending,
                                    account=current_user,
                                    variety_id=variety_id)
@@ -200,6 +211,20 @@ def purchase_variety(product_id, variety_id):
         db.session.rollback()
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
+    log.debug('Purchase successful')
+
+    admins = Account.query.filter_by(is_admin=True).all()
+    notify_all(admins, NotificationType.new_purchase, {
+        'account_email': current_user.email,
+        'product_id': product.id,
+        'variety_id': variety.id,
+        'stock_change_id': new_stock_change.id,
+    })
+    if variety.amount <= 0:
+        notify_all(admins, NotificationType.out_of_stock, {
+            'product_id': product.id,
+            'variety_id': variety.id,
+        })
 
     out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email'))
     return out_schema.jsonify(new_stock_change)
@@ -224,16 +249,23 @@ def edit_purchase_status(stock_change_id):
 
     stock_change = StockChange.query.get_or_404(stock_change_id)
     if stock_change.status != status:
+        variety = Variety.query.get(stock_change.variety_id)
+        product = variety.product
         if status == StockChangeStatus.rejected:
             db.session.delete(stock_change.transaction)
         elif stock_change.status == StockChangeStatus.rejected:
-            product = Variety.query.get(stock_change.variety_id).product
             new_transaction = Transaction(account=stock_change.account,
                                           change=product.price * stock_change.amount,
                                           stock_change_id=stock_change.id)
             stock_change.transaction = new_transaction
             db.session.add(new_transaction)
         stock_change.status = status
+
+        notify(stock_change.account_email, NotificationType.purchase_status_changed, {
+            'stock_change_id': stock_change.id,
+            'product_id': product.id,
+            'variety_id': variety.id,
+        })
 
         try:
             db.session.commit()

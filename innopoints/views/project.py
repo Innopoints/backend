@@ -21,8 +21,9 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-from innopoints.models import Activity, LifetimeStage, Project
+from innopoints.models import Activity, LifetimeStage, NotificationType, Project
 from innopoints.schemas import ProjectSchema
+from innopoints.core.notifications import notify_all
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -133,6 +134,11 @@ def publish_project(project_id):
         db.session.commit()
     else:
         abort(401)
+
+    notify_all(project.moderators, NotificationType.added_as_moderator, {
+        'project_id': project.id,
+        'account_email': current_user.email,
+    })
 
     return NO_PAYLOAD
 

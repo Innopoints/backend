@@ -8,6 +8,7 @@ Product:
 """
 
 import logging
+from datetime import date
 
 from flask import abort, request
 from flask.views import MethodView
@@ -18,8 +19,9 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-from innopoints.models import Product
+from innopoints.models import Product, Notification, Account, NotificationType
 from innopoints.schemas import ProductSchema
+from innopoints.core.notifications import notify_all
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -56,7 +58,7 @@ def list_products():
     db_query = db_query.order_by(ordering[order].asc())
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
-    schema = ProductSchema(many=True, exclude=('notifications', 'description',
+    schema = ProductSchema(many=True, exclude=('description',
                                                'varieties.stock_changes',
                                                'varieties.product',
                                                'varieties.product_id'))
@@ -73,7 +75,7 @@ def create_product():
     if not current_user.is_admin:
         abort(401)
 
-    in_schema = ProductSchema(exclude=('id', 'addition_time', 'notifications',
+    in_schema = ProductSchema(exclude=('id', 'addition_time',
                                        'varieties.stock_changes.variety_id',
                                        'varieties.product_id',
                                        'varieties.images.variety_id'),
@@ -88,6 +90,9 @@ def create_product():
     if db.session.query(duplicate.exists()).scalar():
         abort(400, {'message': 'A product with this name and type exists.'})
 
+    if not new_product.varieties:
+        abort(400, {'message': 'Please provide at least one variety.'})
+
     try:
         for variety in new_product.varieties:
             variety.product = new_product
@@ -101,8 +106,17 @@ def create_product():
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ProductSchema(exclude=('notifications',
-                                        'varieties.product_id',
+    # TODO: replace the following with proper debounce
+    # Check if a notification has been sent today
+    query = Notification.query.filter(
+        Notification.type == NotificationType.new_arrivals,
+        Notification.timestamp >= date.today()
+    )
+    if query.count() == 0:
+        users = Account.query.filter_by(is_admin=False).all()
+        notify_all(users, NotificationType.new_arrivals)
+
+    out_schema = ProductSchema(exclude=('varieties.product_id',
                                         'varieties.product',
                                         'varieties.images.variety_id',
                                         'varieties.images.id',
@@ -123,7 +137,7 @@ class ProductDetailAPI(MethodView):
             abort(401)
         product = Product.query.get_or_404(product_id)
 
-        in_out_schema = ProductSchema(exclude=('id', 'varieties', 'notifications', 'addition_time'))
+        in_out_schema = ProductSchema(exclude=('id', 'varieties', 'addition_time'))
 
         try:
             updated_product = in_out_schema.load(request.json, instance=product, partial=True)

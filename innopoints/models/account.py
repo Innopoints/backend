@@ -28,8 +28,6 @@ class Account(UserMixin, db.Model):
                                    cascade='all, delete-orphan',
                                    passive_deletes=True,
                                    backref='account')
-    notifications = db.relationship('Notification',
-                                    cascade='all, delete-orphan')
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan',
                                    backref='applicant')

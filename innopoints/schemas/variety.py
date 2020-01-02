@@ -78,6 +78,9 @@ class VarietySchema(ma.ModelSchema):
     @post_dump
     def flatten_images(self, data, **kwargs):  # pylint: disable=unused-argument
         """Convert an array of image objects with order into a flat array of URL strings."""
+        if 'images' not in data:
+            return data
+        
         data['images'] = [f'/file/{image["image_id"]}'
                           for image in sorted(data['images'],
                                               key=lambda x: x['order'])]

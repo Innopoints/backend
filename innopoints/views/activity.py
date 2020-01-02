@@ -40,7 +40,7 @@ def create_activity(project_id):
     if not current_user.is_admin and current_user not in project.moderators:
         abort(401)
 
-    in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'notifications'))
+    in_schema = ActivitySchema(exclude=('id', 'project', 'applications'))
 
     try:
         new_activity = in_schema.load(request.json)
@@ -57,7 +57,7 @@ def create_activity(project_id):
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ActivitySchema(exclude=('notifications', 'existing_application'),
+    out_schema = ActivitySchema(exclude=('existing_application',),
                                 context={'user': current_user})
     return out_schema.jsonify(new_activity)
 
@@ -79,7 +79,7 @@ class ActivityAPI(MethodView):
         if activity.project != project:
             abort(400, {'message': 'The specified project and activity are unrelated.'})
 
-        in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'notifications'))
+        in_schema = ActivitySchema(exclude=('id', 'project', 'applications'))
 
         try:
             updated_activity = in_schema.load(request.json, instance=activity, partial=True)
@@ -97,7 +97,7 @@ class ActivityAPI(MethodView):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
-        out_schema = ActivitySchema(exclude=('notifications', 'existing_application'),
+        out_schema = ActivitySchema(exclude=('existing_application',),
                                     context={'user': current_user})
         return out_schema.jsonify(updated_activity)
 

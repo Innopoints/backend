@@ -13,7 +13,7 @@ class ActivitySchema(ma.ModelSchema):
     class Meta:
         model = Activity
         ordered = True
-        exclude = ('project_id', 'notifications')
+        exclude = ('project_id',)
         sqla_session = db.session
 
     @pre_load
@@ -34,6 +34,9 @@ class ActivitySchema(ma.ModelSchema):
     @post_dump
     def wrap_dates(self, data, **kwargs):  # pylint: disable=unused-argument
         """Collapse the two date properties into the {"start": , "end": } dates object."""
+        if 'start_date' not in data:
+            return data
+        
         data['timeframe'] = {
             'start': data.pop('start_date'),
             'end': data.pop('end_date')

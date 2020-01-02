@@ -63,7 +63,7 @@ class Variety(db.Model):
         ).filter(
             StockChange.variety_id == self.id,
             StockChange.status != StockChangeStatus.rejected
-        ).scalar()
+        ).scalar() or 0
 
     @property
     def purchases(self):
