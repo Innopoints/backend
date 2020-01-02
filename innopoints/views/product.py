@@ -108,11 +108,11 @@ def create_product():
 
     # TODO: replace the following with proper debounce
     # Check if a notification has been sent today
-    query = Notification.query.filter(
+    already_sent = Notification.query.filter(
         Notification.type == NotificationType.new_arrivals,
         Notification.timestamp >= date.today()
-    )
-    if query.count() == 0:
+    ).exists()
+    if not db.session.query(already_sent).scalar():
         users = Account.query.filter_by(is_admin=False).all()
         notify_all(users, NotificationType.new_arrivals)
 
