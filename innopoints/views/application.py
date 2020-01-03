@@ -1,25 +1,36 @@
-"""Views related to the Application model.
+"""Views related to the Application and VolunteeringReport models.
 
-- POST /projects/{project_id}/activity/{activity_id}/application
-- DELETE /projects/{project_id}/activity/{activity_id}/application
+Application:
+- POST /projects/{project_id}/activities/{activity_id}/applications
+- DELETE /projects/{project_id}/activities/{activity_id}/applications
+
+VolunteeringReport:
+- POST /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
 """
 
 import logging
 
 from flask import abort, request
 from flask_login import login_required, current_user
+from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-from innopoints.models import Application, Project, Activity, ApplicationStatus
-from innopoints.schemas import ApplicationSchema
+from innopoints.models import (
+    Activity,
+    Application,
+    ApplicationStatus,
+    LifetimeStage,
+    Project,
+)
+from innopoints.schemas import ApplicationSchema, VolunteeringReportSchema
 
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
 
-@api.route('/projects/<int:project_id>/activity/<int:activity_id>/application', methods=['POST'])
+@api.route('/projects/<int:project_id>/activities/<int:activity_id>/applications', methods=['POST'])
 @login_required
 def apply_for_activity(project_id, activity_id):
     """Apply for volunteering on a particular activity."""
@@ -54,7 +65,8 @@ def apply_for_activity(project_id, activity_id):
     return out_schema.jsonify(new_application)
 
 
-@api.route('/projects/<int:project_id>/activity/<int:activity_id>/application', methods=['DELETE'])
+@api.route('/projects/<int:project_id>/activities/<int:activity_id>/applications',
+           methods=['DELETE'])
 @login_required
 def take_back_application(project_id, activity_id):
     """Take back a volunteering application on a particular activity."""
@@ -77,3 +89,47 @@ def take_back_application(project_id, activity_id):
         abort(400, {'message': 'Data integrity violated.'})
 
     return NO_PAYLOAD
+
+
+# ----- VolunteeringReport -----
+
+@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
+           '/applications/<int:application_id>/report', methods=['POST'])
+@login_required
+def create_report(project_id, activity_id, application_id):
+    """Create a volunteering report on an application."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    application = Application.query.get_or_404(application_id)
+    activity = Activity.query.get_or_404(activity_id)
+    project = Project.query.get_or_404(project_id)
+
+    if activity.project != project or application.activity_id != activity.id:
+        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+
+    if current_user not in project.moderators and not current_user.is_admin:
+        abort(401)
+
+    if not (project.lifetime_stage == LifetimeStage.ongoing
+            and project.review_status is not None):
+        abort(400, {'message': 'The project must be in the finalizing stage.'})
+
+    in_out_schema = VolunteeringReportSchema()
+    try:
+        new_report = in_out_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    new_report.application_id = application_id
+    new_report.reporter_email = current_user.email
+
+    try:
+        db.session.add(new_report)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    return in_out_schema.jsonify(new_report)
