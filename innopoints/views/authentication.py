@@ -21,8 +21,8 @@ NO_PAYLOAD = ('', 204)
 @api.route('/login')
 def login():
     """Redirect the user to the Innopolis SSO login page."""
-    if 'final_redirect_uri' in request.args:
-        session['final_redirect_uri'] = request.args['final_redirect_uri']
+    if 'final_redirect_location' in request.args:
+        session['final_redirect_location'] = request.args['final_redirect_location']
         if 'frontend_base' in request.args and current_app.config['ENV'] == 'heroku':
             session['frontend_base'] = request.args['frontend_base']
 
@@ -62,7 +62,7 @@ def authorize():
 
     login_user(user, remember=True)
 
-    final_redirect_uri = session.pop('final_redirect_uri', '/')
+    final_redirect_uri = session.pop('final_redirect_location', '/')
     frontend_base = session.pop('frontend_base', current_app.config['FRONTEND_BASE'])
     return redirect(urljoin(frontend_base, final_redirect_uri))
 
