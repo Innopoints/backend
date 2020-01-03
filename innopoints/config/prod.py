@@ -4,6 +4,8 @@ import os
 from innopoints.config.common import *
 
 
+SECRET_KEY = os.environ['SECRET_KEY']
+
 INNOPOLIS_SSO_CLIENT_ID = os.environ['INNOPOLIS_SSO_CLIENT_ID']
 INNOPOLIS_SSO_CLIENT_SECRET = os.environ['INNOPOLIS_SSO_CLIENT_SECRET']
 

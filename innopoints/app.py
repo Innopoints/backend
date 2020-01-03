@@ -2,7 +2,6 @@
 
 from importlib import import_module
 import logging.config
-import os
 
 from flask import Flask
 from flask_migrate import Migrate
@@ -49,7 +48,6 @@ def create_app(config='config/prod.py'):
     })
 
     app = Flask(__name__, static_folder=None)
-    app.secret_key = os.urandom(16)
     app.config.from_pyfile(config)
 
     # Import DB models. Flask-SQLAlchemy doesn't do this automatically.
