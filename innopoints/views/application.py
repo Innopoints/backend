@@ -155,9 +155,9 @@ def create_report(project_id, activity_id, application_id):
             and project.review_status is not None):
         abort(400, {'message': 'The project must be in the finalizing stage.'})
 
-    in_out_schema = VolunteeringReportSchema()
+    in_schema = VolunteeringReportSchema(exclude=('time',))
     try:
-        new_report = in_out_schema.load(request.json)
+        new_report = in_schema.load(request.json)
     except ValidationError as err:
         abort(400, {'message': err.messages})
 
@@ -172,4 +172,5 @@ def create_report(project_id, activity_id, application_id):
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    return in_out_schema.jsonify(new_report)
+    out_schema = VolunteeringReportSchema()
+    return out_schema.jsonify(new_report)
