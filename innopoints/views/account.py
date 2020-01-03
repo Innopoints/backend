@@ -6,12 +6,13 @@ Account:
 
 import logging
 
-from flask import abort, request, jsonify
+from flask import request, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
+from innopoints.core.helpers import abort
 from innopoints.models import Transaction, Account
 from innopoints.schemas import AccountSchema
 

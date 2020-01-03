@@ -20,7 +20,7 @@ Color:
 
 import logging
 
-from flask import abort, request
+from flask import request
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
@@ -28,6 +28,8 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
+from innopoints.core.helpers import abort
+from innopoints.core.notifications import notify_all, notify
 from innopoints.models import (
     Account,
     Color,
@@ -45,7 +47,6 @@ from innopoints.schemas import (
     StockChangeSchema,
     VarietySchema,
 )
-from innopoints.core.notifications import notify_all, notify
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)

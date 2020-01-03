@@ -10,18 +10,19 @@ Product:
 import logging
 from datetime import date
 
-from flask import abort, request
+from flask import request
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
-from innopoints.extensions import db
 from innopoints.blueprints import api
+from innopoints.core.helpers import abort
+from innopoints.core.notifications import notify_all
+from innopoints.extensions import db
 from innopoints.models import Product, Notification, Account, NotificationType
 from innopoints.schemas import ProductSchema
-from innopoints.core.notifications import notify_all
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)

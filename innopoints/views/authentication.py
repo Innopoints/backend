@@ -7,12 +7,13 @@
 
 from urllib.parse import urljoin
 
-from flask import abort, current_app, url_for, redirect, session, request
+from flask import current_app, url_for, redirect, session, request
 from flask_login import login_user, logout_user
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
 
-from innopoints.extensions import oauth, db
 from innopoints.blueprints import api
+from innopoints.core.helpers import abort
+from innopoints.extensions import oauth, db
 from innopoints.models import Account
 
 NO_PAYLOAD = ('', 204)
