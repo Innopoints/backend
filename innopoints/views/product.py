@@ -33,10 +33,11 @@ def list_products():
     """List products available in InnoStore."""
     default_limit = 3
     default_page = 1
-    default_order = 'time'
+    default_order = 'name'
     ordering = {
-        'time': Product.addition_time,
-        'price': Product.price
+        'name': Product.name.asc(),
+        'price_asc': Product.price.asc(),
+        'price_desc': Product.price.desc()
     }
 
     try:
@@ -50,13 +51,16 @@ def list_products():
     if limit < 1 or page < 1:
         abort(400, {'message': 'Limit and page number must be positive.'})
 
+    if order not in ordering:
+        abort(400, {'message': 'Invalid ordering specified.'})
+
     db_query = Product.query
     if search_query is not None:
         like_query = f'%{search_query}%'
         or_condition = or_(Product.name.ilike(like_query),
                            Product.description.ilike(like_query))
         db_query = db_query.filter(or_condition)
-    db_query = db_query.order_by(ordering[order].asc())
+    db_query = db_query.order_by(ordering[order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
     schema = ProductSchema(many=True, exclude=('description',
