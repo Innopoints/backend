@@ -32,7 +32,14 @@ log = logging.getLogger(__name__)
 @api.route('/projects')
 def list_projects():
     """List ongoing or past projects."""
-
+    first_activity = db.func.min(Activity.start_date)
+    default_order = 'creation_asc'
+    ordering = {
+        'creation_asc': Project.creation_time.asc(),
+        'creation_desc': Project.creation_time.desc(),
+        'proximity_asc': first_activity.asc(),
+        'proximity_desc': first_activity.desc(),
+    }
     lifetime_stages = {
         'ongoing': LifetimeStage.ongoing,
         'past': LifetimeStage.past,
@@ -45,7 +52,7 @@ def list_projects():
 
     db_query = Project.query.filter_by(lifetime_stage=lifetime_stage)
     if 'q' in request.args:
-        like_query = f'%{request.args["query"]}%'
+        like_query = f'%{request.args["q"]}%'
         db_query = db_query.join(Project.activities)
         or_condition = or_(Project.title.ilike(like_query),
                            Activity.name.ilike(like_query),
@@ -56,6 +63,14 @@ def list_projects():
         page = int(request.args.get('page', 1))
         db_query = db_query.order_by(Project.id.desc())
         db_query = db_query.offset(10 * (page - 1)).limit(10)
+    else:
+        order = request.args.get('order', default_order)
+        if order not in ordering:
+            abort(400, {'message': 'Invalid ordering specified.'})
+
+        if order.startswith('proximity'):
+            db_query = db_query.join(Activity).group_by(Project.id)
+        db_query = db_query.order_by(ordering[order])
 
     conditional_exclude = ['review_status', 'moderators']
     if current_user.is_authenticated:
