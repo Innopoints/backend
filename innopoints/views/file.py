@@ -11,12 +11,13 @@ import mimetypes
 
 import requests
 import werkzeug
-from flask import abort, jsonify, request, current_app
+from flask import jsonify, request, current_app
 from flask_login import login_required
 
-from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.core.file_manager import file_manager
+from innopoints.core.helpers import abort
+from innopoints.extensions import db
 from innopoints.models import StaticFile
 
 

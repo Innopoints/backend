@@ -6,12 +6,13 @@
 
 import logging
 
-from flask import abort, request
+from flask import request
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
+from innopoints.core.helpers import abort
 from innopoints.models import Application, Project, Activity, ApplicationStatus
 from innopoints.schemas import ApplicationSchema
 
