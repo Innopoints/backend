@@ -1,12 +1,12 @@
 """Views related to the Project model.
 
 Project:
-- GET /projects
-- GET /projects/drafts
-- POST /projects
-- POST /projects/{project_id}/publish
-- GET /projects/{project_id}
-- PATCH /projects/{project_id}
+- GET    /projects
+- GET    /projects/drafts
+- POST   /projects
+- POST   /projects/{project_id}/publish
+- GET    /projects/{project_id}
+- PATCH  /projects/{project_id}
 - DELETE /projects/{project_id}
 """
 
@@ -34,12 +34,13 @@ log = logging.getLogger(__name__)
 def list_projects():
     """List ongoing or past projects."""
     first_activity = db.func.min(Activity.start_date)
-    default_order = 'creation_asc'
+    default_order_by = 'creation'
+    default_order = 'asc'
     ordering = {
-        'creation_asc': Project.creation_time.asc(),
-        'creation_desc': Project.creation_time.desc(),
-        'proximity_asc': first_activity.asc(),
-        'proximity_desc': first_activity.desc(),
+        ('creation', 'asc'): Project.creation_time.asc(),
+        ('creation', 'desc'): Project.creation_time.desc(),
+        ('proximity', 'asc'): first_activity.asc(),
+        ('proximity', 'desc'): first_activity.desc(),
     }
     lifetime_stages = {
         'ongoing': LifetimeStage.ongoing,
@@ -54,24 +55,25 @@ def list_projects():
     db_query = Project.query.filter_by(lifetime_stage=lifetime_stage)
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
-        db_query = db_query.join(Project.activities)
-        or_condition = or_(Project.title.ilike(like_query),
-                           Activity.name.ilike(like_query),
-                           Activity.description.ilike(like_query))
-        db_query = db_query.filter(or_condition).distinct()
+        db_query = db_query.join(Project.activities).filter(
+            or_(Project.title.ilike(like_query),
+                Activity.name.ilike(like_query),
+                Activity.description.ilike(like_query))
+        ).distinct()
 
     if lifetime_stage == LifetimeStage.past:
         page = int(request.args.get('page', 1))
         db_query = db_query.order_by(Project.id.desc())
         db_query = db_query.offset(10 * (page - 1)).limit(10)
     else:
+        order_by = request.args.get('order_by', default_order_by)
         order = request.args.get('order', default_order)
-        if order not in ordering:
+        if (order_by, order) not in ordering:
             abort(400, {'message': 'Invalid ordering specified.'})
 
-        if order.startswith('proximity'):
+        if order_by == 'proximity':
             db_query = db_query.join(Activity).group_by(Project.id)
-        db_query = db_query.order_by(ordering[order])
+        db_query = db_query.order_by(ordering[order_by, order])
 
     conditional_exclude = ['review_status', 'moderators']
     if current_user.is_authenticated:
