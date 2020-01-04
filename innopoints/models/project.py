@@ -28,7 +28,8 @@ class LifetimeStage(Enum):
     """Represents the project's lifetime stage."""
     draft = auto()
     ongoing = auto()
-    past = auto()
+    finalizing = auto()
+    finished = auto()
 
 
 class Project(db.Model):
