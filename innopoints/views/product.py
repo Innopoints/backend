@@ -1,9 +1,9 @@
 """Views related to the Product model.
 
 Product:
-- GET /products
-- POST /products
-- PATCH /products/{product_id}
+- GET    /products
+- POST   /products
+- PATCH  /products/{product_id}
 - DELETE /products/{product_id}
 """
 
@@ -32,17 +32,20 @@ def list_products():
     """List products available in InnoStore."""
     default_limit = 3
     default_page = 1
-    default_order = 'name'
+    default_order_by = 'addition_time'
+    default_order = 'asc'
     ordering = {
-        'name': Product.name.asc(),
-        'price_asc': Product.price.asc(),
-        'price_desc': Product.price.desc()
+        ('addition_time', 'asc'): Product.addition_time.asc(),
+        ('addition_time', 'desc'): Product.addition_time.desc(),
+        ('price', 'asc'): Product.price.asc(),
+        ('price', 'desc'): Product.price.desc()
     }
 
     try:
         limit = int(request.args.get('limit', default_limit))
         page = int(request.args.get('page', default_page))
         search_query = request.args.get('q')
+        order_by = request.args.get('order_by', default_order_by)
         order = request.args.get('order', default_order)
     except ValueError:
         abort(400, {'message': 'Bad query parameters.'})
@@ -50,7 +53,8 @@ def list_products():
     if limit < 1 or page < 1:
         abort(400, {'message': 'Limit and page number must be positive.'})
 
-    if order not in ordering:
+    if (order_by, order) not in ordering:
+        print(order_by, order)
         abort(400, {'message': 'Invalid ordering specified.'})
 
     db_query = Product.query
@@ -59,7 +63,7 @@ def list_products():
         or_condition = or_(Product.name.ilike(like_query),
                            Product.description.ilike(like_query))
         db_query = db_query.filter(or_condition)
-    db_query = db_query.order_by(ordering[order])
+    db_query = db_query.order_by(ordering[order_by, order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
     schema = ProductSchema(many=True, exclude=('description',
