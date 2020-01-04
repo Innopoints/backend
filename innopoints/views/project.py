@@ -247,7 +247,10 @@ class ProjectDetailAPI(MethodView):
 
         in_schema = ProjectSchema(only=('name', 'image_id', 'organizer', 'moderators'))
 
-        # TODO: check for review_status=approved/rejected by admin. if approved, finish the project
+        old_status = project.review_status
+
+        # TODO: check for review_status=approved/rejected by admin.
+        # if approved, finish the project and send out claim_innopoints notifications
 
         try:
             updated_project = in_schema.load(request.json, instance=project, partial=True)
@@ -261,6 +264,12 @@ class ProjectDetailAPI(MethodView):
             db.session.rollback()
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
+
+        if updated_project.review_status != old_status:
+            mods = [*updated_project.moderators, updated_project.creator]
+            notify_all(mods, NotificationType.project_review_status_changed, {
+                'project_id': updated_project.id,
+            })
 
         out_schema = ProjectSchema(only=('id', 'name', 'image_url', 'organizer', 'moderators'))
         return out_schema.jsonify(updated_project)
