@@ -23,7 +23,14 @@ from innopoints.blueprints import api
 from innopoints.core.helpers import abort
 from innopoints.core.notifications import notify_all
 from innopoints.extensions import db
-from innopoints.models import Activity, LifetimeStage, NotificationType, Project
+from innopoints.models import (
+    Activity,
+    LifetimeStage,
+    ReviewStatus,
+    NotificationType,
+    Project,
+    Account,
+)
 from innopoints.schemas import ProjectSchema
 
 NO_PAYLOAD = ('', 204)
@@ -161,6 +168,43 @@ def publish_project(project_id):
     return NO_PAYLOAD
 
 
+@api.route('/projects/<int:project_id>/request_review', methods=['PATCH'])
+@login_required
+def request_review(project_id):
+    """Request an admin's review for my project."""
+
+    project = Project.query.get_or_404(project_id)
+
+    if project.lifetime_stage != LifetimeStage.finalizing:
+        abort(400, {'message': 'Only projects being finalized can be reviewed.'})
+
+    if current_user != project.creator:
+        abort(401)
+
+    if project.review_status == ReviewStatus.pending:
+        abort(400, {'message': 'Project is already under review.'})
+    elif project.review_status == ReviewStatus.approved:
+        abort(400, {'message': 'Project is already approved.'})
+
+    project.review_status = ReviewStatus.pending
+
+    try:
+        db.session.add(project)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    admins = Account.query.filter_by(is_admin=True).all()
+    notify_all(admins, NotificationType.project_review_requested, {
+        'project_id': project.id,
+    })
+
+    return ProjectSchema(exclude=('admin_feedback', 'files', 'image_id'),
+                         context={'user': current_user}).jsonify(project)
+
+
 class ProjectDetailAPI(MethodView):
     """REST views for a particular instance of a Project model."""
 
@@ -202,6 +246,8 @@ class ProjectDetailAPI(MethodView):
             abort(401)
 
         in_schema = ProjectSchema(only=('name', 'image_id', 'organizer', 'moderators'))
+
+        # TODO: check for review_status=approved/rejected by admin. if approved, finish the project
 
         try:
             updated_project = in_schema.load(request.json, instance=project, partial=True)
