@@ -1,27 +1,28 @@
 """Views related to the Product model.
 
 Product:
-- GET /products
-- POST /products
-- PATCH /products/{product_id}
+- GET    /products
+- POST   /products
+- PATCH  /products/{product_id}
 - DELETE /products/{product_id}
 """
 
 import logging
 from datetime import date
 
-from flask import abort, request
+from flask import request
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
-from innopoints.extensions import db
 from innopoints.blueprints import api
+from innopoints.core.helpers import abort
+from innopoints.core.notifications import notify_all
+from innopoints.extensions import db
 from innopoints.models import Product, Notification, Account, NotificationType
 from innopoints.schemas import ProductSchema
-from innopoints.core.notifications import notify_all
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -32,16 +33,20 @@ def list_products():
     """List products available in InnoStore."""
     default_limit = 3
     default_page = 1
-    default_order = 'time'
+    default_order_by = 'addition_time'
+    default_order = 'asc'
     ordering = {
-        'time': Product.addition_time,
-        'price': Product.price
+        ('addition_time', 'asc'): Product.addition_time.asc(),
+        ('addition_time', 'desc'): Product.addition_time.desc(),
+        ('price', 'asc'): Product.price.asc(),
+        ('price', 'desc'): Product.price.desc()
     }
 
     try:
         limit = int(request.args.get('limit', default_limit))
         page = int(request.args.get('page', default_page))
         search_query = request.args.get('q')
+        order_by = request.args.get('order_by', default_order_by)
         order = request.args.get('order', default_order)
     except ValueError:
         abort(400, {'message': 'Bad query parameters.'})
@@ -49,13 +54,17 @@ def list_products():
     if limit < 1 or page < 1:
         abort(400, {'message': 'Limit and page number must be positive.'})
 
+    if (order_by, order) not in ordering:
+        print(order_by, order)
+        abort(400, {'message': 'Invalid ordering specified.'})
+
     db_query = Product.query
     if search_query is not None:
         like_query = f'%{search_query}%'
         or_condition = or_(Product.name.ilike(like_query),
                            Product.description.ilike(like_query))
         db_query = db_query.filter(or_condition)
-    db_query = db_query.order_by(ordering[order].asc())
+    db_query = db_query.order_by(ordering[order_by, order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
     schema = ProductSchema(many=True, exclude=('description',

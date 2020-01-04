@@ -80,7 +80,7 @@ class VarietySchema(ma.ModelSchema):
         """Convert an array of image objects with order into a flat array of URL strings."""
         if 'images' not in data:
             return data
-        
+
         data['images'] = [f'/file/{image["image_id"]}'
                           for image in sorted(data['images'],
                                               key=lambda x: x['order'])]

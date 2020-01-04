@@ -1,10 +1,10 @@
 """Views related to the Variety, StockChange, Size and Color models.
 
 Variety:
-- POST   /products/{product_id}/variety
-- PATCH  /products/{product_id}/variety/{variety_id}
-- DELETE /products/{product_id}/variety/{variety_id}
-- POST   /products/{product_id}/variety/{variety_id}/purchase
+- POST   /products/{product_id}/varieties
+- PATCH  /products/{product_id}/varieties/{variety_id}
+- DELETE /products/{product_id}/varieties/{variety_id}
+- POST   /products/{product_id}/varieties/{variety_id}/purchase
 
 StockChange:
 - PATCH /stock_changes/{stock_change_id}
@@ -20,7 +20,7 @@ Color:
 
 import logging
 
-from flask import abort, request
+from flask import request
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
@@ -28,6 +28,8 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
+from innopoints.core.helpers import abort
+from innopoints.core.notifications import notify_all, notify
 from innopoints.models import (
     Account,
     Color,
@@ -45,13 +47,12 @@ from innopoints.schemas import (
     StockChangeSchema,
     VarietySchema,
 )
-from innopoints.core.notifications import notify_all, notify
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
 
 
-@api.route('/products/<int:product_id>/variety', methods=['POST'])
+@api.route('/products/<int:product_id>/varieties', methods=['POST'])
 @login_required
 def create_variety(product_id):
     """Create a new variety."""
@@ -158,12 +159,12 @@ class VarietyAPI(MethodView):
 
 
 variety_api = VarietyAPI.as_view('variety_api')
-api.add_url_rule('/products/<int:product_id>/variety/<int:variety_id>',
+api.add_url_rule('/products/<int:product_id>/varieties/<int:variety_id>',
                  view_func=variety_api,
                  methods=('PATCH', 'DELETE'))
 
 
-@api.route('/products/<int:product_id>/variety/<int:variety_id>/purchase', methods=['POST'])
+@api.route('/products/<int:product_id>/varieties/<int:variety_id>/purchase', methods=['POST'])
 @login_required
 def purchase_variety(product_id, variety_id):
     """Purchase a particular variety of a product."""

@@ -14,6 +14,8 @@ if __name__ == '__main__':
 else:
     if os.environ.get('FLASK_ENV') == 'development':
         config = 'config/dev.py'
+    elif os.environ.get('FLASK_ENV') == 'heroku':
+        config = 'config/heroku.py'
     else:
         config = 'config/prod.py'
     app = create_app(config)

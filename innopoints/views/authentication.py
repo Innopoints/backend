@@ -5,12 +5,15 @@
 - GET /logout
 """
 
-from flask import abort, current_app, url_for, redirect
+from urllib.parse import urljoin
+
+from flask import current_app, url_for, redirect, session, request
 from flask_login import login_user, logout_user
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
 
-from innopoints.extensions import oauth, db
 from innopoints.blueprints import api
+from innopoints.core.helpers import abort
+from innopoints.extensions import oauth, db
 from innopoints.models import Account
 
 NO_PAYLOAD = ('', 204)
@@ -19,6 +22,11 @@ NO_PAYLOAD = ('', 204)
 @api.route('/login')
 def login():
     """Redirect the user to the Innopolis SSO login page."""
+    if 'final_redirect_location' in request.args:
+        session['final_redirect_location'] = request.args['final_redirect_location']
+        if 'frontend_base' in request.args and current_app.config['ENV'] == 'heroku':
+            session['frontend_base'] = request.args['frontend_base']
+
     redirect_uri = url_for('api.authorize', _external=True)
     return oauth.innopolis_sso.authorize_redirect(redirect_uri)
 
@@ -55,7 +63,9 @@ def authorize():
 
     login_user(user, remember=True)
 
-    return redirect(url_for('api.list_projects'))
+    final_redirect_uri = session.pop('final_redirect_location', '/')
+    frontend_base = session.pop('frontend_base', current_app.config['FRONTEND_BASE'])
+    return redirect(urljoin(frontend_base, final_redirect_uri))
 
 
 @api.route('/logout')

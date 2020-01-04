@@ -2,12 +2,11 @@
 
 from importlib import import_module
 import logging.config
-import os
 
 from flask import Flask
 from flask_migrate import Migrate
 
-from innopoints.extensions import db, ma, oauth, login_manager
+from innopoints.extensions import db, ma, cors, oauth, login_manager
 from innopoints.blueprints import all_blueprints
 
 
@@ -49,7 +48,6 @@ def create_app(config='config/prod.py'):
     })
 
     app = Flask(__name__, static_folder=None)
-    app.secret_key = os.urandom(16)
     app.config.from_pyfile(config)
 
     # Import DB models. Flask-SQLAlchemy doesn't do this automatically.
@@ -60,6 +58,7 @@ def create_app(config='config/prod.py'):
     db.init_app(app)
     Migrate(app, db)
     ma.init_app(app)
+    cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     oauth.init_app(app)
     login_manager.init_app(app)
 

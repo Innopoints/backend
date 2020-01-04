@@ -1,9 +1,9 @@
 """Views related to the Activity model.
 
 Activity:
-- POST /projects/{project_id}/activity
-- PATCH /projects/{project_id}/activity/{activity_id}
-- DELETE /projects/{project_id}/activity/{activity_id}
+- POST /projects/{project_id}/activities
+- PATCH /projects/{project_id}/activities/{activity_id}
+- DELETE /projects/{project_id}/activities/{activity_id}
 
 Competence:
 - GET /competences
@@ -14,7 +14,7 @@ Competence:
 
 import logging
 
-from flask import abort, request
+from flask import request
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
@@ -22,6 +22,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
+from innopoints.core.helpers import abort
 from innopoints.models import Activity, Project, IPTS_PER_HOUR, Competence
 from innopoints.schemas import ActivitySchema, CompetenceSchema
 
@@ -29,7 +30,7 @@ NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
 
 
-@api.route('/projects/<int:project_id>/activity', methods=['POST'])
+@api.route('/projects/<int:project_id>/activities', methods=['POST'])
 @login_required
 def create_activity(project_id):
     """Create a new activity to an existing project."""
@@ -123,7 +124,7 @@ class ActivityAPI(MethodView):
 
 
 activity_api = ActivityAPI.as_view('activity_api')
-api.add_url_rule('/projects/<int:project_id>/activity/<int:activity_id>',
+api.add_url_rule('/projects/<int:project_id>/activities/<int:activity_id>',
                  view_func=activity_api,
                  methods=('PATCH', 'DELETE'))
 

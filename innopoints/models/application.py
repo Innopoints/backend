@@ -57,6 +57,7 @@ class VolunteeringReport(db.Model):
     reporter_email = db.Column(db.String(128),
                                db.ForeignKey('accounts.email', ondelete='CASCADE'),
                                nullable=False)
+    time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     rating = db.Column(db.Integer,
                        db.CheckConstraint('rating <= 5 AND rating >= 1'),
                        nullable=False)
