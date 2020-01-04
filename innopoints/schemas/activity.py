@@ -36,7 +36,7 @@ class ActivitySchema(ma.ModelSchema):
         """Collapse the two date properties into the {"start": , "end": } dates object."""
         if 'start_date' not in data:
             return data
-        
+
         data['timeframe'] = {
             'start': data.pop('start_date'),
             'end': data.pop('end_date')
