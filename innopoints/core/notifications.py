@@ -25,9 +25,11 @@ def notify(recipient_email: str, notification_type: str, payload=None):
         db.session.add(notification)
         db.session.commit()
         log.info(f'Sent a notification to {recipient_email}')
+        return notification
     except IntegrityError as exc:
         db.session.rollback()
         log.exception(exc)
+        return None
 
 def notify_all(recipients: List[Account], notification_type: str, payload=None):
     """Sends the same notification to each of the emails in the given list."""
