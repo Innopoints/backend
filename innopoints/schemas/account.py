@@ -18,6 +18,8 @@ class AccountSchema(ma.ModelSchema):
 class TransactionSchema(ma.ModelSchema):
     class Meta:
         model = Transaction
+        ordered = True
+        sqla_session = db.session
 
 
 class TimelineSchema(ma.Schema):
