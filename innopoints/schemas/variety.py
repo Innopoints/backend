@@ -1,7 +1,7 @@
 """Schema for the Variety, Color, Size, StockChange and ProductImage models."""
 
 from marshmallow_enum import EnumField
-from marshmallow import ValidationError, pre_load, post_dump
+from marshmallow import ValidationError, pre_load, post_dump, validate
 
 from innopoints.extensions import ma, db
 from innopoints.models import Variety, Color, Size, StockChange, StockChangeStatus, ProductImage
@@ -86,7 +86,7 @@ class VarietySchema(ma.ModelSchema):
                                               key=lambda x: x['order'])]
         return data
 
-    images = ma.Nested('ProductImageSchema', many=True)
+    images = ma.Nested('ProductImageSchema', many=True, validate=validate.Length(min=1))
     stock_changes = ma.Nested('StockChangeSchema', many=True)
     amount = ma.Int(dump_only=True)
     purchases = ma.Int(dump_only=True)
