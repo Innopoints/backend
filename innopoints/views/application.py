@@ -131,11 +131,6 @@ def change_application_status(project_id, activity_id, application_id):
     if application.status != status:
         application.status = status
 
-        notify(application.applicant_email, NotificationType.application_status_changed, {
-            'activity_id': activity_id,
-            'application_id': application_id,
-        })
-
         try:
             db.session.commit()
         except IntegrityError as err:
@@ -143,8 +138,12 @@ def change_application_status(project_id, activity_id, application_id):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ApplicationSchema(exclude=('applicant', 'actual_hours'))
-    return out_schema.jsonify(application)
+        notify(application.applicant_email, NotificationType.application_status_changed, {
+            'activity_id': activity_id,
+            'application_id': application_id,
+        })
+
+    return NO_PAYLOAD
 
 
 # ----- VolunteeringReport -----
