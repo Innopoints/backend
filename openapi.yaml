@@ -1,0 +1,401 @@
+openapi: 3.0.1
+info:
+  title: Innopoints API
+  description: Describes the endpoints exposed by the API of Innopoints. This is only for internal use at Innopolis University.
+  # termsOfService: http://swagger.io/terms/
+  contact:
+    email: innopoints@innopolis.university
+  # license:
+  #   name: Apache 2.0
+  #   url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+ 
+externalDocs:
+  description: Additional detailed documentation on Notion
+  url: https://www.notion.so/innopoints/
+
+servers:
+- url: https://innopoints-backend.herokuapp.com/
+- url: Something on innopolis servers
+
+tags:
+- name: product
+  description: Items you can buy from the store
+- name: variety
+  description: Variations of products
+- name: project
+  description: An event you can volunteer on
+- name: activity
+  description: They make up a project
+- name: application
+  description: Volunteer wants to work on an activity
+- name: account
+  description: Someone
+- name: notification
+  description: Telling someone that something happened
+
+paths:
+  /products:
+    get:
+      tags:
+      - product
+      summary: List all existing products
+      operationId: listProducts
+      parameters: 
+        - name: page
+          description: Page number
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          description: Maximum number of elemenets
+          in: query
+          schema:
+            type: integer
+            default: 3
+          example: 10
+        - name: order
+          description: Parameter to sort products by
+          in: query
+          schema:
+            type: string
+            default: time
+          example: price
+        - name: q
+          description: Search query
+          in: query
+          schema:
+            type: string
+          required: false
+
+      responses:
+        400:
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Bad query parameters
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      tags:
+      - product
+      summary: Add a new item to the store
+      operationId: addProduct
+      requestBody:
+        description: Item object to be added to the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      responses:
+        200:
+          description: Created product is returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        400:
+          description: Invalid input
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - innopolis_sso: []
+
+  /account/{email}:
+    parameters:
+    - name: email
+      in: path
+      description: email of the requested account
+      required: true
+      schema:
+        type: string
+        format: email
+        nullable: true
+    get:
+      tags:
+      - account
+      summary: Get current user info
+      description: If the user is logged in, get their information
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+      security:
+      - innopolis_sso: []
+  /account/{email}/balance:
+    parameters:
+    - name: email
+      in: path
+      description: email of the requested account
+      required: true
+      schema:
+        type: string
+        format: email
+    patch:
+      tags:
+      - account
+      summary: Modify the user's balance
+      description: Update the user's balance by a number that can be positive or negative
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                change:
+                  type: integer
+                  example: 340
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+      security:
+      - innopolis_sso: []
+
+
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        full_name:
+          type: string
+          example: Abdelrahman Abounegm
+        group:
+          type: string
+          example: BS18-04
+          nullable: true
+        email:
+          type: string
+          format: email
+        telegram_username:
+          type: string
+          minLength: 4
+          maxLength: 32
+          nullable: true
+        is_admin:
+          type: boolean
+          default: false
+        balance:
+          type: integer
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        account_email:
+          type: string
+          format: email
+        change:
+          type: integer
+        stock_change_id:
+          type: integer
+          minimum: 1
+          nullable: true
+        feedback_id:
+          type: integer
+          minimum: 1
+          nullable: true
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          example: ASCII Whale
+        type:
+          type: string
+          nullable: true
+          example: T-Shirt
+        description:
+          type: string
+          example: Just a shirt
+        varieties:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variety'
+          minLength: 1
+        price:
+          type: integer
+        addition_time:
+          type: string
+          format: date-time
+          
+    Variety:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        product_id:
+          type: integer
+          minimum: 1
+        size:
+          type: string
+          maxLength: 3
+          nullable: true
+          example: XL
+        color:
+          type: string
+          minLength: 6
+          maxLength: 6
+          nullable: true
+          example: c0ff32
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              image_id:
+                type: integer
+                minimum: 1
+              order:
+                type: integer
+
+    StockChange:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        amount:
+          type: integer
+        time:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, ready_for_pickup, carried_out, rejected]
+        account_email:
+          type: string
+          format: email
+        variety_id:
+          type: integer
+          minimum: 1
+    
+    Project:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Olympiad
+        image_id:
+          type: integer
+          nullable: true
+        creation_time:
+          type: string
+          format: date-time
+        organizer:
+          type: string
+          example: Events department
+          nullable: true
+        creator_email:
+          type: string
+          format: email
+        admin_feedback:
+          type: string
+          maxLength: 1024
+          nullable: true
+        review_status:
+          type: string
+          enum: [pending, approved, rejected]
+          nullable: true
+        lifetime_stage:
+          type: string
+          enum: [draft, ongoing, finalizing, finished]
+          default: draft
+
+    Activity:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 128
+          nullable: true
+        description:
+          type: string
+          maxLength: 1024
+          nullable: true
+        timeframe:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+          nullable: true
+        project_id:
+          type: integer
+          minimum: 1
+        working_hours:
+          type: integer
+          minimum: 1
+          default: 1
+        reward_rate:
+          type: integer
+          minimum: 0
+          default: 70
+        fixed_reward:
+          type: boolean
+          default: false
+        people_required:
+          type: integer
+          minimum: 0
+          default: 0
+        telegram_required:
+          type: boolean
+          default: false
+        feedback_question:
+          type: array
+          items:
+            type: string
+          example:
+           - "What did you learn from this volunteering opportunity?"
+           - "What could be improved in the organization?"
+  
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: invalid input
+
+  securitySchemes:
+    innopolis_sso:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: /login
+          scopes: {}
+    api_key:
+      type: apiKey
+      name: api_key
+      in: cookie

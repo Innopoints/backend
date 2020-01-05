@@ -55,7 +55,6 @@ def list_products():
         abort(400, {'message': 'Limit and page number must be positive.'})
 
     if (order_by, order) not in ordering:
-        print(order_by, order)
         abort(400, {'message': 'Invalid ordering specified.'})
 
     db_query = Product.query

@@ -11,7 +11,7 @@ VolunteeringReport:
 
 import logging
 
-from flask import request
+from flask import request, jsonify
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -45,6 +45,9 @@ def apply_for_activity(project_id, activity_id):
     activity = Activity.query.get_or_404(activity_id)
     if activity.project != project:
         abort(400, {'message': 'The specified project and activity are unrelated.'})
+
+    if project.lifetime_stage != LifetimeStage.ongoing:
+        abort(400, {'message': 'Applications may only be placed on ongoing projects.'})
 
     if activity.has_application_from(current_user):
         abort(400, {'message': 'An application already exists.'})
@@ -83,6 +86,9 @@ def take_back_application(project_id, activity_id):
                                               applicant=current_user).one_or_none()
     if application is None:
         abort(400, {'message': 'No application exists for this activity.'})
+
+    if project.lifetime_stage != LifetimeStage.ongoing:
+        abort(400, {'message': 'Applications may only be taken back from ongoing projects.'})
 
     db.session.delete(application)
     try:
@@ -152,8 +158,7 @@ def create_report(project_id, activity_id, application_id):
     if current_user not in project.moderators and not current_user.is_admin:
         abort(401)
 
-    if not (project.lifetime_stage == LifetimeStage.ongoing
-            and project.review_status is not None):
+    if project.lifetime_stage != LifetimeStage.finalizing:
         abort(400, {'message': 'The project must be in the finalizing stage.'})
 
     in_schema = VolunteeringReportSchema(exclude=('time',))

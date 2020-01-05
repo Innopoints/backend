@@ -13,3 +13,13 @@ class AccountSchema(ma.ModelSchema):
         sqla_session = db.session
 
     balance = ma.Int()
+
+
+class TimelineSchema(ma.Schema):
+    class Meta:
+        ordered = True
+        sqla_session = db.session
+
+    entry_time = ma.DateTime(timezone=True)
+    type = ma.Str()
+    payload = ma.Dict()
