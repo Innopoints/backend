@@ -39,6 +39,8 @@ class Activity(db.Model):
         db.CheckConstraint(f'(fixed_reward AND working_hours = 1) '
                            f'OR (NOT fixed_reward AND reward_rate = {IPTS_PER_HOUR})',
                            name='reward policy'),
+        db.UniqueConstraint('name', 'project_id',
+                            name='name is unique inside a project')
     )
 
     id = db.Column(db.Integer, primary_key=True)
