@@ -295,14 +295,9 @@ def leave_feedback(project_id, activity_id, application_id):
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    all_feedback_in = True
-    for activity in project.activities:
-        for application in activity.applications:
-            if application.feedback is None:
-                all_feedback_in = False
-                break
-        if not all_feedback_in:
-            break
+    all_feedback_in = all(application.feedback is not None
+                          for activity in project.activities
+                          for application in activity.applications)
     if all_feedback_in:
         mods = [*project.moderators, project.creator]
         notify_all(mods, NotificationType.all_feedback_in, {
