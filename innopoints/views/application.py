@@ -3,7 +3,7 @@
 Application:
 - POST   /projects/{project_id}/activities/{activity_id}/applications
 - DELETE /projects/{project_id}/activities/{activity_id}/applications
-- PATCH  /projects/{project_id}/activities/{activity_id}/applications
+- PATCH  /projects/{project_id}/activities/{activity_id}/applications/{application_id}
 
 VolunteeringReport:
 - GET  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report_info
