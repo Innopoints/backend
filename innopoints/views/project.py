@@ -190,8 +190,6 @@ def request_review(project_id):
 
     if project.review_status == ReviewStatus.pending:
         abort(400, {'message': 'Project is already under review.'})
-    elif project.review_status == ReviewStatus.approved:
-        abort(400, {'message': 'Project is already approved.'})
 
     project.review_status = ReviewStatus.pending
 
@@ -311,8 +309,6 @@ class ProjectDetailAPI(MethodView):
             abort(400, {'The project may only be edited during its draft and ongoing stages.'})
 
         in_schema = ProjectSchema(only=('name', 'image_id', 'organizer', 'moderators'))
-
-        old_status = project.review_status
 
         try:
             updated_project = in_schema.load(request.json, instance=project, partial=True)
