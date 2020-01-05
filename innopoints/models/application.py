@@ -69,10 +69,13 @@ class Feedback(db.Model):
     __tablename__ = 'feedback'
 
     application_id = db.Column(db.Integer,
-                               db.ForeignKey('applications.id'),
+                               db.ForeignKey('applications.id', ondelete='CASCADE'),
                                unique=True,
                                primary_key=True)
     # property `competences` created with a backref
     time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     answers = db.Column(db.ARRAY(db.String(1024)), nullable=False)
-    transaction = db.relationship('Transaction')
+    transaction = db.relationship('Transaction',
+                                  uselist=False,
+                                  cascade='all, delete-orphan',
+                                  passive_deletes=True)

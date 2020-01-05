@@ -1,4 +1,4 @@
-"""Views related to the Application and VolunteeringReport models.
+"""Views related to the Application, VolunteeringReport and Feedback models.
 
 Application:
 - POST   /projects/{project_id}/activities/{activity_id}/applications
@@ -32,7 +32,7 @@ from innopoints.models import (
     project_moderation,
     VolunteeringReport,
 )
-from innopoints.schemas import ApplicationSchema, VolunteeringReportSchema
+from innopoints.schemas import ApplicationSchema, VolunteeringReportSchema, FeedbackSchema
 
 
 NO_PAYLOAD = ('', 204)
@@ -231,3 +231,69 @@ def create_report(project_id, activity_id, application_id):
 
     out_schema = VolunteeringReportSchema()
     return out_schema.jsonify(new_report)
+
+
+# ----- Feedback -----
+
+@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
+           '/applications/<int:application_id>/feedback')
+@login_required
+def read_feedback(project_id, activity_id, application_id):
+    """Get the feedback from a volunteer on a particular volunteering experience."""
+    application = Application.query.get_or_404(application_id)
+    activity = Activity.query.get_or_404(activity_id)
+    project = Project.query.get_or_404(project_id)
+
+    if activity.project != project or application.activity_id != activity.id:
+        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+
+    if current_user not in project.moderators and not current_user.is_admin:
+        abort(401)
+
+    out_schema = FeedbackSchema()
+    return out_schema.jsonify(application.feedback)
+
+
+@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
+           '/applications/<int:application_id>/feedback', methods=['POST'])
+@login_required
+def leave_feedback(project_id, activity_id, application_id):
+    """Leave feedback on a particular volunteering experience."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    application = Application.query.get_or_404(application_id)
+    activity = Activity.query.get_or_404(activity_id)
+    project = Project.query.get_or_404(project_id)
+
+    if activity.project != project or application.activity_id != activity.id:
+        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+
+    if application.applicant != current_user:
+        abort(401)
+
+    if application.feedback is not None:
+        abort(400, {'message': 'Feedback already exists.'})
+
+    in_schema = FeedbackSchema(exclude=('time',))
+    try:
+        new_feedback = in_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    if len(new_feedback.answers) != len(activity.feedback_questions):
+        abort(400, {'message': f'Expected {len(activity.feedback_questions)} answer(s), '
+                               f'found {len(new_feedback.answers)}.'})
+
+    new_feedback.application_id = application_id
+
+    try:
+        db.session.add(new_feedback)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    out_schema = FeedbackSchema()
+    return out_schema.jsonify(new_feedback)
