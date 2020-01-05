@@ -115,6 +115,46 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
       - innopolis_sso: []
+  /products/{product_id}:
+    parameters:
+    - name: product_id
+      in: path
+      description: ID of the product in the database
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    patch:
+      tags:
+      - product
+      requestBody:
+        description: What to edit
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        400:
+          description: invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: unauthorized
+          content: {}
+      security:
+        - innopoints_sso: []
+    delete:
+      tags:
+      - product
+      responses:
+        204:
+          description: success. no payload
+        401:
+          description: unauthorized
+      security:
+        - innopoints_sso: []
 
   /account/{email}:
     parameters:

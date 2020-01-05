@@ -13,6 +13,7 @@ class NotificationType(Enum):
     claim_innopoints = auto()
     application_status_changed = auto()
     service = auto()
+    manual_transaction = auto()
     project_review_status_changed = auto()
     all_feedback_in = auto()
     out_of_stock = auto()

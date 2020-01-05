@@ -13,6 +13,7 @@ from innopoints.models import (
     Account,
     Application,
     StockChange,
+    Transaction,
 )
 
 
@@ -26,6 +27,7 @@ class PayloadSchema(ma.Schema):
     account = ma.Nested('AccountSchema', only=('email', 'full_name'))
     application = ma.Nested('ApplicationSchema', only=('id', 'status', 'actual_hours'))
     stock_change = ma.Nested('StockChangeSchema', only=('id', 'amount', 'status'))
+    transaction = ma.Nested('TransactionSchema', only=('id', 'change'))
 
     @pre_dump
     def fill_data(self, data, **kwargs):  # pylint: disable=unused-argument
@@ -43,6 +45,8 @@ class PayloadSchema(ma.Schema):
             data['application'] = Application.query.get(data.pop('application_id'))
         if 'stock_change_id' in data:
             data['stock_change'] = StockChange.query.get(data.pop('stock_change_id'))
+        if 'transaction_id' in data:
+            data['transaction'] = Transaction.query.get(data.pop('transaction_id'))
         return data
 
 

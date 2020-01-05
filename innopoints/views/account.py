@@ -6,6 +6,7 @@ Account:
 - POST /account/{email}/balance
 - GET  /account/timeline
 - GET  /account/{email}/timeline
+- POST /account/{email}/notify
 """
 
 import logging
@@ -18,6 +19,7 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
 from innopoints.core.sql_hacks import as_row
+from innopoints.core.notifications import notify
 from innopoints.extensions import db
 from innopoints.models import (
     Account,
@@ -91,6 +93,10 @@ def change_balance(email):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
+        notify(user.email, NotificationType.manual_transaction, {
+            'transaction_id': new_transaction.id,
+        })
+
     return jsonify(balance=user.balance)
 
 
@@ -162,3 +168,27 @@ def get_timeline(email):
 
     out_schema = TimelineSchema(many=True)
     return out_schema.jsonify(timeline.all())
+
+
+@api.route('/account/<email>/notify', methods=['POST'])
+def service_notification(email):
+    """Sends a custom service notification by the admin to any user."""
+    user = Account.query.get_or_404(email)
+
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if not current_user.is_admin:
+        abort(401)
+
+    if not request.json.get('message'):
+        abort(400, {'message': 'Specify a valid message.'})
+
+    notification = notify(user.email, NotificationType.service, {
+        'message': request.json['message']
+    })
+
+    if notification is None:
+        abort(500, {'message': 'Error creating notification.'})
+
+    return NO_PAYLOAD

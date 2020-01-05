@@ -8,6 +8,8 @@ Project:
 - GET    /projects/{project_id}
 - PATCH  /projects/{project_id}
 - DELETE /projects/{project_id}
+- PATCH  /projects/{project_id}/request_review
+- PATCH  /projects/{project_id}/review_status
 """
 
 import logging
@@ -21,9 +23,16 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
-from innopoints.core.notifications import notify_all
+from innopoints.core.notifications import notify, notify_all
 from innopoints.extensions import db
-from innopoints.models import Activity, LifetimeStage, NotificationType, Project
+from innopoints.models import (
+    Activity,
+    LifetimeStage,
+    ReviewStatus,
+    NotificationType,
+    Project,
+    Account,
+)
 from innopoints.schemas import ProjectSchema
 
 NO_PAYLOAD = ('', 204)
@@ -162,6 +171,96 @@ def publish_project(project_id):
         'project_id': project.id,
         'account_email': current_user.email,
     })
+
+    return NO_PAYLOAD
+
+
+@api.route('/projects/<int:project_id>/request_review', methods=['PATCH'])
+@login_required
+def request_review(project_id):
+    """Request an admin's review for my project."""
+
+    project = Project.query.get_or_404(project_id)
+
+    if project.lifetime_stage != LifetimeStage.finalizing:
+        abort(400, {'message': 'Only projects being finalized can be reviewed.'})
+
+    if current_user != project.creator:
+        abort(401)
+
+    if project.review_status == ReviewStatus.pending:
+        abort(400, {'message': 'Project is already under review.'})
+
+    project.review_status = ReviewStatus.pending
+
+    try:
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    admins = Account.query.filter_by(is_admin=True).all()
+    notify_all(admins, NotificationType.project_review_requested, {
+        'project_id': project.id,
+    })
+
+    return ProjectSchema(exclude=('admin_feedback', 'files', 'image_id'),
+                         context={'user': current_user}).jsonify(project)
+
+
+@api.route('/projects/<int:project_id>/review_status', methods=['PATCH'])
+@login_required
+def review_project(project_id):
+    """Review a project in its finalizing stage."""
+
+    project = Project.query.get_or_404(project_id)
+
+    if project.lifetime_stage != LifetimeStage.finalizing:
+        abort(400, {'message': 'Only projects being finalized can be reviewed.'})
+
+    if not current_user.is_admin:
+        abort(401)
+
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if project.review_status != ReviewStatus.pending:
+        abort(400, {'message': 'Can only review projects pending review.'})
+
+    allowed_states = {
+        'approved': ReviewStatus.approved,
+        'rejected': ReviewStatus.rejected,
+    }
+
+    if request.json.get('review_status') not in allowed_states:
+        abort(400, {'message': 'Invalid review status specified.'})
+
+    project.review_status = allowed_states[request.json['review_status']]
+    if project.review_status == ReviewStatus.approved:
+        project.lifetime_stage = LifetimeStage.finished
+
+    if 'admin_feedback' in request.json:
+        project.admin_feedback = request.json['admin_feedback']
+
+    try:
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    notify_all(project.moderators, NotificationType.project_review_status_changed, {
+        'project_id': project.id,
+    })
+    if project.review_status == ReviewStatus.approved:
+        for activity in project.activities:
+            for application in activity.applications:
+                notify(application.applicant_email, NotificationType.claim_innopoints, {
+                    'project_id': project.id,
+                    'activity_id': activity.id,
+                    'application_id': application.id,
+                })
 
     return NO_PAYLOAD
 
