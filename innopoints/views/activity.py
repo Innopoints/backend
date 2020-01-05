@@ -23,7 +23,7 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
-from innopoints.models import Activity, Project, IPTS_PER_HOUR, Competence
+from innopoints.models import Activity, Project, IPTS_PER_HOUR, Competence, LifetimeStage
 from innopoints.schemas import ActivitySchema, CompetenceSchema
 
 NO_PAYLOAD = ('', 204)
@@ -40,6 +40,9 @@ def create_activity(project_id):
     project = Project.query.get_or_404(project_id)
     if not current_user.is_admin and current_user not in project.moderators:
         abort(401)
+
+    if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
+        abort(400, {'message': 'Activities may only be created on draft and ongoing projects.'})
 
     in_schema = ActivitySchema(exclude=('id', 'project', 'applications'))
 
@@ -76,6 +79,9 @@ class ActivityAPI(MethodView):
         if not current_user.is_admin and current_user not in project.moderators:
             abort(401)
 
+        if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
+            abort(400, {'message': 'Activities may only be edited on draft and ongoing projects.'})
+
         activity = Activity.query.get_or_404(activity_id)
         if activity.project != project:
             abort(400, {'message': 'The specified project and activity are unrelated.'})
@@ -108,6 +114,9 @@ class ActivityAPI(MethodView):
         project = Project.query.get_or_404(project_id)
         if not current_user.is_admin and current_user not in project.moderators:
             abort(401)
+
+        if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
+            abort(400, {'message': 'Activities may only be deleted on draft and ongoing projects.'})
 
         activity = Activity.query.get_or_404(activity_id)
         if activity.project != project:

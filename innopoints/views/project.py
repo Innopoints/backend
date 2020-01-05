@@ -42,17 +42,8 @@ def list_projects():
         ('proximity', 'asc'): first_activity.asc(),
         ('proximity', 'desc'): first_activity.desc(),
     }
-    lifetime_stages = {
-        'ongoing': LifetimeStage.ongoing,
-        'past': LifetimeStage.past,
-    }
 
-    try:
-        lifetime_stage = lifetime_stages[request.args['type']]
-    except KeyError:
-        abort(400, {'message': f'A project type must be one of: {", ".join(lifetime_stages)}'})
-
-    db_query = Project.query.filter_by(lifetime_stage=lifetime_stage)
+    db_query = Project.query
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
         db_query = db_query.join(Project.activities).filter(
@@ -61,11 +52,8 @@ def list_projects():
                 Activity.description.ilike(like_query))
         ).distinct()
 
-    if lifetime_stage == LifetimeStage.past:
-        page = int(request.args.get('page', 1))
-        db_query = db_query.order_by(Project.id.desc())
-        db_query = db_query.offset(10 * (page - 1)).limit(10)
-    else:
+    if request.args.get('type') == 'ongoing':
+        db_query = db_query.filter_by(lifetime_stage=LifetimeStage.ongoing)
         order_by = request.args.get('order_by', default_order_by)
         order = request.args.get('order', default_order)
         if (order_by, order) not in ordering:
@@ -74,6 +62,14 @@ def list_projects():
         if order_by == 'proximity':
             db_query = db_query.join(Activity).group_by(Project.id)
         db_query = db_query.order_by(ordering[order_by, order])
+    elif request.args.get('type') == 'past':
+        db_query = db_query.filter(or_(Project.lifetime_stage == LifetimeStage.finalizing,
+                                       Project.lifetime_stage == LifetimeStage.finished))
+        page = int(request.args.get('page', 1))
+        db_query = db_query.order_by(Project.id.desc())
+        db_query = db_query.offset(10 * (page - 1)).limit(10)
+    else:
+        abort(400, {'message': 'A project type must be one of: {"ongoing", "past"}'})
 
     conditional_exclude = ['review_status', 'moderators']
     if current_user.is_authenticated:
@@ -200,6 +196,9 @@ class ProjectDetailAPI(MethodView):
         project = Project.query.get_or_404(project_id)
         if not current_user.is_admin and current_user != project.creator:
             abort(401)
+
+        if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
+            abort(400, {'The project may only be edited during its draft and ongoing stages.'})
 
         in_schema = ProjectSchema(only=('name', 'image_id', 'organizer', 'moderators'))
 
