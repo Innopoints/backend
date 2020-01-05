@@ -93,6 +93,10 @@ def change_balance(email):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
+        notify(user.email, NotificationType.manual_transaction, {
+            'transaction_id': new_transaction.id,
+        })
+
     return jsonify(balance=user.balance)
 
 

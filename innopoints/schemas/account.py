@@ -1,7 +1,7 @@
 """Schema for the Account model."""
 
 from innopoints.extensions import ma, db
-from innopoints.models import Account
+from innopoints.models import Account, Transaction
 
 
 # pylint: disable=missing-docstring
@@ -13,6 +13,11 @@ class AccountSchema(ma.ModelSchema):
         sqla_session = db.session
 
     balance = ma.Int()
+
+
+class TransactionSchema(ma.ModelSchema):
+    class Meta:
+        model = Transaction
 
 
 class TimelineSchema(ma.Schema):

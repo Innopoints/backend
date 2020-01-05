@@ -6,12 +6,12 @@ from typing import List
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
-from innopoints.models import Notification, Account
+from innopoints.models import Notification, NotificationType, Account
 
 log = logging.getLogger(__name__)
 
 
-def notify(recipient_email: str, notification_type: str, payload=None):
+def notify(recipient_email: str, notification_type: NotificationType, payload=None):
     """Sends a notification to the specified user."""
     # TODO: check preferences
     # TODO: send Email
