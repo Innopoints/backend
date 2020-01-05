@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-05T08:44:23.702Z",
+  "__export_date": "2020-01-05T13:37:55.495Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -263,7 +263,7 @@
       "isPrivate": false,
       "metaSortKey": -1560385379861.25,
       "method": "GET",
-      "modified": 1578059069532,
+      "modified": 1578229975455,
       "name": "Show project",
       "parameters": [],
       "parentId": "fld_a271d4a747684a2e8d59d6857134eda3",
@@ -273,7 +273,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/projects/1",
+      "url": "{{url}}/projects/2",
       "_type": "request"
     },
     {
@@ -408,29 +408,6 @@
       "_type": "request"
     },
     {
-      "_id": "req_e5acdc23d8934901a8f7692bec320ccf",
-      "authentication": {},
-      "body": {},
-      "created": 1576258056059,
-      "description": "",
-      "headers": [],
-      "isPrivate": false,
-      "metaSortKey": -1576245413426.5,
-      "method": "DELETE",
-      "modified": 1578059133759,
-      "name": "Delete activity",
-      "parameters": [],
-      "parentId": "fld_d3fe061760a44949a49d2b98e0ee47ce",
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingFollowRedirects": "global",
-      "settingRebuildPath": true,
-      "settingSendCookies": true,
-      "settingStoreCookies": true,
-      "url": "{{url}}/projects/3/activities/4",
-      "_type": "request"
-    },
-    {
       "_id": "req_10e8e24fef4d4c589b66cfa8848275ea",
       "authentication": {},
       "body": {
@@ -498,6 +475,38 @@
       "_type": "request"
     },
     {
+      "_id": "req_df642b3680ae415e9ac56bed35608d8a",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"status\": \"pending\"\n}"
+      },
+      "created": 1578224586993,
+      "description": "",
+      "headers": [
+        {
+          "id": "pair_e81149396fc14c6080f4c572fe2fad47",
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "isPrivate": false,
+      "metaSortKey": -1577276806062,
+      "method": "PATCH",
+      "modified": 1578224968117,
+      "name": "Change application status",
+      "parameters": [],
+      "parentId": "fld_cd3ee7a12e954d1b8bb682b4d9a44e32",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/projects/1/activities/1/applications/6",
+      "_type": "request"
+    },
+    {
       "_id": "req_fe90e7519c1948dca1f7ca700ca684e4",
       "authentication": {},
       "body": {
@@ -562,6 +571,96 @@
       "settingSendCookies": true,
       "settingStoreCookies": true,
       "url": "{{url}}/projects/1/activities/1/applications/6/report_info",
+      "_type": "request"
+    },
+    {
+      "_id": "req_e5acdc23d8934901a8f7692bec320ccf",
+      "authentication": {},
+      "body": {},
+      "created": 1576258056059,
+      "description": "",
+      "headers": [],
+      "isPrivate": false,
+      "metaSortKey": -1577847215973,
+      "method": "DELETE",
+      "modified": 1578229177112,
+      "name": "Delete activity",
+      "parameters": [],
+      "parentId": "fld_1a42fe85c5d447f49081f267a45d262e",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/projects/3/activities/4",
+      "_type": "request"
+    },
+    {
+      "_id": "req_6f784c6afd4e4a94b3b8c370cc975636",
+      "authentication": {},
+      "body": {},
+      "created": 1578229197285,
+      "description": "",
+      "headers": [],
+      "isPrivate": false,
+      "metaSortKey": -1578229655270,
+      "method": "GET",
+      "modified": 1578229750807,
+      "name": "Get feedback",
+      "parameters": [],
+      "parentId": "fld_79e272b2811844878c6f138e83c4fdae",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/projects/2/activities/3/applications/1/feedback",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_79e272b2811844878c6f138e83c4fdae",
+      "created": 1578229171457,
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1576245413314,
+      "modified": 1578229189189,
+      "name": "Feedback",
+      "parentId": "fld_d3fe061760a44949a49d2b98e0ee47ce",
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_33f40a9199964823b5fe766f8fa075f1",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"answers\": [\"fine\"],\n\t\"competences\": [1, 2]\n}"
+      },
+      "created": 1578229655220,
+      "description": "",
+      "headers": [
+        {
+          "id": "pair_34648ceee88a4d13aa1634e4761cff58",
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "isPrivate": false,
+      "metaSortKey": -1578229655220,
+      "method": "POST",
+      "modified": 1578231311417,
+      "name": "Leave feedback",
+      "parameters": [],
+      "parentId": "fld_79e272b2811844878c6f138e83c4fdae",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/projects/2/activities/3/applications/1/feedback",
       "_type": "request"
     },
     {
@@ -1349,11 +1448,11 @@
         {
           "creation": "2019-12-13T12:48:12.137Z",
           "domain": "0.0.0.0",
-          "expires": "2021-01-03T22:29:14.000Z",
+          "expires": "2021-01-04T13:37:09.000Z",
           "hostOnly": true,
-          "id": "5654061313992051",
+          "id": "32593561089265877",
           "key": "remember_token",
-          "lastAccessed": "2020-01-04T22:29:14.271Z",
+          "lastAccessed": "2020-01-05T13:37:09.540Z",
           "path": "/",
           "value": "\"admin@innopolis.university|8a05b1fba27f45da6ffdf696c611d140b9af746a6f9e5456e067cb1c86b23c2d48f466bbf5442fbdfcbf7440b8538c7c955ae24fbf94759f429b16d6c54e3fce\""
         },
@@ -1362,18 +1461,18 @@
           "domain": "0.0.0.0",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "614789460981473",
+          "id": "019360796327096974",
           "key": "session",
-          "lastAccessed": "2020-01-04T22:29:14.271Z",
+          "lastAccessed": "2020-01-05T13:37:09.540Z",
           "path": "/",
-          "value": ".eJwdi8sKAjEMAP-lZ5GmbdKsJ_9k2TYJFrQr-xBE_HcX5zLMYT5uX3UZm7iLm-TR-rX1Pj_ne1vPe28vXda2vd3JjbboenOXbdn1qP8QSkUaCAtRhKBScMoYyAASZmFRNOQSwYrXABCysiCjUOAYfVVLxDh4iwCeMnBm5VzjlJg4CqtpxcPssWbDFHyO_oCECJIVdd8fdNE3mQ.XhERug.YLZEu5ZlSjLHBVdIxLBfYk0q4Ds"
+          "value": ".eJwdi8sKAjEMAP-lZ5GmbdKsJ_9k2TYJFrQr-xBE_HcX5zLMYT5uX3UZm7iLm-TR-rX1Pj_ne1vPe28vXda2vd3JjbboenOXbdn1qP8QSkUaCAtRhKBScMoYyAASZmFRNOQSwYrXABCysiCjUOAYfVVLxDh4iwCeMnBm5VzjlJg4CqtpxcPssWbDFHyO_oCECJIVdd8fdNE3mQ.XhHmhQ.mypybxt-39ggqPgTCJ98bIWZ7Wo"
         },
         {
           "creation": "2019-12-21T21:19:14.685Z",
           "domain": "127.0.0.1",
           "expires": "2020-12-20T21:34:06.000Z",
           "hostOnly": true,
-          "id": "40836505622699226",
+          "id": "9453990152188025",
           "key": "remember_token",
           "lastAccessed": "2019-12-21T21:34:06.421Z",
           "path": "/",
@@ -1384,7 +1483,7 @@
           "domain": "127.0.0.1",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "5538401789283776",
+          "id": "7147866826750378",
           "key": "session",
           "lastAccessed": "2019-12-21T21:34:06.421Z",
           "path": "/",
@@ -1395,7 +1494,7 @@
           "domain": "innopoints-backend.herokuapp.com",
           "expires": "2021-01-02T13:32:45.000Z",
           "hostOnly": true,
-          "id": "10614477489824958",
+          "id": "25518959902780414",
           "key": "remember_token",
           "lastAccessed": "2020-01-03T13:33:22.121Z",
           "path": "/",
@@ -1407,7 +1506,7 @@
           "domain": "innopoints-backend.herokuapp.com",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "054783640384387766",
+          "id": "1996397196735149",
           "key": "session",
           "lastAccessed": "2020-01-03T13:33:22.122Z",
           "path": "/",
@@ -1416,7 +1515,7 @@
         }
       ],
       "created": 1576093985404,
-      "modified": 1578176954272,
+      "modified": 1578231429542,
       "name": "Default Jar",
       "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
       "_type": "cookie_jar"
