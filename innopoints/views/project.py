@@ -196,7 +196,6 @@ def request_review(project_id):
     project.review_status = ReviewStatus.pending
 
     try:
-        db.session.add(project)
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
@@ -247,7 +246,6 @@ def review_project(project_id):
         project.admin_feedback = request.json['admin_feedback']
 
     try:
-        db.session.add(project)
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
