@@ -243,6 +243,9 @@ def review_project(project_id):
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
+    notify_all(project.moderators, NotificationType.project_review_status_changed, {
+        'project_id': project.id,
+    })
     return NO_PAYLOAD
 
 
