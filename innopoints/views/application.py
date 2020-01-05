@@ -229,20 +229,6 @@ def create_report(project_id, activity_id, application_id):
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    all_feedback_in = True
-    for activity in project.activities:
-        for application in activity.applications:
-            if application.feedback is None:
-                all_feedback_in = False
-                break
-        if not all_feedback_in:
-            break
-    if all_feedback_in:
-        mods = [*project.moderators, project.creator]
-        notify_all(mods, NotificationType.all_feedback_in, {
-            'project_id': project.id,
-        })
-
     out_schema = VolunteeringReportSchema()
     return out_schema.jsonify(new_report)
 
@@ -308,6 +294,20 @@ def leave_feedback(project_id, activity_id, application_id):
         db.session.rollback()
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
+
+    all_feedback_in = True
+    for activity in project.activities:
+        for application in activity.applications:
+            if application.feedback is None:
+                all_feedback_in = False
+                break
+        if not all_feedback_in:
+            break
+    if all_feedback_in:
+        mods = [*project.moderators, project.creator]
+        notify_all(mods, NotificationType.all_feedback_in, {
+            'project_id': project.id,
+        })
 
     out_schema = FeedbackSchema()
     return out_schema.jsonify(new_feedback)
