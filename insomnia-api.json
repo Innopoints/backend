@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-05T15:14:36.062Z",
+  "__export_date": "2020-01-05T16:00:58.053Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -118,6 +118,50 @@
       "_type": "request"
     },
     {
+      "_id": "req_b0139a8d5a084c49b5aff7ca69198725",
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"telegram_username\": \"aUserNameaa\"\n}"
+      },
+      "created": 1578239911186,
+      "description": "",
+      "headers": [
+        {
+          "id": "pair_ae2d9b1c996f489484cae42bfaec0fbd",
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "isPrivate": false,
+      "metaSortKey": -1578239911186,
+      "method": "PATCH",
+      "modified": 1578240035513,
+      "name": "Change Telegram username",
+      "parameters": [],
+      "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/account/student1@innopolis.university/telegram",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
+      "created": 1577218177904,
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1576094103863,
+      "modified": 1578237253313,
+      "name": "Account",
+      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
+      "_type": "request_group"
+    },
+    {
       "_id": "req_c829f1a48cd6491c940d75a2a5ddc986",
       "authentication": {},
       "body": {},
@@ -139,18 +183,6 @@
       "settingStoreCookies": true,
       "url": "{{url}}/account",
       "_type": "request"
-    },
-    {
-      "_id": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
-      "created": 1577218177904,
-      "description": "",
-      "environment": {},
-      "environmentPropertyOrder": null,
-      "metaSortKey": -1576094103863,
-      "modified": 1578237253313,
-      "name": "Account",
-      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
-      "_type": "request_group"
     },
     {
       "_id": "req_832ae9702a6c499fb6e44680dd318991",
@@ -1618,7 +1650,7 @@
           "domain": "0.0.0.0",
           "expires": "2021-01-04T13:37:09.000Z",
           "hostOnly": true,
-          "id": "32593561089265877",
+          "id": "718715140176722",
           "key": "remember_token",
           "lastAccessed": "2020-01-05T13:37:09.540Z",
           "path": "/",
@@ -1629,7 +1661,7 @@
           "domain": "0.0.0.0",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "019360796327096974",
+          "id": "8001992135781817",
           "key": "session",
           "lastAccessed": "2020-01-05T13:37:09.540Z",
           "path": "/",
@@ -1640,7 +1672,7 @@
           "domain": "127.0.0.1",
           "expires": "2020-12-20T21:34:06.000Z",
           "hostOnly": true,
-          "id": "9453990152188025",
+          "id": "4845563608888275",
           "key": "remember_token",
           "lastAccessed": "2019-12-21T21:34:06.421Z",
           "path": "/",
@@ -1651,7 +1683,7 @@
           "domain": "127.0.0.1",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "7147866826750378",
+          "id": "08419008118230531",
           "key": "session",
           "lastAccessed": "2019-12-21T21:34:06.421Z",
           "path": "/",
@@ -1662,7 +1694,7 @@
           "domain": "innopoints-backend.herokuapp.com",
           "expires": "2021-01-02T13:32:45.000Z",
           "hostOnly": true,
-          "id": "25518959902780414",
+          "id": "8585688733377721",
           "key": "remember_token",
           "lastAccessed": "2020-01-03T13:33:22.121Z",
           "path": "/",
@@ -1674,16 +1706,38 @@
           "domain": "innopoints-backend.herokuapp.com",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "1996397196735149",
+          "id": "9209753758046497",
           "key": "session",
           "lastAccessed": "2020-01-03T13:33:22.122Z",
           "path": "/",
           "secure": true,
           "value": ".eJwdy0GKwzAMQNG7eF0GyZJsuau5SZEjhRo6yZA0hWHo3Vu6-rzF_0_HHttleDon85-xfI9lWX_X29i_jmU8YtvH_S-d0mXeYr-m83074q3P0JnCDEvhwDJLdYJaSwCiCLEQeobM1oQIVQByxgxdgsFCulbxlk0dbQqNYG-11T71IJ06EARHbUWhm4O-Q8xs1jBHbwrqnJ4vUWM38A.Xg9CfQ.q8He_Pyigg0kecDB8bwv4mWntu0"
+        },
+        {
+          "creation": "2020-01-05T15:59:23.169Z",
+          "domain": "localhost",
+          "expires": "2021-01-04T16:00:39.000Z",
+          "hostOnly": true,
+          "id": "5552520183352507",
+          "key": "remember_token",
+          "lastAccessed": "2020-01-05T16:00:39.357Z",
+          "path": "/",
+          "value": "\"student1@innopolis.university|06e578a672e7333adb9dab1342f701eda4b26e103b5e31f3ba03864f0a2ee0e1ca71820aff8d7aff039160afd0b79f13e0ce69af78c080b7ed05d72d7971629a\""
+        },
+        {
+          "creation": "2020-01-05T15:59:23.170Z",
+          "domain": "localhost",
+          "hostOnly": true,
+          "httpOnly": true,
+          "id": "6494269378787325",
+          "key": "session",
+          "lastAccessed": "2020-01-05T16:00:39.357Z",
+          "path": "/",
+          "value": ".eJwdi0EKwjAQAP-Ss0g2yW62PfmT0mR3MSCtNK0g4t8tzmWYw3zc0XWbmrjR9f0QXXa4tWVZn-uj9euxtJduve1vd3GTbdrvbty3Q8_6P6FUpIGwEEUIKgXnjIEMIGEWFkVDLhGseA0AISsLMgoFjtFXtUSMg7cI4CkDZ1bONc6JiaOwmlY8zR5rNkzB5-hPSIggWVH3_QFYWDjI.XhIIJw.AtRos8PG7Gamuiwx1yk8O2y63HU"
         }
       ],
       "created": 1576093985404,
-      "modified": 1578231429542,
+      "modified": 1578240039358,
       "name": "Default Jar",
       "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
       "_type": "cookie_jar"
