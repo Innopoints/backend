@@ -143,11 +143,20 @@ def publish_project(project_id):
     if project.lifetime_stage != LifetimeStage.draft:
         abort(400, {'message': 'Only draft projects can be published.'})
 
-    if current_user.is_admin or project.creator == current_user:
-        project.lifetime_stage = LifetimeStage.ongoing
-        db.session.commit()
-    else:
+    if not current_user.is_admin and project.creator != current_user:
         abort(401)
+
+    if not project.organizer:
+        abort(400, {'message': 'The organizer field must not be empty.'})
+
+    if not project.activities:
+        abort(400, {'message': 'The project must have at least one activity.'})
+
+    if not all(len(activity.competences) in range(1, 4) for activity in project.activities):
+        abort(400, {'message': 'The activities must have from 1 to 3 competences.'})
+
+    project.lifetime_stage = LifetimeStage.ongoing
+    db.session.commit()
 
     notify_all(project.moderators, NotificationType.added_as_moderator, {
         'project_id': project.id,
