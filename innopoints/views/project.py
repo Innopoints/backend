@@ -21,7 +21,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
-from innopoints.core.notifications import notify_all
+from innopoints.core.notifications import notify, notify_all
 from innopoints.extensions import db
 from innopoints.models import (
     Activity,
@@ -201,6 +201,51 @@ def request_review(project_id):
                          context={'user': current_user}).jsonify(project)
 
 
+@api.route('/projects/<int:project_id>/review_status', methods=['PATCH'])
+@login_required
+def review_project(project_id):
+    """Review a project in its finalizing stage."""
+
+    project = Project.query.get_or_404(project_id)
+
+    if project.lifetime_stage != LifetimeStage.finalizing:
+        abort(400, {'message': 'Only projects being finalized can be reviewed.'})
+
+    if not current_user.is_admin:
+        abort(401)
+
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if project.review_status != ReviewStatus.pending:
+        abort(400, {'message': 'Can only review projects pending review.'})
+
+    allowed_states = {
+        'approved': ReviewStatus.approved,
+        'rejected': ReviewStatus.rejected,
+    }
+
+    if 'review_status' not in request.json or request.json['review_status'] not in allowed_states:
+        abort(400, {'message': 'Invalid review status specified.'})
+
+    project.review_status = allowed_states[request.json['review_status']]
+    if project.review_status == ReviewStatus.approved:
+        project.lifetime_stage = LifetimeStage.finished
+
+    if 'admin_feedback' in request.json:
+        project.admin_feedback = request.json['admin_feedback']
+
+    try:
+        db.session.add(project)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    return NO_PAYLOAD
+
+
 class ProjectDetailAPI(MethodView):
     """REST views for a particular instance of a Project model."""
 
@@ -247,9 +292,6 @@ class ProjectDetailAPI(MethodView):
         in_schema = ProjectSchema(only=('name', 'image_id', 'organizer', 'moderators'))
 
         old_status = project.review_status
-
-        # TODO: check for review_status=approved/rejected by admin.
-        # if approved, finish the project and send out claim_innopoints notifications
 
         try:
             updated_project = in_schema.load(request.json, instance=project, partial=True)
