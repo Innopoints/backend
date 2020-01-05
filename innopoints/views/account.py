@@ -137,10 +137,12 @@ def get_timeline(email):
     promotions = (
         # pylint: disable=unsubscriptable-object
         db.session
-            .query(Notification.payload['project']['id'].label('project_id'),
-                   Notification.payload['project']['name'].label('project_name'),
+            .query(Notification.payload['project_id'].label('project_id'),
                    Notification.timestamp.label('entry_time'))
             .filter_by(recipient_email=user.email, type=NotificationType.added_as_moderator)
+            .join(Project,
+                  Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
+            .add_column(Project.name.label('project_name'))
     ).subquery()
 
     projects = (
