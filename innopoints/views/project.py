@@ -246,6 +246,15 @@ def review_project(project_id):
     notify_all(project.moderators, NotificationType.project_review_status_changed, {
         'project_id': project.id,
     })
+    if project.review_status == ReviewStatus.approved:
+        for activity in project.activities:
+            for application in activity.applications:
+                notify(application.applicant_email, NotificationType.claim_innopoints, {
+                    'project_id': project.id,
+                    'activity_id': activity.id,
+                    'application_id': application.id,
+                })
+
     return NO_PAYLOAD
 
 
