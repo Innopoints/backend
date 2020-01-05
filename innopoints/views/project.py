@@ -330,8 +330,7 @@ class ProjectDetailAPI(MethodView):
             abort(400, {'message': 'Data integrity violated.'})
 
         if updated_project.review_status != old_status:
-            mods = [*updated_project.moderators, updated_project.creator]
-            notify_all(mods, NotificationType.project_review_status_changed, {
+            notify_all(updated_project.moderators, NotificationType.project_review_status_changed, {
                 'project_id': updated_project.id,
             })
 
