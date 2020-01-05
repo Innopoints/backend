@@ -3,6 +3,7 @@
 Application:
 - POST   /projects/{project_id}/activities/{activity_id}/applications
 - DELETE /projects/{project_id}/activities/{activity_id}/applications
+- PATCH  /projects/{project_id}/activities/{activity_id}/applications/{application_id}
 
 VolunteeringReport:
 - GET  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report_info
@@ -18,12 +19,15 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
+from innopoints.core.notifications import notify
+from innopoints.core.timezone import tz_aware_now
 from innopoints.extensions import db
 from innopoints.models import (
     Activity,
     Application,
     ApplicationStatus,
     LifetimeStage,
+    NotificationType,
     Project,
     project_moderation,
     VolunteeringReport,
@@ -54,6 +58,9 @@ def apply_for_activity(project_id, activity_id):
 
     if activity.telegram_required and not isinstance(request.json.get('telegram'), str):
         abort(400, {'message': 'This activity requires a Telegram username.'})
+
+    if activity.application_deadline is not None and activity.application_deadline < tz_aware_now():
+        abort(400, {'message': 'The application is past the deadline.'})
 
     new_application = Application(applicant=current_user,
                                   activity_id=activity_id,
@@ -97,6 +104,50 @@ def take_back_application(project_id, activity_id):
         db.session.rollback()
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
+
+    return NO_PAYLOAD
+
+
+@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
+           '/applications/<int:application_id>', methods=['PATCH'])
+@login_required
+def change_application_status(project_id, activity_id, application_id):
+    """Change the status of an application."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    application = Application.query.get_or_404(application_id)
+    activity = Activity.query.get_or_404(activity_id)
+    project = Project.query.get_or_404(project_id)
+
+    if activity.project != project or application.activity_id != activity.id:
+        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+
+    if current_user not in project.moderators and not current_user.is_admin:
+        abort(401)
+
+    if project.lifetime_stage != LifetimeStage.ongoing:
+        abort(400, {'message': 'The application status may only be changed for ongoing projects.'})
+
+    try:
+        status = getattr(ApplicationStatus, request.json['status'])
+    except (KeyError, AttributeError):
+        abort(400, {'message': 'A valid application status must be specified.'})
+
+    if application.status != status:
+        application.status = status
+
+        try:
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            log.exception(err)
+            abort(400, {'message': 'Data integrity violated.'})
+
+        notify(application.applicant_email, NotificationType.application_status_changed, {
+            'activity_id': activity_id,
+            'application_id': application_id,
+        })
 
     return NO_PAYLOAD
 

@@ -273,7 +273,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/projects/3",
+      "url": "{{url}}/projects/1",
       "_type": "request"
     },
     {
@@ -1293,7 +1293,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/account/student1@innopolis.university",
+      "url": "{{url}}/account",
       "_type": "request"
     },
     {
