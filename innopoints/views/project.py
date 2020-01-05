@@ -327,11 +327,6 @@ class ProjectDetailAPI(MethodView):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
-        if updated_project.review_status != old_status:
-            notify_all(updated_project.moderators, NotificationType.project_review_status_changed, {
-                'project_id': updated_project.id,
-            })
-
         out_schema = ProjectSchema(only=('id', 'name', 'image_url', 'organizer', 'moderators'))
         return out_schema.jsonify(updated_project)
 
