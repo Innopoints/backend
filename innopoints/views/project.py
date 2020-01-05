@@ -9,6 +9,7 @@ Project:
 - PATCH  /projects/{project_id}
 - DELETE /projects/{project_id}
 - PATCH  /projects/{project_id}/request_review
+- PATCH  /projects/{project_id}/finalize
 - PATCH  /projects/{project_id}/review_status
 """
 
@@ -205,14 +206,39 @@ def request_review(project_id):
         'project_id': project.id,
     })
 
-    return ProjectSchema(exclude=('admin_feedback', 'files', 'image_id'),
-                         context={'user': current_user}).jsonify(project)
+    return NO_PAYLOAD
+
+
+@api.route('/projects/<int:project_id>/finalize', methods=['PATCH'])
+@login_required
+def finalize_project(project_id):
+    """Finalize the project."""
+    project = Project.query.get_or_404(project_id)
+
+    if current_user != project.creator:
+        abort(401)
+
+    if project.lifetime_stage != LifetimeStage.ongoing:
+        abort(400, {'message': 'Only ongoing projects can be finalized.'})
+
+    project.lifetime_stage = LifetimeStage.ongoing
+
+    try:
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    return NO_PAYLOAD
 
 
 @api.route('/projects/<int:project_id>/review_status', methods=['PATCH'])
 @login_required
 def review_project(project_id):
     """Review a project in its finalizing stage."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
 
     project = Project.query.get_or_404(project_id)
 
@@ -221,9 +247,6 @@ def review_project(project_id):
 
     if not current_user.is_admin:
         abort(401)
-
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
 
     if project.review_status != ReviewStatus.pending:
         abort(400, {'message': 'Can only review projects pending review.'})
