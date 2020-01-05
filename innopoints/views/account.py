@@ -7,6 +7,7 @@ Account:
 - GET  /account/timeline
 - GET  /account/{email}/timeline
 - POST /account/{email}/notify
+- PATCH /account/telegram
 """
 
 import logging
@@ -190,5 +191,35 @@ def service_notification(email):
 
     if notification is None:
         abort(500, {'message': 'Error creating notification.'})
+
+    return NO_PAYLOAD
+
+
+@api.route('/account/telegram', methods=['PATCH'], defaults={'email': None})
+@api.route('/account/<email>/telegram', methods=['PATCH'])
+@login_required
+def change_telegram(email):
+    """Change a user's Telegram username.
+    If the email is not passed, change own username."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if email is None:
+        user = current_user
+    else:
+        if not current_user.is_admin:
+            abort(401)
+        user = Account.query.get_or_404(email)
+
+    if 'telegram_username' not in request.json:
+        abort(400, {'message': 'The telegram_username field must be passed.'})
+
+    user.telegram_username = request.json['telegram_username']
+    try:
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
 
     return NO_PAYLOAD
