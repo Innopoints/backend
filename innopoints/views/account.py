@@ -181,7 +181,7 @@ def service_notification(email):
     if not current_user.is_admin:
         abort(401)
 
-    if 'message' not in request.json or not request.json['message']:
+    if not request.json.get('message'):
         abort(400, {'message': 'Specify a valid message.'})
 
     notification = notify(user.email, NotificationType.service, {

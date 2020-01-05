@@ -236,7 +236,7 @@ def review_project(project_id):
         'rejected': ReviewStatus.rejected,
     }
 
-    if 'review_status' not in request.json or request.json['review_status'] not in allowed_states:
+    if request.json.get('review_status') not in allowed_states:
         abort(400, {'message': 'Invalid review status specified.'})
 
     project.review_status = allowed_states[request.json['review_status']]
