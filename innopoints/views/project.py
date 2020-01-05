@@ -186,7 +186,7 @@ def request_review(project_id):
     if project.lifetime_stage != LifetimeStage.finalizing:
         abort(400, {'message': 'Only projects being finalized can be reviewed.'})
 
-    if current_user != project.creator:
+    if current_user != project.creator and not current_user.is_admin:
         abort(401)
 
     if project.review_status == ReviewStatus.pending:
@@ -215,13 +215,13 @@ def finalize_project(project_id):
     """Finalize the project."""
     project = Project.query.get_or_404(project_id)
 
-    if current_user != project.creator:
+    if current_user != project.creator and not current_user.is_admin:
         abort(401)
 
     if project.lifetime_stage != LifetimeStage.ongoing:
         abort(400, {'message': 'Only ongoing projects can be finalized.'})
 
-    project.lifetime_stage = LifetimeStage.ongoing
+    project.lifetime_stage = LifetimeStage.finalizing
 
     try:
         db.session.commit()
