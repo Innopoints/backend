@@ -8,6 +8,8 @@ Project:
 - GET    /projects/{project_id}
 - PATCH  /projects/{project_id}
 - DELETE /projects/{project_id}
+- PATCH  /projects/{project_id}/request_review
+- PATCH  /projects/{project_id}/review_status
 """
 
 import logging
