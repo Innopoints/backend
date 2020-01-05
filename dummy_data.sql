@@ -10,7 +10,7 @@ INSERT INTO accounts (full_name, "group", email, telegram_username, is_admin)
 INSERT INTO projects (name, image_id, creation_time, organizer, creator_email, admin_feedback, review_status, lifetime_stage)
 	VALUES ('Some Olympiad', null, NOW(), 'Olympiad department', 'events@innopolis.university', null, null, 'draft');
 INSERT INTO projects (name, image_id, creation_time, organizer, creator_email, admin_feedback, review_status, lifetime_stage)
-	VALUES ('World Olympiad in something', null, NOW() - INTERVAL'1 Month', 'Olympiad department', 'events@innopolis.university', 'Good job', 'approved', 'past');
+	VALUES ('World Olympiad in something', null, NOW() - INTERVAL'1 Month', 'Olympiad department', 'events@innopolis.university', 'Good job', 'approved', 'finished');
 INSERT INTO projects (name, image_id, creation_time, organizer, creator_email, admin_feedback, review_status, lifetime_stage)
 	VALUES ('Christmas party', null, NOW() - INTERVAL'2 DAYS', 'Student Affairs', 'events@innopolis.university', null, null, 'ongoing');
 
