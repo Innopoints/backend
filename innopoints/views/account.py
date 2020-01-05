@@ -44,7 +44,7 @@ def subquery_to_events(subquery, event_type):
     return db.session.query(
         'entry_time',
         db.literal(event_type).label('type'),
-        payload.cast(db.String).label('payload')
+        payload.label('payload')
     ).select_from(subquery)
 
 

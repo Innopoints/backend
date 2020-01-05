@@ -22,4 +22,4 @@ class TimelineSchema(ma.Schema):
 
     entry_time = ma.DateTime(timezone=True)
     type = ma.Str()
-    payload = ma.Str()
+    payload = ma.Dict()
