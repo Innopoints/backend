@@ -5,7 +5,7 @@ Project:
 - GET    /projects/drafts
 - GET    /projects/for_review
 - POST   /projects
-- POST   /projects/{project_id}/publish
+- PATCH  /projects/{project_id}/publish
 - GET    /projects/{project_id}
 - PATCH  /projects/{project_id}
 - DELETE /projects/{project_id}
@@ -157,7 +157,7 @@ def create_project():
     return out_schema.jsonify(new_project)
 
 
-@api.route('/projects/<int:project_id>/publish', methods=['POST'])
+@api.route('/projects/<int:project_id>/publish', methods=['PATCH'])
 @login_required
 def publish_project(project_id):
     """Publish an existing draft project."""

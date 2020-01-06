@@ -1,23 +1,23 @@
 """Views related to the Account model.
 
 Account:
-- GET  /account
-- GET  /account/{email}
-- POST /account/{email}/balance
-- GET  /account/timeline
-- GET  /account/{email}/timeline
-- GET  /account/notification_settings
-- GET  /account/{email}/notification_settings
-- POST /account/{email}/notify
-- PATCH /account/telegram
-- PATCH /account/{email}/telegram
-- PATCH /account/notification_settings
-- PATCH /account/{email}/notification_settings
+- GET    /account
+- GET    /account/{email}
+- PATCH  /account/{email}/balance
+- GET    /account/timeline
+- GET    /account/{email}/timeline
+- GET    /account/notification_settings
+- GET    /account/{email}/notification_settings
+- POST   /account/{email}/notify
+- PATCH  /account/telegram
+- PATCH  /account/{email}/telegram
+- PATCH  /account/notification_settings
+- PATCH  /account/{email}/notification_settings
 """
 
 import logging
 
-from flask import request, jsonify
+from flask import request
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
 from sqlalchemy.dialects.postgresql import JSONB
@@ -76,7 +76,7 @@ def get_info(email):
     return out_schema.jsonify(user)
 
 
-@api.route('/account/<string:email>/balance', methods=['POST'])
+@api.route('/account/<string:email>/balance', methods=['PATCH'])
 @login_required
 def change_balance(email):
     """Change a user's balance."""
@@ -105,7 +105,7 @@ def change_balance(email):
             'transaction_id': new_transaction.id,
         })
 
-    return jsonify(balance=user.balance)
+    return NO_PAYLOAD
 
 
 @api.route('/account/timeline', defaults={'email': None})
