@@ -124,6 +124,18 @@ paths:
       schema:
         type: integer
         minimum: 1
+    get:
+      tags:
+      - product
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        404:
+          description: not found
     patch:
       tags:
       - product
@@ -134,6 +146,12 @@ paths:
             schema:
               $ref: '#/components/schemas/Product'
       responses:
+        200:
+          description: success. no payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
         400:
           description: invalid data
           content:
@@ -142,7 +160,8 @@ paths:
                 $ref: '#/components/schemas/Error'
         401:
           description: unauthorized
-          content: {}
+        404:
+          description: product not found
       security:
         - innopoints_sso: []
     delete:
@@ -153,6 +172,8 @@ paths:
           description: success. no payload
         401:
           description: unauthorized
+        404:
+          description: product not found
       security:
         - innopoints_sso: []
 
