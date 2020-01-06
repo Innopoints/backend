@@ -141,8 +141,8 @@ def edit_application(project_id, activity_id, application_id):
 
     if 'actual_hours' in request.json:
         actual_hours = request.json['actual_hours']
-        if not isinstance(actual_hours, int) or actual_hours <= 0:
-            abort(400, {'message': 'Actual hours must be a positive integer.'})
+        if not isinstance(actual_hours, int) or actual_hours < 0:
+            abort(400, {'message': 'Actual hours must be a non-negative integer.'})
 
         if activity.fixed_reward:
             abort(400, {'Working hours may only be changed on hourly-rate activity applications.'})
@@ -306,7 +306,7 @@ def leave_feedback(project_id, activity_id, application_id):
     new_feedback.transaction = new_transaction
     db.session.add(new_transaction)
 
-    try:    
+    try:
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
