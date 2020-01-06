@@ -7,6 +7,7 @@ Variety:
 - POST   /products/{product_id}/varieties/{variety_id}/purchase
 
 StockChange:
+- GET   /stock_changes/for_review
 - PATCH /stock_changes/{stock_change_id}
 
 Size:
@@ -232,6 +233,20 @@ def purchase_variety(product_id, variety_id):
 
 
 # ----- StockChange -----
+
+@api.route('/stock_changes/for_review')
+@login_required
+def get_purchases_for_review():
+    """Get a list of purchases that require admin's attention."""
+    if not current_user.is_admin:
+        abort(401)
+
+    db_query = StockChange.query.filter(
+        StockChange.status.in_((StockChangeStatus.pending, StockChangeStatus.ready_for_pickup))
+    )
+    schema = StockChangeSchema(many=True, exclude=('transaction', 'account'))
+    return schema.jsonify(db_query.all())
+
 
 @api.route('/stock_changes/<int:stock_change_id>', methods=['PATCH'])
 @login_required
