@@ -6,14 +6,20 @@ Account:
 - POST /account/{email}/balance
 - GET  /account/timeline
 - GET  /account/{email}/timeline
+- GET  /account/notification_settings
+- GET  /account/{email}/notification_settings
 - POST /account/{email}/notify
 - PATCH /account/telegram
+- PATCH /account/{email}/telegram
+- PATCH /account/notification_settings
+- PATCH /account/{email}/notification_settings
 """
 
 import logging
 
 from flask import request, jsonify
 from flask_login import login_required, current_user
+from marshmallow import ValidationError
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 
@@ -34,7 +40,7 @@ from innopoints.models import (
     Transaction,
     Variety,
 )
-from innopoints.schemas import AccountSchema, TimelineSchema
+from innopoints.schemas import AccountSchema, TimelineSchema, NotificationSettingsSchema
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -65,7 +71,8 @@ def get_info(email):
         user = Account.query.get_or_404(email)
 
     out_schema = AccountSchema(exclude=('moderated_projects', 'created_projects', 'stock_changes',
-                                        'transactions', 'applications', 'reports'))
+                                        'transactions', 'applications', 'reports',
+                                        'notification_settings'))
     return out_schema.jsonify(user)
 
 
@@ -171,6 +178,23 @@ def get_timeline(email):
     return out_schema.jsonify(timeline.all())
 
 
+@api.route('/account/notification_settings', defaults={'email': None})
+@api.route('/account/<email>/notification_settings')
+@login_required
+def get_notification_settings(email):
+    """Get the notification settings of the account.
+    If the e-mail is not passed, return own settings."""
+    if email is None:
+        user = current_user
+    else:
+        if not current_user.is_admin:
+            abort(401)
+        user = Account.query.get_or_404(email)
+
+    out_schema = NotificationSettingsSchema()
+    return out_schema.jsonify(user.notification_settings)
+
+
 @api.route('/account/<email>/notify', methods=['POST'])
 def service_notification(email):
     """Sends a custom service notification by the admin to any user."""
@@ -215,6 +239,40 @@ def change_telegram(email):
         abort(400, {'message': 'The telegram_username field must be passed.'})
 
     user.telegram_username = request.json['telegram_username']
+    try:
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    return NO_PAYLOAD
+
+
+@api.route('/account/notification_settings', methods=['PATCH'], defaults={'email': None})
+@api.route('/account/<email>/notification_settings', methods=['PATCH'])
+@login_required
+def change_notification_settings(email):
+    """Get the notification settings of the account.
+    If the e-mail is not passed, return own settings."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+
+    if email is None:
+        user = current_user
+    else:
+        if not current_user.is_admin:
+            abort(401)
+        user = Account.query.get_or_404(email)
+
+    in_schema = NotificationSettingsSchema()
+    try:
+        new_notification_settings = in_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    user.notification_settings = new_notification_settings
+
     try:
         db.session.commit()
     except IntegrityError as err:
