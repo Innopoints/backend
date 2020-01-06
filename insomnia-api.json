@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-06T13:18:17.111Z",
+  "__export_date": "2020-01-06T15:14:55.936Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -118,6 +118,41 @@
       "_type": "request"
     },
     {
+      "_id": "req_39342132fce34691a530cbc6eb297a98",
+      "authentication": {},
+      "body": {},
+      "created": 1578323571126,
+      "description": "",
+      "headers": [],
+      "isPrivate": false,
+      "metaSortKey": -1578323571127,
+      "method": "GET",
+      "modified": 1578323637119,
+      "name": "List accounts",
+      "parameters": [],
+      "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/accounts",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
+      "created": 1577218177904,
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1576094103863,
+      "modified": 1578237253313,
+      "name": "Account",
+      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
+      "_type": "request_group"
+    },
+    {
       "_id": "req_ec6fa2acbc97429b85cd10ee3ad0dbb9",
       "authentication": {},
       "body": {},
@@ -139,18 +174,6 @@
       "settingStoreCookies": true,
       "url": "{{url}}/account/notification_settings",
       "_type": "request"
-    },
-    {
-      "_id": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
-      "created": 1577218177904,
-      "description": "",
-      "environment": {},
-      "environmentPropertyOrder": null,
-      "metaSortKey": -1576094103863,
-      "modified": 1578237253313,
-      "name": "Account",
-      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
-      "_type": "request_group"
     },
     {
       "_id": "req_8177c97b630049fc9ea57e1f5b9988a7",
@@ -327,7 +350,7 @@
       "isPrivate": false,
       "metaSortKey": -1576094115333,
       "method": "GET",
-      "modified": 1576158825585,
+      "modified": 1578321151506,
       "name": "List ongoing projects",
       "parameters": [],
       "parentId": "fld_a271d4a747684a2e8d59d6857134eda3",
@@ -337,7 +360,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/projects?type=ongoing",
+      "url": "{{url}}/projects",
       "_type": "request"
     },
     {
@@ -362,7 +385,7 @@
       "isPrivate": false,
       "metaSortKey": -1570857870200.75,
       "method": "GET",
-      "modified": 1576158853774,
+      "modified": 1578321180578,
       "name": "List past projects",
       "parameters": [],
       "parentId": "fld_a271d4a747684a2e8d59d6857134eda3",
@@ -372,7 +395,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/projects?type=past",
+      "url": "{{url}}/projects/past",
       "_type": "request"
     },
     {
@@ -974,7 +997,7 @@
       "isPrivate": false,
       "metaSortKey": -1576099348440,
       "method": "GET",
-      "modified": 1577104223824,
+      "modified": 1578321127075,
       "name": "List products",
       "parameters": [],
       "parentId": "fld_6ce1a2c624dd424b992b6436c202062e",
@@ -984,7 +1007,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/products?limit=10",
+      "url": "{{url}}/products?limit=2&page=3",
       "_type": "request"
     },
     {
