@@ -177,6 +177,266 @@ paths:
       security:
         - innopoints_sso: []
 
+  /product/{product_id}/varieties/:
+    parameters:
+    - name: product_id
+      in: path
+      description: ID of the product in the database
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    post:
+      tags:
+        - variety
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Variety'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variety'
+        401:
+          description: unauthorized
+        404:
+          description: product not found
+
+      security:
+        - innopoints_sso: []
+  /product/{product_id}/varieties/{variety_id}:
+    parameters:
+    - name: product_id
+      in: path
+      description: ID of the product in the database
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    - name: variety_id
+      in: path
+      description: ID of the variety in the database
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    patch:
+      tags:
+        - variety
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Variety'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variety'
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: product/variety not found
+
+      security:
+        - innopoints_sso: []
+    delete:
+      tags:
+        - variety
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: product/variety not found
+
+      security:
+        - innopoints_sso: []
+  /product/{product_id}/varieties/{variety_id}/purchase:
+    parameters:
+    - name: product_id
+      in: path
+      description: ID of the product in the database
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    - name: variety_id
+      in: path
+      description: ID of the variety in the database
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    post:
+      tags:
+        - variety
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  minimum: 1
+                  example: 1
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockChange'
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: product/variety not found
+
+      security:
+        - innopoints_sso: []
+  /stock_changes/for_review:
+    get:
+      tags:
+        - variety
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockChange'
+        401:
+          description: unauthorized. admins only
+      security:
+        - innopoints_sso: []
+  /stock_changes/{stock_change_id}:
+    parameters:
+      - name: stock_change_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    patch:
+      tags:
+        - variety
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/StockChangeStatus'
+      responses:
+        204:
+          description: success
+      security:
+        - innopoints_sso: []
+  /sizes:
+    get:
+      tags:
+        - variety
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    value:
+                      $ref: '#/components/schemas/Variety/properties/size'
+    post:
+      tags:
+      - variety
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  $ref: '#/components/schemas/Variety/properties/size'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    $ref: '#/components/schemas/Variety/properties/size'
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized. admins only
+      security:
+        - innopolis_sso: []
+  /colors:
+    get:
+      tags:
+        - variety
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    value:
+                      # TODO: prefix with '#'
+                      $ref: '#/components/schemas/Variety/properties/color'
+    post:
+      tags:
+      - variety
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  $ref: '#/components/schemas/Variety/properties/color'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    $ref: '#/components/schemas/Variety/properties/color'
+        400:
+          description: invalid request
+        401:
+          description: unauthorized. admins only
+      security:
+        - innopolis_sso: []
+
   /account/{email}:
     parameters:
     - name: email
@@ -348,15 +608,22 @@ components:
           type: string
           format: date-time
         status:
-          type: string
-          enum: [pending, ready_for_pickup, carried_out, rejected]
+          $ref: '#/components/schemas/StockChangeStatus'
         account_email:
           type: string
           format: email
         variety_id:
           type: integer
           minimum: 1
-    
+    StockChangeStatus:
+      type: string
+      enum: 
+      - pending
+      - ready_for_pickup
+      - carried_out
+      - rejected
+      example: pending
+
     Project:
       type: object
       properties:
