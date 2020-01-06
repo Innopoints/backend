@@ -3,6 +3,7 @@
 Project:
 - GET    /projects
 - GET    /projects/drafts
+- GET    /projects/for_review
 - POST   /projects
 - POST   /projects/{project_id}/publish
 - GET    /projects/{project_id}
@@ -105,6 +106,19 @@ def list_drafts():
                                        creator=current_user)
     schema = ProjectSchema(many=True, only=('id', 'name', 'creation_time'))
     return schema.jsonify(db_query.all())
+
+
+@api.route('/projects/for_review')
+@login_required
+def list_projects_for_review():
+    """Return a list of projects pending the administrator's review."""
+    if not current_user.is_admin:
+        abort(401)
+
+    db_query = Project.query.filter_by(review_status=ReviewStatus.pending)
+    schema = ProjectSchema(many=True, only=('id', 'name', 'organizer'))
+    return schema.jsonify(db_query.all())
+
 
 
 @api.route('/projects', methods=['POST'])
