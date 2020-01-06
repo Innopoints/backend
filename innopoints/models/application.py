@@ -35,7 +35,7 @@ class Application(db.Model):
     status = db.Column(db.Enum(ApplicationStatus),
                        nullable=False,
                        default=ApplicationStatus.pending)
-    actual_hours = db.Column(db.Integer, nullable=True)
+    actual_hours = db.Column(db.Integer, nullable=False)
     report = db.relationship('VolunteeringReport',
                              uselist=False,
                              cascade='all, delete-orphan')

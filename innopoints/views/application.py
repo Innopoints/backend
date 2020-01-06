@@ -30,6 +30,7 @@ from innopoints.models import (
     NotificationType,
     Project,
     project_moderation,
+    Transaction,
     VolunteeringReport,
 )
 from innopoints.schemas import ApplicationSchema, VolunteeringReportSchema, FeedbackSchema
@@ -66,6 +67,7 @@ def apply_for_activity(project_id, activity_id):
                                   activity_id=activity_id,
                                   comment=request.json.get('comment'),
                                   telegram_username=request.json.get('telegram'),
+                                  actual_hours=activity.working_hours,
                                   status=ApplicationStatus.pending)
     db.session.add(new_application)
     try:
@@ -295,11 +297,16 @@ def leave_feedback(project_id, activity_id, application_id):
     if len(new_feedback.answers) != len(activity.feedback_questions):
         abort(400, {'message': f'Expected {len(activity.feedback_questions)} answer(s), '
                                f'found {len(new_feedback.answers)}.'})
-
     new_feedback.application_id = application_id
+    db.session.add(new_feedback)
 
-    try:
-        db.session.add(new_feedback)
+    new_transaction = Transaction(account=current_user,
+                                  change=application.actual_hours * activity.reward_rate,
+                                  feedback_id=new_feedback)
+    new_feedback.transaction = new_transaction
+    db.session.add(new_transaction)
+
+    try:    
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
