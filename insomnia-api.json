@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-06T09:43:01.558Z",
+  "__export_date": "2020-01-06T13:18:17.111Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -257,8 +257,8 @@
       ],
       "isPrivate": false,
       "metaSortKey": -1578173761352,
-      "method": "POST",
-      "modified": 1578237222099,
+      "method": "PATCH",
+      "modified": 1578316480996,
       "name": "Change balance",
       "parameters": [],
       "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
@@ -462,8 +462,8 @@
       "headers": [],
       "isPrivate": false,
       "metaSortKey": -1560385379886.25,
-      "method": "POST",
-      "modified": 1578064910340,
+      "method": "PATCH",
+      "modified": 1578316498982,
       "name": "Publish my draft",
       "parameters": [],
       "parentId": "fld_a271d4a747684a2e8d59d6857134eda3",
@@ -617,9 +617,9 @@
       "description": "",
       "headers": [],
       "isPrivate": false,
-      "metaSortKey": -1560385379848.75,
+      "metaSortKey": -1560385379849.9219,
       "method": "DELETE",
-      "modified": 1578059072677,
+      "modified": 1578316528035,
       "name": "Delete project",
       "parameters": [],
       "parentId": "fld_a271d4a747684a2e8d59d6857134eda3",
@@ -670,10 +670,10 @@
       "description": "",
       "environment": {},
       "environmentPropertyOrder": null,
-      "metaSortKey": -1576094103834.0938,
-      "modified": 1578059098191,
+      "metaSortKey": -1560385379849.5312,
+      "modified": 1578316526300,
       "name": "Activity",
-      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
+      "parentId": "fld_a271d4a747684a2e8d59d6857134eda3",
       "_type": "request_group"
     },
     {
@@ -794,7 +794,7 @@
       "isPrivate": false,
       "metaSortKey": -1577276806062,
       "method": "PATCH",
-      "modified": 1578224968117,
+      "modified": 1578316599559,
       "name": "Change application status",
       "parameters": [],
       "parentId": "fld_cd3ee7a12e954d1b8bb682b4d9a44e32",
@@ -804,7 +804,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/projects/1/activities/1/applications/6",
+      "url": "{{url}}/projects/1/activities/1/applications/6/status",
       "_type": "request"
     },
     {
@@ -1147,8 +1147,8 @@
       "description": "",
       "environment": {},
       "environmentPropertyOrder": null,
-      "metaSortKey": -1576096946083.5,
-      "modified": 1576404746877,
+      "metaSortKey": -1576096946094.0469,
+      "modified": 1578316552752,
       "name": "Variety",
       "parentId": "fld_6ce1a2c624dd424b992b6436c202062e",
       "_type": "request_group"
@@ -1269,10 +1269,10 @@
       "description": "",
       "environment": {},
       "environmentPropertyOrder": null,
-      "metaSortKey": -1576094103826.2812,
-      "modified": 1578059335407,
+      "metaSortKey": -1576096946090.5312,
+      "modified": 1578316550780,
       "name": "Change in Stock",
-      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
+      "parentId": "fld_6ce1a2c624dd424b992b6436c202062e",
       "_type": "request_group"
     },
     {
@@ -1294,7 +1294,7 @@
       "isPrivate": false,
       "metaSortKey": -1577632717813,
       "method": "PATCH",
-      "modified": 1577633553087,
+      "modified": 1578316560357,
       "name": "Change purchase status",
       "parameters": [],
       "parentId": "fld_7e6d623108244bfca68bb0f57ea102c0",
@@ -1304,7 +1304,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/stock_changes/5",
+      "url": "{{url}}/stock_changes/5/status",
       "_type": "request"
     },
     {
