@@ -12,6 +12,8 @@ from innopoints.extensions import db
 from innopoints.models import Notification
 from innopoints.schemas import NotificationSchema
 
+NO_PAYLOAD = ('', 204)
+
 
 @api.route('/notifications')
 @login_required
@@ -30,4 +32,4 @@ def read_notification(notification_id):
     notification.is_read = True
     db.session.add(notification)
     db.session.commit()
-    return NotificationSchema().jsonify(notification)
+    return NO_PAYLOAD

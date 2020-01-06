@@ -17,7 +17,7 @@ Account:
 
 import logging
 
-from flask import request, jsonify
+from flask import request
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
 from sqlalchemy.dialects.postgresql import JSONB
@@ -105,7 +105,7 @@ def change_balance(email):
             'transaction_id': new_transaction.id,
         })
 
-    return jsonify(balance=user.balance)
+    return NO_PAYLOAD
 
 
 @api.route('/account/timeline', defaults={'email': None})

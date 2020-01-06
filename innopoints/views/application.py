@@ -3,7 +3,7 @@
 Application:
 - POST   /projects/{project_id}/activities/{activity_id}/applications
 - DELETE /projects/{project_id}/activities/{activity_id}/applications
-- PATCH  /projects/{project_id}/activities/{activity_id}/applications/{application_id}
+- PATCH  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/status
 
 VolunteeringReport:
 - GET  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report_info
@@ -109,7 +109,7 @@ def take_back_application(project_id, activity_id):
 
 
 @api.route('/projects/<int:project_id>/activities/<int:activity_id>'
-           '/applications/<int:application_id>', methods=['PATCH'])
+           '/applications/<int:application_id>/status', methods=['PATCH'])
 @login_required
 def change_application_status(project_id, activity_id, application_id):
     """Change the status of an application."""

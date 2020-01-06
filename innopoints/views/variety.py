@@ -8,7 +8,7 @@ Variety:
 
 StockChange:
 - GET   /stock_changes/for_review
-- PATCH /stock_changes/{stock_change_id}
+- PATCH /stock_changes/{stock_change_id}/status
 
 Size:
 - GET /sizes
@@ -248,7 +248,7 @@ def get_purchases_for_review():
     return schema.jsonify(db_query.all())
 
 
-@api.route('/stock_changes/<int:stock_change_id>', methods=['PATCH'])
+@api.route('/stock_changes/<int:stock_change_id>/status', methods=['PATCH'])
 @login_required
 def edit_purchase_status(stock_change_id):
     """Edit the status of a particular purchase."""
@@ -290,8 +290,7 @@ def edit_purchase_status(stock_change_id):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email'))
-    return out_schema.jsonify(stock_change)
+    return NO_PAYLOAD
 
 
 # ----- Size -----
