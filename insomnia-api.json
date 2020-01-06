@@ -780,7 +780,7 @@
       "authentication": {},
       "body": {
         "mimeType": "application/json",
-        "text": "{\n\t\"status\": \"pending\"\n}"
+        "text": "{\n\t\"status\": \"approved\",\n\t\"actual_hours\": 3\n}"
       },
       "created": 1578224586993,
       "description": "",

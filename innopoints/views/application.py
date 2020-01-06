@@ -30,6 +30,7 @@ from innopoints.models import (
     NotificationType,
     Project,
     project_moderation,
+    Transaction,
     VolunteeringReport,
 )
 from innopoints.schemas import ApplicationSchema, VolunteeringReportSchema, FeedbackSchema
@@ -66,6 +67,7 @@ def apply_for_activity(project_id, activity_id):
                                   activity_id=activity_id,
                                   comment=request.json.get('comment'),
                                   telegram_username=request.json.get('telegram'),
+                                  actual_hours=activity.working_hours,
                                   status=ApplicationStatus.pending)
     db.session.add(new_application)
     try:
@@ -111,8 +113,8 @@ def take_back_application(project_id, activity_id):
 @api.route('/projects/<int:project_id>/activities/<int:activity_id>'
            '/applications/<int:application_id>/status', methods=['PATCH'])
 @login_required
-def change_application_status(project_id, activity_id, application_id):
-    """Change the status of an application."""
+def edit_application(project_id, activity_id, application_id):
+    """Change the status or the actual hours of an application."""
     if not request.is_json:
         abort(400, {'message': 'The request should be in JSON.'})
 
@@ -129,27 +131,38 @@ def change_application_status(project_id, activity_id, application_id):
     if project.lifetime_stage != LifetimeStage.ongoing:
         abort(400, {'message': 'The application status may only be changed for ongoing projects.'})
 
-    try:
-        status = getattr(ApplicationStatus, request.json['status'])
-    except (KeyError, AttributeError):
-        abort(400, {'message': 'A valid application status must be specified.'})
-
-    if application.status != status:
+    old_status = application.status
+    if 'status' in request.json:
+        try:
+            status = getattr(ApplicationStatus, request.json['status'])
+        except AttributeError:
+            abort(400, {'message': 'A valid application status must be specified.'})
         application.status = status
 
-        try:
-            db.session.commit()
-        except IntegrityError as err:
-            db.session.rollback()
-            log.exception(err)
-            abort(400, {'message': 'Data integrity violated.'})
+    if 'actual_hours' in request.json:
+        actual_hours = request.json['actual_hours']
+        if not isinstance(actual_hours, int) or actual_hours < 0:
+            abort(400, {'message': 'Actual hours must be a non-negative integer.'})
 
+        if activity.fixed_reward:
+            abort(400, {'Working hours may only be changed on hourly-rate activity applications.'})
+        application.actual_hours = actual_hours
+
+    try:
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    if application.status != old_status:
         notify(application.applicant_email, NotificationType.application_status_changed, {
             'activity_id': activity_id,
             'application_id': application_id,
         })
 
-    return NO_PAYLOAD
+    out_schema = ApplicationSchema()
+    return out_schema.jsonify(application)
 
 
 # ----- VolunteeringReport -----
@@ -284,11 +297,16 @@ def leave_feedback(project_id, activity_id, application_id):
     if len(new_feedback.answers) != len(activity.feedback_questions):
         abort(400, {'message': f'Expected {len(activity.feedback_questions)} answer(s), '
                                f'found {len(new_feedback.answers)}.'})
-
     new_feedback.application_id = application_id
+    db.session.add(new_feedback)
+
+    new_transaction = Transaction(account=current_user,
+                                  change=application.actual_hours * activity.reward_rate,
+                                  feedback_id=new_feedback)
+    new_feedback.transaction = new_transaction
+    db.session.add(new_transaction)
 
     try:
-        db.session.add(new_feedback)
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()

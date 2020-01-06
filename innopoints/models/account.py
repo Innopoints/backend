@@ -6,7 +6,7 @@ from flask_login.mixins import UserMixin
 from sqlalchemy.dialects.postgresql import JSONB
 
 from innopoints.extensions import db, login_manager
-from innopoints.models import NotificationGroup
+from innopoints.models.notification import NotificationGroup
 
 
 DEFAULT_NOTIFICATIONS = {
