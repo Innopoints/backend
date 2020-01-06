@@ -3,6 +3,7 @@
 Product:
 - GET    /products
 - POST   /products
+- GET    /products/{product_id}
 - PATCH  /products/{product_id}
 - DELETE /products/{product_id}
 """
@@ -134,6 +135,13 @@ def create_product():
 
 class ProductDetailAPI(MethodView):
     """REST views for the Product model"""
+    def get(self, product_id):
+        """Get a single product."""
+        product = Product.query.get_or_404(product_id)
+        schema = ProductSchema(exclude=('varieties.stock_changes',
+                                        'varieties.product',
+                                        'varieties.product_id'))
+        return schema.jsonify(product)
 
     @login_required
     def patch(self, product_id):
@@ -182,4 +190,4 @@ class ProductDetailAPI(MethodView):
 product_api = ProductDetailAPI.as_view('product_api')
 api.add_url_rule('/products/<int:product_id>',
                  view_func=product_api,
-                 methods=('PATCH', 'DELETE'))
+                 methods=('GET', 'PATCH', 'DELETE'))
