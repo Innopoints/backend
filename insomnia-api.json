@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-06T13:18:17.111Z",
+  "__export_date": "2020-01-06T14:37:58.532Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -327,7 +327,7 @@
       "isPrivate": false,
       "metaSortKey": -1576094115333,
       "method": "GET",
-      "modified": 1576158825585,
+      "modified": 1578321151506,
       "name": "List ongoing projects",
       "parameters": [],
       "parentId": "fld_a271d4a747684a2e8d59d6857134eda3",
@@ -337,7 +337,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/projects?type=ongoing",
+      "url": "{{url}}/projects",
       "_type": "request"
     },
     {
@@ -362,7 +362,7 @@
       "isPrivate": false,
       "metaSortKey": -1570857870200.75,
       "method": "GET",
-      "modified": 1576158853774,
+      "modified": 1578321180578,
       "name": "List past projects",
       "parameters": [],
       "parentId": "fld_a271d4a747684a2e8d59d6857134eda3",
@@ -372,7 +372,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/projects?type=past",
+      "url": "{{url}}/projects/past",
       "_type": "request"
     },
     {
@@ -974,7 +974,7 @@
       "isPrivate": false,
       "metaSortKey": -1576099348440,
       "method": "GET",
-      "modified": 1577104223824,
+      "modified": 1578321127075,
       "name": "List products",
       "parameters": [],
       "parentId": "fld_6ce1a2c624dd424b992b6436c202062e",
@@ -984,7 +984,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/products?limit=10",
+      "url": "{{url}}/products?limit=2&page=3",
       "_type": "request"
     },
     {
