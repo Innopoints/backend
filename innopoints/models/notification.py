@@ -24,19 +24,28 @@ class NotificationType(Enum):
     project_review_requested = auto()
 
 
+class NotificationGroup(Enum):
+    """Represents notification groups."""
+    innostore = 'innostore'
+    volunteering = 'volunteering'
+    service = 'service'
+    project_creation = 'project_creation'
+    administration = 'administration'
+
+
 type_to_group = {
-    NotificationType.purchase_status_changed: 'innostore',
-    NotificationType.new_arrivals: 'innostore',
-    NotificationType.claim_innopoints: 'volunteering',
-    NotificationType.application_status_changed: 'volunteering',
-    NotificationType.service: 'service',
-    NotificationType.manual_transaction: 'service',
-    NotificationType.project_review_status_changed: 'project_creation',
-    NotificationType.all_feedback_in: 'project_creation',
-    NotificationType.added_as_moderator: 'project_creation',
-    NotificationType.out_of_stock: 'administration',
-    NotificationType.new_purchase: 'administration',
-    NotificationType.project_review_requested: 'administration',
+    NotificationType.purchase_status_changed:       NotificationGroup.innostore,
+    NotificationType.new_arrivals:                  NotificationGroup.innostore,
+    NotificationType.claim_innopoints:              NotificationGroup.volunteering,
+    NotificationType.application_status_changed:    NotificationGroup.volunteering,
+    NotificationType.service:                       NotificationGroup.service,
+    NotificationType.manual_transaction:            NotificationGroup.service,
+    NotificationType.project_review_status_changed: NotificationGroup.project_creation,
+    NotificationType.all_feedback_in:               NotificationGroup.project_creation,
+    NotificationType.added_as_moderator:            NotificationGroup.project_creation,
+    NotificationType.out_of_stock:                  NotificationGroup.administration,
+    NotificationType.new_purchase:                  NotificationGroup.administration,
+    NotificationType.project_review_requested:      NotificationGroup.administration,
 }
 
 
