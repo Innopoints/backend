@@ -1186,6 +1186,41 @@
       "_type": "request"
     },
     {
+      "_id": "req_c9112cf385e84f519f27ad77dd3583d3",
+      "authentication": {},
+      "body": {},
+      "created": 1578259820388,
+      "description": "",
+      "headers": [],
+      "isPrivate": false,
+      "metaSortKey": -1578259820388,
+      "method": "GET",
+      "modified": 1578259835782,
+      "name": "List purchases for review",
+      "parameters": [],
+      "parentId": "fld_7e6d623108244bfca68bb0f57ea102c0",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/stock_changes/for_review",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_7e6d623108244bfca68bb0f57ea102c0",
+      "created": 1577632688562,
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1576094103826.2812,
+      "modified": 1578059335407,
+      "name": "Change in Stock",
+      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
+      "_type": "request_group"
+    },
+    {
       "_id": "req_104ebf0d5c754e46b0a6fcf44f082ebc",
       "authentication": {},
       "body": {
@@ -1216,18 +1251,6 @@
       "settingStoreCookies": true,
       "url": "{{url}}/stock_changes/5",
       "_type": "request"
-    },
-    {
-      "_id": "fld_7e6d623108244bfca68bb0f57ea102c0",
-      "created": 1577632688562,
-      "description": "",
-      "environment": {},
-      "environmentPropertyOrder": null,
-      "metaSortKey": -1576094103826.2812,
-      "modified": 1578059335407,
-      "name": "Change in Stock",
-      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
-      "_type": "request_group"
     },
     {
       "_id": "req_a29ca61920b54cd9b6c3d2168e3e4d2e",

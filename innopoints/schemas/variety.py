@@ -44,6 +44,9 @@ class VarietySchema(ma.ModelSchema):
                 return data
             raise ValidationError('The color must be specified.')
 
+        if data['color'] is None:
+            return data
+
         if data['color'].startswith('#'):
             data['color'] = data['color'][1:].upper()
 
