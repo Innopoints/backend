@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-05T20:56:34.998Z",
+  "__export_date": "2020-01-05T20:38:23.746Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -497,6 +497,29 @@
       "settingSendCookies": true,
       "settingStoreCookies": true,
       "url": "{{url}}/projects/2/request_review",
+      "_type": "request"
+    },
+    {
+      "_id": "req_9677c66e7fbf472e9005791235bfd325",
+      "authentication": {},
+      "body": {},
+      "created": 1578256563426,
+      "description": "",
+      "headers": [],
+      "isPrivate": false,
+      "metaSortKey": -1560385379851.0938,
+      "method": "PATCH",
+      "modified": 1578256575098,
+      "name": "Finalize project",
+      "parameters": [],
+      "parentId": "fld_a271d4a747684a2e8d59d6857134eda3",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/projects/2/finalize",
       "_type": "request"
     },
     {
