@@ -2,6 +2,7 @@
 
 Project:
 - GET    /projects
+- GET    /projects/past
 - GET    /projects/drafts
 - GET    /projects/for_review
 - POST   /projects
@@ -15,8 +16,9 @@ Project:
 """
 
 import logging
+import math
 
-from flask import request
+from flask import request, jsonify
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
@@ -42,8 +44,8 @@ log = logging.getLogger(__name__)
 
 
 @api.route('/projects')
-def list_projects():
-    """List ongoing or past projects."""
+def list_ongoing_projects():
+    """List ongoing projects."""
     first_activity = db.func.min(Activity.start_date)
     default_order_by = 'creation'
     default_order = 'asc'
@@ -54,7 +56,7 @@ def list_projects():
         ('proximity', 'desc'): first_activity.desc(),
     }
 
-    db_query = Project.query
+    db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.ongoing)
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
         db_query = db_query.join(Project.activities).filter(
@@ -63,24 +65,14 @@ def list_projects():
                 Activity.description.ilike(like_query))
         ).distinct()
 
-    if request.args.get('type') == 'ongoing':
-        db_query = db_query.filter_by(lifetime_stage=LifetimeStage.ongoing)
-        order_by = request.args.get('order_by', default_order_by)
-        order = request.args.get('order', default_order)
-        if (order_by, order) not in ordering:
-            abort(400, {'message': 'Invalid ordering specified.'})
+    order_by = request.args.get('order_by', default_order_by)
+    order = request.args.get('order', default_order)
+    if (order_by, order) not in ordering:
+        abort(400, {'message': 'Invalid ordering specified.'})
 
-        if order_by == 'proximity':
-            db_query = db_query.join(Activity).group_by(Project.id)
-        db_query = db_query.order_by(ordering[order_by, order])
-    elif request.args.get('type') == 'past':
-        db_query = db_query.filter(or_(Project.lifetime_stage == LifetimeStage.finalizing,
-                                       Project.lifetime_stage == LifetimeStage.finished))
-        page = int(request.args.get('page', 1))
-        db_query = db_query.order_by(Project.id.desc())
-        db_query = db_query.offset(10 * (page - 1)).limit(10)
-    else:
-        abort(400, {'message': 'A project type must be one of: {"ongoing", "past"}'})
+    if order_by == 'proximity':
+        db_query = db_query.join(Activity).group_by(Project.id)
+    db_query = db_query.order_by(ordering[order_by, order])
 
     conditional_exclude = ['review_status', 'moderators']
     if current_user.is_authenticated:
@@ -97,6 +89,54 @@ def list_projects():
                                                             'feedback_questions')]
     schema = ProjectSchema(many=True, exclude=exclude + activity_exclude + conditional_exclude)
     return schema.jsonify(db_query.all())
+
+
+@api.route('/projects/past')
+def list_past_projects():
+    """List past projects."""
+    default_page = 1
+    default_limit = 12
+
+    db_query = Project.query.filter(or_(Project.lifetime_stage == LifetimeStage.finalizing,
+                                        Project.lifetime_stage == LifetimeStage.finished))
+    count_query = db.session.query(db.func.count(Project.id)).filter(
+        or_(Project.lifetime_stage == LifetimeStage.finalizing,
+            Project.lifetime_stage == LifetimeStage.finished)
+    )
+    if 'q' in request.args:
+        like_query = f'%{request.args["q"]}%'
+        db_query = db_query.join(Project.activities).filter(
+            or_(Project.title.ilike(like_query),
+                Activity.name.ilike(like_query),
+                Activity.description.ilike(like_query))
+        ).distinct()
+        count_query = count_query.join(Project.activities).filter(
+            or_(Project.title.ilike(like_query),
+                Activity.name.ilike(like_query),
+                Activity.description.ilike(like_query))
+        ).distinct()
+
+    page = int(request.args.get('page', default_page))
+    limit = int(request.args.get('limit', default_limit))
+    db_query = db_query.order_by(Project.creation_time.desc())
+    db_query = db_query.offset(limit * (page - 1)).limit(limit)
+
+    conditional_exclude = ['review_status', 'moderators']
+    if current_user.is_authenticated:
+        conditional_exclude.remove('moderators')
+        if not current_user.is_admin:
+            conditional_exclude.remove('review_status')
+    exclude = ['admin_feedback', 'review_status', 'files', 'image_id',
+               'lifetime_stage', 'admin_feedback']
+    activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
+                                                            'fixed_reward', 'working_hours',
+                                                            'reward_rate', 'people_required',
+                                                            'application_deadline', 'project',
+                                                            'applications', 'existing_application',
+                                                            'feedback_questions')]
+    schema = ProjectSchema(many=True, exclude=exclude + activity_exclude + conditional_exclude)
+    return jsonify(pages=math.ceil(count_query.scalar() / limit),
+                   data=schema.dump(db_query.all()))
 
 
 @api.route('/projects/drafts')
