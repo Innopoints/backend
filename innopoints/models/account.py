@@ -6,14 +6,15 @@ from flask_login.mixins import UserMixin
 from sqlalchemy.dialects.postgresql import JSONB
 
 from innopoints.extensions import db, login_manager
+from .models import NotificationGroup
 
 
 DEFAULT_NOTIFICATIONS = {
-    'innostore': 'off',
-    'volunteering': 'off',
-    'project_creation': 'off',
-    'administration': 'off',
-    'service': 'email',
+    NotificationGroup.innostore: 'off',
+    NotificationGroup.volunteering: 'off',
+    NotificationGroup.project_creation: 'off',
+    NotificationGroup.administration: 'off',
+    NotificationGroup.service: 'email',
 }
 
 class Account(UserMixin, db.Model):
