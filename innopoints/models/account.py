@@ -3,9 +3,19 @@
 Also contains the function to load the user for the login manager."""
 
 from flask_login.mixins import UserMixin
+from sqlalchemy.dialects.postgresql import JSONB
 
 from innopoints.extensions import db, login_manager
+from innopoints.models import NotificationGroup
 
+
+DEFAULT_NOTIFICATIONS = {
+    NotificationGroup.innostore: 'off',
+    NotificationGroup.volunteering: 'off',
+    NotificationGroup.project_creation: 'off',
+    NotificationGroup.administration: 'off',
+    NotificationGroup.service: 'email',
+}
 
 class Account(UserMixin, db.Model):
     """Represents an account of a logged in user."""
@@ -19,6 +29,7 @@ class Account(UserMixin, db.Model):
     created_projects = db.relationship('Project',
                                        cascade='all, delete-orphan',
                                        backref='creator')
+    notification_settings = db.Column(JSONB, nullable=False, default=DEFAULT_NOTIFICATIONS)
     # property `moderated_projects` created with a backref
     stock_changes = db.relationship('StockChange',
                                     cascade='all, delete-orphan',
