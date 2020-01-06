@@ -6,21 +6,32 @@ from typing import List
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
-from innopoints.models import Notification, NotificationType, Account
+from innopoints.models import Notification, NotificationType, Account, type_to_group
 
 log = logging.getLogger(__name__)
 
 
 def notify(recipient_email: str, notification_type: NotificationType, payload=None):
     """Sends a notification to the specified user."""
-    # TODO: check preferences
-    # TODO: send Email
-    # TODO: send Push
+    notification_group = type_to_group[notification_type]
+    channel = db.session.query(
+        # pylint: disable=unsubscriptable-object
+        Account.notification_settings[notification_group]
+    ).filter_by(email=recipient_email).scalar()
+
+    if channel == 'email':
+        # TODO: send Email
+        pass
+    elif channel == 'push':
+        # TODO: send Push
+        pass
+
     notification = Notification(
         recipient_email=recipient_email,
         type=notification_type,
         payload=payload,
     )
+
     try:
         db.session.add(notification)
         db.session.commit()
@@ -30,6 +41,7 @@ def notify(recipient_email: str, notification_type: NotificationType, payload=No
         db.session.rollback()
         log.exception(exc)
         return None
+
 
 def notify_all(recipients: List[Account], notification_type: str, payload=None):
     """Sends the same notification to each of the emails in the given list."""
