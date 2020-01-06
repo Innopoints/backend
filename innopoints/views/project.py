@@ -116,8 +116,15 @@ def list_past_projects():
                 Activity.description.ilike(like_query))
         ).distinct()
 
-    page = int(request.args.get('page', default_page))
-    limit = int(request.args.get('limit', default_limit))
+    try:
+        limit = int(request.args.get('limit', default_limit))
+        page = int(request.args.get('page', default_page))
+    except ValueError:
+        abort(400, {'message': 'Bad query parameters.'})
+
+    if limit < 1 or page < 1:
+        abort(400, {'message': 'Limit and page number must be positive.'})
+
     db_query = db_query.order_by(Project.creation_time.desc())
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
