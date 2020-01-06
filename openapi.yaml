@@ -325,7 +325,7 @@ paths:
           description: unauthorized. admins only
       security:
         - innopoints_sso: []
-  /stock_changes/{stock_change_id}:
+  /stock_changes/{stock_change_id}/status:
     parameters:
       - name: stock_change_id
         in: path
@@ -485,12 +485,8 @@ paths:
                   type: integer
                   example: 340
       responses:
-        200:
-          description: success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Account'
+        204:
+          description: success. no payload
       security:
       - innopolis_sso: []
 
