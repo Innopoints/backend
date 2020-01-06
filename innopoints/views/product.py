@@ -9,9 +9,10 @@ Product:
 """
 
 import logging
+import math
 from datetime import date
 
-from flask import request
+from flask import request, jsonify
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
@@ -32,7 +33,7 @@ log = logging.getLogger(__name__)
 @api.route('/products')
 def list_products():
     """List products available in InnoStore."""
-    default_limit = 3
+    default_limit = 24
     default_page = 1
     default_order_by = 'addition_time'
     default_order = 'asc'
@@ -46,7 +47,6 @@ def list_products():
     try:
         limit = int(request.args.get('limit', default_limit))
         page = int(request.args.get('page', default_page))
-        search_query = request.args.get('q')
         order_by = request.args.get('order_by', default_order_by)
         order = request.args.get('order', default_order)
     except ValueError:
@@ -59,11 +59,13 @@ def list_products():
         abort(400, {'message': 'Invalid ordering specified.'})
 
     db_query = Product.query
-    if search_query is not None:
-        like_query = f'%{search_query}%'
+    count_query = db.session.query(db.func.count(Product.id))
+    if 'q' in request.args:
+        like_query = f'%{request.args["q"]}%'
         or_condition = or_(Product.name.ilike(like_query),
                            Product.description.ilike(like_query))
         db_query = db_query.filter(or_condition)
+        count_query = count_query.filter(or_condition)
     db_query = db_query.order_by(ordering[order_by, order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
@@ -71,7 +73,8 @@ def list_products():
                                                'varieties.stock_changes',
                                                'varieties.product',
                                                'varieties.product_id'))
-    return schema.jsonify(db_query.all())
+    return jsonify(pages=math.ceil(count_query.scalar() / limit),
+                   data=schema.dump(db_query.all()))
 
 
 @api.route('/products', methods=['POST'])
