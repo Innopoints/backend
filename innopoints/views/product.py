@@ -138,8 +138,7 @@ class ProductDetailAPI(MethodView):
     def get(self, product_id):
         """Get a single product."""
         product = Product.query.get_or_404(product_id)
-        schema = ProductSchema(exclude=('description',
-                                        'varieties.stock_changes',
+        schema = ProductSchema(exclude=('varieties.stock_changes',
                                         'varieties.product',
                                         'varieties.product_id'))
         return schema.jsonify(product)
