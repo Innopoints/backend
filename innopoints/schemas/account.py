@@ -38,9 +38,10 @@ class NotificationSettingsSchema(ma.Schema):
     class Meta:
         ordered = True
         sqla_session = db.session
+        notification_modes = ['off', 'email', 'push']
 
-    innostore = ma.Str(validate=validate.OneOf(['off', 'email', 'push']))
-    volunteering = ma.Str(validate=validate.OneOf(['off', 'email', 'push']))
-    project_creation = ma.Str(validate=validate.OneOf(['off', 'email', 'push']))
-    administration = ma.Str(validate=validate.OneOf(['off', 'email', 'push']))
-    service = ma.Str(validate=validate.OneOf(['off', 'email', 'push']))
+    innostore = ma.Str(validate=validate.OneOf(Meta.notification_modes))
+    volunteering = ma.Str(validate=validate.OneOf(Meta.notification_modes))
+    project_creation = ma.Str(validate=validate.OneOf(Meta.notification_modes))
+    administration = ma.Str(validate=validate.OneOf(Meta.notification_modes))
+    service = ma.Str(validate=validate.OneOf(Meta.notification_modes))
