@@ -144,12 +144,12 @@ def edit_application(project_id, activity_id, application_id):
 
     old_status = application.status
     if 'status' in request.json:
-        if activity.internal:
-            abort(400, {'message': 'Cannot modify the status of internal activities.'})
         try:
             status = getattr(ApplicationStatus, request.json['status'])
         except AttributeError:
             abort(400, {'message': 'A valid application status must be specified.'})
+        if activity.internal and old_status != status:
+            abort(400, {'message': 'Cannot modify the status of internal activities.'})
         application.status = status
 
     if 'actual_hours' in request.json:
