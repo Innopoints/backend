@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-07T11:04:09.968Z",
+  "__export_date": "2020-01-07T11:08:55.258Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -1917,7 +1917,7 @@
       "color": null,
       "created": 1576094030712,
       "data": {
-        "url": "https://innopoints-backend.herokuapp.com"
+        "url": "https://innopoints-backend.herokuapp.com/api/v1"
       },
       "dataPropertyOrder": {
         "&": [
@@ -1926,7 +1926,7 @@
       },
       "isPrivate": false,
       "metaSortKey": 1576094030712,
-      "modified": 1577100899988,
+      "modified": 1578395292222,
       "name": "Heroku",
       "parentId": "env_7b8a02f2a3429e99124f789bed9fa4d8ed8bba68",
       "_type": "environment"
@@ -1936,7 +1936,7 @@
       "color": "#7d69cb",
       "created": 1576094085100,
       "data": {
-        "url": "localhost:7507"
+        "url": "localhost:7507/api/v1"
       },
       "dataPropertyOrder": {
         "&": [
@@ -1945,7 +1945,7 @@
       },
       "isPrivate": false,
       "metaSortKey": 1576094085100,
-      "modified": 1578237143593,
+      "modified": 1578395273322,
       "name": "Local",
       "parentId": "env_7b8a02f2a3429e99124f789bed9fa4d8ed8bba68",
       "_type": "environment"

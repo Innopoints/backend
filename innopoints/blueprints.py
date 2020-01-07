@@ -21,6 +21,6 @@ def _factory(partial_module_string, url_prefix='/'):
     return blueprint
 
 
-api = _factory('api')
+api = _factory('api', url_prefix='/api/v1')
 
 all_blueprints = (api,)
