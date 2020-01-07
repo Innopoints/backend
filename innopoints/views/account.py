@@ -16,6 +16,7 @@ Account:
 - PATCH  /account/{email}/notification_settings
 """
 
+from datetime import datetime
 import logging
 import math
 
@@ -28,6 +29,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
+from innopoints.core.timezone import tz_aware_now, unix_epoch
 from innopoints.core.sql_hacks import as_row
 from innopoints.core.notifications import notify
 from innopoints.extensions import db
@@ -35,6 +37,10 @@ from innopoints.models import (
     Account,
     Activity,
     Application,
+    ApplicationStatus,
+    Competence,
+    Feedback,
+    feedback_competence,
     Notification,
     NotificationType,
     Product,
@@ -42,6 +48,7 @@ from innopoints.models import (
     StockChange,
     Transaction,
     Variety,
+    VolunteeringReport,
 )
 from innopoints.schemas import AccountSchema, TimelineSchema, NotificationSettingsSchema
 
@@ -216,6 +223,77 @@ def get_timeline(email):
 
     out_schema = TimelineSchema(many=True)
     return out_schema.jsonify(timeline.all())
+
+
+@api.route('/account/statistics', defaults={'email': None})
+@api.route('/account/<email>/statistics')
+@login_required
+def get_statistics(email):
+    """Get the statistics of the account.
+    If the e-mail is not passed, return own statistics."""
+    if email is None:
+        user = current_user
+    else:
+        if not current_user.is_admin:
+            abort(401)
+        user = Account.query.get_or_404(email)
+
+    if 'start_date' in request.args:
+        try:
+            start_date = datetime.fromisoformat(request.args['start_date'])
+        except ValueError:
+            abort(400, {'message': 'The datetime must be in ISO format with timezone.'})
+
+        if start_date.tzinfo is None:
+            abort(400, {'message': 'The timezone must be passed.'})
+    else:
+        start_date = unix_epoch
+
+    if 'end_date' in request.args:
+        try:
+            end_date = datetime.fromisoformat(request.args['end_date'])
+        except ValueError:
+            abort(400, {'message': 'The datetime must be in ISO format with timezone.'})
+
+        if end_date.tzinfo is None:
+            abort(400, {'message': 'The timezone must be passed.'})
+    else:
+        end_date = tz_aware_now()
+
+    volunteering = (
+        # pylint: disable=bad-continuation,invalid-unary-operand-type
+        db.session.query(db.func.sum(Application.actual_hours),
+                         db.func.count(Application.id))
+            .filter_by(applicant=user, status=ApplicationStatus.approved)
+            .filter(Application.application_time >= start_date)
+            .filter(Application.application_time <= end_date)
+            .join(Activity).filter(~Activity.fixed_reward)
+    ).one()
+
+    rating = (
+        # pylint: disable=bad-continuation
+        db.session.query(db.func.avg(VolunteeringReport.rating))
+            .join(Application).filter_by(applicant=user, status=ApplicationStatus.approved)
+            .filter(Application.application_time >= start_date)
+            .filter(Application.application_time <= end_date)
+    ).scalar()
+
+    competences = (
+        # pylint: disable=bad-continuation
+        db.session.query(db.func.count(feedback_competence.c.feedback_id),
+                         feedback_competence.c.competence_id)
+            .group_by(feedback_competence.c.competence_id)
+            .join(Feedback).join(Application).filter_by(applicant=user)
+            .filter(Application.application_time >= start_date)
+            .filter(Application.application_time <= end_date)
+            .join(Competence).add_column(Competence.name).group_by(Competence.name)
+    ).all()
+
+    return jsonify(hours=volunteering[0] or 0,
+                   positions=volunteering[1],
+                   rating=float(rating or 0),
+                   competences=[dict(zip(('amount', 'id', 'name'), competence))
+                                for competence in competences])
 
 
 @api.route('/account/notification_settings', defaults={'email': None})
