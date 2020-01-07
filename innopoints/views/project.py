@@ -79,7 +79,7 @@ def list_ongoing_projects():
         conditional_exclude.remove('moderators')
         if not current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'review_status', 'files', 'image_id',
+    exclude = ['admin_feedback', 'files', 'image_id',
                'lifetime_stage', 'admin_feedback']
     activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
                                                             'fixed_reward', 'working_hours',
@@ -133,7 +133,7 @@ def list_past_projects():
         conditional_exclude.remove('moderators')
         if not current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'review_status', 'files', 'image_id',
+    exclude = ['admin_feedback', 'files', 'image_id',
                'lifetime_stage', 'admin_feedback']
     activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
                                                             'fixed_reward', 'working_hours',
