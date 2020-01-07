@@ -126,8 +126,6 @@ def edit_application(project_id, activity_id, application_id):
 
     application = Application.query.get_or_404(application_id)
     activity = Activity.query.get_or_404(activity_id)
-    if activity.internal:
-        abort(404)
     project = Project.query.get_or_404(project_id)
 
     if activity.project != project or application.activity_id != activity.id:
@@ -136,11 +134,18 @@ def edit_application(project_id, activity_id, application_id):
     if current_user not in project.moderators and not current_user.is_admin:
         abort(401)
 
-    if project.lifetime_stage != LifetimeStage.ongoing:
-        abort(400, {'message': 'The application status may only be changed for ongoing projects.'})
+    if activity.internal:
+        if project.lifetime_stage != LifetimeStage.finalizing:
+            abort(400, {'message': 'Internal activity applications may only be edited '
+                                   'in the finalizing stage.'})
+    else:
+        if project.lifetime_stage != LifetimeStage.ongoing:
+            abort(400, {'message': 'The application may only be edited for ongoing projects.'})
 
     old_status = application.status
     if 'status' in request.json:
+        if activity.internal:
+            abort(400, {'message': 'Cannot modify the status of internal activities.'})
         try:
             status = getattr(ApplicationStatus, request.json['status'])
         except AttributeError:
