@@ -118,6 +118,41 @@
       "_type": "request"
     },
     {
+      "_id": "req_39342132fce34691a530cbc6eb297a98",
+      "authentication": {},
+      "body": {},
+      "created": 1578323571126,
+      "description": "",
+      "headers": [],
+      "isPrivate": false,
+      "metaSortKey": -1578323571127,
+      "method": "GET",
+      "modified": 1578323637119,
+      "name": "List accounts",
+      "parameters": [],
+      "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/accounts",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
+      "created": 1577218177904,
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1576094103863,
+      "modified": 1578237253313,
+      "name": "Account",
+      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
+      "_type": "request_group"
+    },
+    {
       "_id": "req_ec6fa2acbc97429b85cd10ee3ad0dbb9",
       "authentication": {},
       "body": {},
@@ -139,18 +174,6 @@
       "settingStoreCookies": true,
       "url": "{{url}}/account/notification_settings",
       "_type": "request"
-    },
-    {
-      "_id": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
-      "created": 1577218177904,
-      "description": "",
-      "environment": {},
-      "environmentPropertyOrder": null,
-      "metaSortKey": -1576094103863,
-      "modified": 1578237253313,
-      "name": "Account",
-      "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
-      "_type": "request_group"
     },
     {
       "_id": "req_8177c97b630049fc9ea57e1f5b9988a7",

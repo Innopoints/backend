@@ -2,6 +2,7 @@
 
 Account:
 - GET    /account
+- GET    /accounts
 - GET    /account/{email}
 - PATCH  /account/{email}/balance
 - GET    /account/timeline
@@ -16,10 +17,12 @@ Account:
 """
 
 import logging
+import math
 
-from flask import request
+from flask import request, jsonify
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
+from sqlalchemy import or_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 
@@ -74,6 +77,43 @@ def get_info(email):
                                         'transactions', 'applications', 'reports',
                                         'notification_settings'))
     return out_schema.jsonify(user)
+
+
+@api.route('/accounts')
+@login_required
+def list_users():
+    """List all user accounts on the website."""
+    default_page = 1
+    default_limit = 25
+
+    try:
+        limit = int(request.args.get('limit', default_limit))
+        page = int(request.args.get('page', default_page))
+    except ValueError:
+        abort(400, {'message': 'Bad query parameters.'})
+
+    db_query = db.session.query(Account.email, Account.full_name)
+    count_query = db.session.query(db.func.count(Account.email))
+    if 'q' in request.args:
+        like_query = f'%{request.args["q"]}%'
+        db_query = db_query.filter(
+            or_(Account.email.ilike(like_query),
+                Account.full_name.ilike(like_query))
+        )
+        count_query = count_query.filter(
+            or_(Account.email.ilike(like_query),
+                Account.full_name.ilike(like_query))
+        )
+
+    if limit < 1 or page < 1:
+        abort(400, {'message': 'Limit and page number must be positive.'})
+
+    db_query = db_query.order_by(Account.email.asc())
+    db_query = db_query.offset(limit * (page - 1)).limit(limit)
+
+    schema = AccountSchema(many=True, only=('email', 'full_name'))
+    return jsonify(pages=math.ceil(count_query.scalar() / limit),
+                   data=schema.dump(db_query.all()))
 
 
 @api.route('/account/<string:email>/balance', methods=['PATCH'])
