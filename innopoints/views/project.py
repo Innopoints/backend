@@ -28,12 +28,14 @@ from innopoints.core.helpers import abort
 from innopoints.core.notifications import notify, notify_all
 from innopoints.extensions import db
 from innopoints.models import (
+    Account,
     Activity,
+    Application,
+    ApplicationStatus,
     LifetimeStage,
-    ReviewStatus,
     NotificationType,
     Project,
-    Account,
+    ReviewStatus,
 )
 from innopoints.schemas import ProjectSchema
 
@@ -121,7 +123,6 @@ def list_projects_for_review():
     return schema.jsonify(db_query.all())
 
 
-
 @api.route('/projects', methods=['POST'])
 @login_required
 def create_project():
@@ -141,11 +142,15 @@ def create_project():
     new_project.creator = current_user
     new_project.moderators.append(current_user)
 
-    try:
-        for new_activity in new_project.activities:
-            new_activity.project = new_project
+    for new_activity in new_project.activities:
+        new_activity.project = new_project
 
-        db.session.add(new_project)
+    moderation = Activity(name='Moderation', internal=True, working_hours=0)
+    moderation.project = new_project
+
+    db.session.add(new_project)
+
+    try:
         db.session.commit()
     except IntegrityError as err:
         db.session.rollback()
@@ -236,6 +241,18 @@ def finalize_project(project_id):
         abort(400, {'message': 'Only ongoing projects can be finalized.'})
 
     project.lifetime_stage = LifetimeStage.finalizing
+
+    moderation = Activity.query.filter_by(project=project,
+                                          internal=True,
+                                          name='Moderation').one_or_none()
+    if moderation is None:
+        log.error('The moderation activity couldn\'t be found.')
+        abort(500)
+    else:
+        for moderator in project.moderators:
+            moderation.applications.append(
+                Application(applicant=moderator, status=ApplicationStatus.approved)
+            )
 
     try:
         db.session.commit()

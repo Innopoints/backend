@@ -157,6 +157,12 @@ def get_timeline(email):
             .join(Project,
                   Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
             .add_column(Project.name.label('project_name'))
+            .outerjoin(Activity, (Activity.project_id == Project.id)
+                               & (Activity.internal)
+                               & (Activity.name == 'Moderation'))
+            .outerjoin(Application, (Application.activity_id == Activity.id)
+                                  & (Application.applicant == user))
+            .add_column(Application.id.label('application_id'))
     ).subquery()
 
     projects = (

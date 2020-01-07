@@ -44,7 +44,7 @@ def create_activity(project_id):
     if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
         abort(400, {'message': 'Activities may only be created on draft and ongoing projects.'})
 
-    in_schema = ActivitySchema(exclude=('id', 'project', 'applications'))
+    in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
 
     try:
         new_activity = in_schema.load(request.json)
@@ -83,10 +83,13 @@ class ActivityAPI(MethodView):
             abort(400, {'message': 'Activities may only be edited on draft and ongoing projects.'})
 
         activity = Activity.query.get_or_404(activity_id)
+        if activity.internal:
+            abort(404)
+
         if activity.project != project:
             abort(400, {'message': 'The specified project and activity are unrelated.'})
 
-        in_schema = ActivitySchema(exclude=('id', 'project', 'applications'))
+        in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
 
         try:
             updated_activity = in_schema.load(request.json, instance=activity, partial=True)
@@ -119,11 +122,15 @@ class ActivityAPI(MethodView):
             abort(400, {'message': 'Activities may only be deleted on draft and ongoing projects.'})
 
         activity = Activity.query.get_or_404(activity_id)
+        if activity.internal:
+            abort(404)
+
         if activity.project != project:
             abort(400, {'message': 'The specified project and activity are unrelated.'})
 
+        db.session.delete(activity)
+
         try:
-            db.session.delete(activity)
             db.session.commit()
         except IntegrityError as err:
             db.session.rollback()

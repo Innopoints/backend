@@ -48,6 +48,9 @@ def apply_for_activity(project_id, activity_id):
 
     project = Project.query.get_or_404(project_id)
     activity = Activity.query.get_or_404(activity_id)
+    if activity.internal:
+        abort(404)
+
     if activity.project != project:
         abort(400, {'message': 'The specified project and activity are unrelated.'})
 
@@ -88,6 +91,9 @@ def take_back_application(project_id, activity_id):
     """Take back a volunteering application on a particular activity."""
     project = Project.query.get_or_404(project_id)
     activity = Activity.query.get_or_404(activity_id)
+    if activity.internal:
+        abort(404)
+
     if activity.project != project:
         abort(400, {'message': 'The specified project and activity are unrelated.'})
 
@@ -120,6 +126,8 @@ def edit_application(project_id, activity_id, application_id):
 
     application = Application.query.get_or_404(application_id)
     activity = Activity.query.get_or_404(activity_id)
+    if activity.internal:
+        abort(404)
     project = Project.query.get_or_404(project_id)
 
     if activity.project != project or application.activity_id != activity.id:
@@ -174,6 +182,8 @@ def get_report_info(project_id, activity_id, application_id):
     """Get the reports from the moderators of the project and an average rating."""
     application = Application.query.get_or_404(application_id)
     activity = Activity.query.get_or_404(activity_id)
+    if activity.internal:
+        abort(404)
     project = Project.query.get_or_404(project_id)
 
     if activity.project != project or application.activity_id != activity.id:
@@ -214,6 +224,8 @@ def create_report(project_id, activity_id, application_id):
 
     application = Application.query.get_or_404(application_id)
     activity = Activity.query.get_or_404(activity_id)
+    if activity.internal:
+        abort(404)
     project = Project.query.get_or_404(project_id)
 
     if activity.project != project or application.activity_id != activity.id:

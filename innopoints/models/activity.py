@@ -62,6 +62,7 @@ class Activity(db.Model):
     feedback_questions = db.Column(db.ARRAY(db.String(1024)),
                                    nullable=False,
                                    default=DEFAULT_QUESTIONS)
+    internal = db.Column(db.Boolean, nullable=False, default=False)
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan')
 
