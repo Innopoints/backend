@@ -225,7 +225,8 @@ def publish_project(project_id):
     if not project.organizer:
         abort(400, {'message': 'The organizer field must not be empty.'})
 
-    if not project.activities:
+    external_activity = Activity.query.filter_by(internal=False)
+    if not db.session.query(external_activity.exists()).scalar():
         abort(400, {'message': 'The project must have at least one activity.'})
 
     if not all(len(activity.competences) in range(1, 4) for activity in project.activities):
