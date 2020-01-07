@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-06T14:37:58.532Z",
+  "__export_date": "2020-01-07T11:04:09.968Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -327,7 +327,7 @@
       "isPrivate": false,
       "metaSortKey": -1578173761277,
       "method": "GET",
-      "modified": 1578213676122,
+      "modified": 1578385683345,
       "name": "Get account timeline",
       "parameters": [],
       "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
@@ -337,7 +337,30 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/account/student1@innopolis.university/timeline",
+      "url": "{{url}}/account/student2@innopolis.university/timeline",
+      "_type": "request"
+    },
+    {
+      "_id": "req_b1b5d470cc4c47238c0bd7a557301e79",
+      "authentication": {},
+      "body": {},
+      "created": 1578390710796,
+      "description": "",
+      "headers": [],
+      "isPrivate": false,
+      "metaSortKey": -1578117737755,
+      "method": "GET",
+      "modified": 1578393309787,
+      "name": "Get account statistics",
+      "parameters": [],
+      "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingFollowRedirects": "global",
+      "settingRebuildPath": true,
+      "settingSendCookies": true,
+      "settingStoreCookies": true,
+      "url": "{{url}}/account/student1@innopolis.university/statistics?end_date=2020-01-01T13:37:00+05:00",
       "_type": "request"
     },
     {
