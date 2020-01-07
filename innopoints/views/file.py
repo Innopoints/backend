@@ -12,7 +12,8 @@ import mimetypes
 import requests
 import werkzeug
 from flask import jsonify, request, current_app
-from flask_login import login_required
+from flask_login import login_required, current_user
+from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.file_manager import file_manager
@@ -50,7 +51,7 @@ def upload_file(namespace):
     if mimetype not in ALLOWED_MIMETYPES:
         abort(400, {'message': f'Mimetype "{mimetype}" is not allowed'})
 
-    new_file = StaticFile(mimetype=mimetype, namespace=namespace)
+    new_file = StaticFile(mimetype=mimetype, namespace=namespace, owner=current_user)
     db.session.add(new_file)
     db.session.commit()
     try:
@@ -82,10 +83,20 @@ def retrieve_file(file_id):
 def delete_file(file_id):
     """Delete the given file by ID."""
     file = StaticFile.query.get_or_404(file_id)
+    if file.owner != current_user:
+        abort(401)
+
     try:
         file_manager.delete(str(file_id), file.namespace)
     except FileNotFoundError:
         abort(404, 'File not found on storage')
+
     db.session.delete(file)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
     return NO_PAYLOAD
