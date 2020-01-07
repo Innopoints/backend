@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-07T11:08:55.258Z",
+  "__export_date": "2020-01-07T11:26:16.101Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -14,7 +14,7 @@
       "isPrivate": false,
       "metaSortKey": -1576094319907,
       "method": "GET",
-      "modified": 1576094332474,
+      "modified": 1578396315499,
       "name": "Login (cheat)",
       "parameters": [],
       "parentId": "fld_983e426ea7044379b7d1d826fb9a21c7",
@@ -24,7 +24,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/login_cheat",
+      "url": "{{ auth_url }}/login_cheat",
       "_type": "request"
     },
     {
@@ -58,7 +58,7 @@
       "isPrivate": false,
       "metaSortKey": -1576094268763.5,
       "method": "GET",
-      "modified": 1578256634285,
+      "modified": 1578396320477,
       "name": "Login as (cheat)",
       "parameters": [],
       "parentId": "fld_983e426ea7044379b7d1d826fb9a21c7",
@@ -68,7 +68,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/login_cheat/events@innopolis.university",
+      "url": "{{ auth_url }}/login_cheat/events@innopolis.university",
       "_type": "request"
     },
     {
@@ -81,7 +81,7 @@
       "isPrivate": false,
       "metaSortKey": -1576094217620,
       "method": "GET",
-      "modified": 1576094382887,
+      "modified": 1578396324460,
       "name": "Login (SSO)",
       "parameters": [],
       "parentId": "fld_983e426ea7044379b7d1d826fb9a21c7",
@@ -91,7 +91,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/login",
+      "url": "{{ auth_url }}/login",
       "_type": "request"
     },
     {
@@ -104,7 +104,7 @@
       "isPrivate": false,
       "metaSortKey": -1576094166476.5,
       "method": "GET",
-      "modified": 1576164899334,
+      "modified": 1578396331333,
       "name": "Log out",
       "parameters": [],
       "parentId": "fld_983e426ea7044379b7d1d826fb9a21c7",
@@ -114,7 +114,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/logout",
+      "url": "{{ auth_url }}/logout",
       "_type": "request"
     },
     {
@@ -1820,7 +1820,7 @@
           "domain": "0.0.0.0",
           "expires": "2021-01-04T13:37:09.000Z",
           "hostOnly": true,
-          "id": "9089056550621901",
+          "id": "5802077051009595",
           "key": "remember_token",
           "lastAccessed": "2020-01-05T13:37:09.540Z",
           "path": "/",
@@ -1831,7 +1831,7 @@
           "domain": "0.0.0.0",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "2168002485209335",
+          "id": "3479387026528691",
           "key": "session",
           "lastAccessed": "2020-01-05T13:37:09.540Z",
           "path": "/",
@@ -1842,7 +1842,7 @@
           "domain": "127.0.0.1",
           "expires": "2020-12-20T21:34:06.000Z",
           "hostOnly": true,
-          "id": "9273255599288885",
+          "id": "6771614658192249",
           "key": "remember_token",
           "lastAccessed": "2019-12-21T21:34:06.421Z",
           "path": "/",
@@ -1853,7 +1853,7 @@
           "domain": "127.0.0.1",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "23249989085704792",
+          "id": "9177623272056823",
           "key": "session",
           "lastAccessed": "2019-12-21T21:34:06.421Z",
           "path": "/",
@@ -1864,7 +1864,7 @@
           "domain": "innopoints-backend.herokuapp.com",
           "expires": "2021-01-02T13:32:45.000Z",
           "hostOnly": true,
-          "id": "24782384228756715",
+          "id": "4940650215252793",
           "key": "remember_token",
           "lastAccessed": "2020-01-03T13:33:22.121Z",
           "path": "/",
@@ -1876,7 +1876,7 @@
           "domain": "innopoints-backend.herokuapp.com",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "17116634356734384",
+          "id": "506765492414512",
           "key": "session",
           "lastAccessed": "2020-01-03T13:33:22.122Z",
           "path": "/",
@@ -1886,11 +1886,11 @@
         {
           "creation": "2020-01-05T15:59:23.169Z",
           "domain": "localhost",
-          "expires": "2021-01-04T21:05:10.000Z",
+          "expires": "2021-01-06T11:25:51.000Z",
           "hostOnly": true,
-          "id": "6546915477855342",
+          "id": "34482403735614775",
           "key": "remember_token",
-          "lastAccessed": "2020-01-05T21:05:10.455Z",
+          "lastAccessed": "2020-01-07T11:25:51.053Z",
           "path": "/",
           "value": "\"admin@innopolis.university|8a05b1fba27f45da6ffdf696c611d140b9af746a6f9e5456e067cb1c86b23c2d48f466bbf5442fbdfcbf7440b8538c7c955ae24fbf94759f429b16d6c54e3fce\""
         },
@@ -1899,15 +1899,15 @@
           "domain": "localhost",
           "hostOnly": true,
           "httpOnly": true,
-          "id": "9063867833618247",
+          "id": "10765210061356578",
           "key": "session",
-          "lastAccessed": "2020-01-05T21:05:10.455Z",
+          "lastAccessed": "2020-01-07T11:25:51.054Z",
           "path": "/",
-          "value": ".eJwdi8sKAjEMAP-lZ5GmbdKsJ_9k2TYJFrQr-xBE_HcX5zLMYT5uX3UZm7iLm-TR-rX1Pj_ne1vPe28vXda2vd3JjbboenOXbdn1qP8QSkUaCAtRhKBScMoYyAASZmFRNOQSwYrXABCysiCjUOAYfVVLxDh4iwCeMnBm5VzjlJg4CqtpxcPssWbDFHyO_oCECJIVdd8fdNE3mQ.XhJPhg.P00z61ebDjyHz-1djCWRc3s6e6E"
+          "value": ".eJwdi8sKAjEMAP-lZ5GmbdKsJ_9k2TYJFrQr-xBE_HcX5zLMYT5uX3UZm7iLm-TR-rX1Pj_ne1vPe28vXda2vd3JjbboenOXbdn1qP8QSkUaCAtRhKBScMoYyAASZmFRNOQSwYrXABCysiCjUOAYfVVLxDh4iwCeMnBm5VzjlJg4CqtpxcPssWbDFHyO_oCECJIVdd8fdNE3mQ.XhRqvw.jeon42T1STubgpx6p1aDVHI7GcI"
         }
       ],
       "created": 1576093985404,
-      "modified": 1578258310455,
+      "modified": 1578396351056,
       "name": "Default Jar",
       "parentId": "wrk_2b23c86b831e4c3bb37e8e44918a89ad",
       "_type": "cookie_jar"
@@ -1917,16 +1917,18 @@
       "color": null,
       "created": 1576094030712,
       "data": {
+        "auth_url": "https://innopoints-backend.herokuapp.com",
         "url": "https://innopoints-backend.herokuapp.com/api/v1"
       },
       "dataPropertyOrder": {
         "&": [
-          "url"
+          "url",
+          "auth_url"
         ]
       },
       "isPrivate": false,
       "metaSortKey": 1576094030712,
-      "modified": 1578395292222,
+      "modified": 1578396306936,
       "name": "Heroku",
       "parentId": "env_7b8a02f2a3429e99124f789bed9fa4d8ed8bba68",
       "_type": "environment"
@@ -1936,16 +1938,18 @@
       "color": "#7d69cb",
       "created": 1576094085100,
       "data": {
+        "auth_url": "localhost:7507",
         "url": "localhost:7507/api/v1"
       },
       "dataPropertyOrder": {
         "&": [
-          "url"
+          "url",
+          "auth_url"
         ]
       },
       "isPrivate": false,
       "metaSortKey": 1576094085100,
-      "modified": 1578395273322,
+      "modified": 1578396303933,
       "name": "Local",
       "parentId": "env_7b8a02f2a3429e99124f789bed9fa4d8ed8bba68",
       "_type": "environment"

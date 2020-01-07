@@ -11,7 +11,7 @@ from flask import current_app, url_for, redirect, session, request
 from flask_login import login_user, logout_user
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
 
-from innopoints.blueprints import api
+from innopoints.blueprints import auth
 from innopoints.core.helpers import abort
 from innopoints.extensions import oauth, db
 from innopoints.models import Account
@@ -19,7 +19,7 @@ from innopoints.models import Account
 NO_PAYLOAD = ('', 204)
 
 
-@api.route('/login')
+@auth.route('/login')
 def login():
     """Redirect the user to the Innopolis SSO login page."""
     if 'final_redirect_location' in request.args:
@@ -31,7 +31,7 @@ def login():
     return oauth.innopolis_sso.authorize_redirect(redirect_uri)
 
 
-@api.route('/authorize')
+@auth.route('/authorize')
 def authorize():
     """Catch the user after the back-redirect and fetch the essential info."""
     token = oauth.innopolis_sso.authorize_access_token(
@@ -68,18 +68,19 @@ def authorize():
     return redirect(urljoin(frontend_base, final_redirect_uri))
 
 
-@api.route('/logout')
+@auth.route('/logout')
 def logout():
     """Log out the currently signed in user."""
     logout_user()
     return NO_PAYLOAD
 
 
-@api.route('/login_cheat/', defaults={'email': 'admin@innopolis.university'})
-@api.route('/login_cheat/<email>')
+@auth.route('/login_cheat/', defaults={'email': 'admin@innopolis.university'})
+@auth.route('/login_cheat/<email>')
 def login_cheat(email):
     """Bypass OAuth."""
-    # TODO: remove this
+    if current_app.config['ENV'] not in ('development', 'heroku'):
+        abort(400, {'message': 'This endpoint is unavailable.'})
     user = Account.query.get_or_404(email)
     login_user(user, remember=True)
 
