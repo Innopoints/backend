@@ -41,7 +41,12 @@ class Account(UserMixin, db.Model):
                                    backref='account')
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan',
+                                   passive_deletes=True,
                                    backref='applicant')
+    static_files = db.relationship('StaticFile',
+                                   cascade='all, delete-orphan',
+                                   passive_deletes=True,
+                                   backref='owner')
     reports = db.relationship('VolunteeringReport',
                               cascade='all, delete-orphan')
 
