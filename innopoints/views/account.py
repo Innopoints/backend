@@ -84,7 +84,7 @@ def get_info(email):
 def list_users():
     """List all user accounts on the website."""
     default_page = 1
-    default_limit = 10
+    default_limit = 25
 
     try:
         limit = int(request.args.get('limit', default_limit))
