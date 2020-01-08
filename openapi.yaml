@@ -196,7 +196,7 @@ paths:
       security:
         - innopoints_sso: []
 
-  /product/{product_id}/varieties/:
+  /products/{product_id}/varieties/:
     parameters:
     - name: product_id
       in: path
@@ -227,7 +227,7 @@ paths:
 
       security:
         - innopoints_sso: []
-  /product/{product_id}/varieties/{variety_id}:
+  /products/{product_id}/varieties/{variety_id}:
     parameters:
     - name: product_id
       in: path
@@ -282,7 +282,7 @@ paths:
 
       security:
         - innopoints_sso: []
-  /product/{product_id}/varieties/{variety_id}/purchase:
+  /products/{product_id}/varieties/{variety_id}/purchase:
     parameters:
     - name: product_id
       in: path
