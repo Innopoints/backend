@@ -15,7 +15,8 @@ externalDocs:
   url: https://www.notion.so/innopoints/
 
 servers:
-- url: https://innopoints-backend.herokuapp.com/
+- url: https://innopoints-backend.herokuapp.com/api/v1/
+- url: http://localhost:7507/api/v1/
 - url: Something on innopolis servers
 
 tags:
