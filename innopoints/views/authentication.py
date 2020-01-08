@@ -27,7 +27,7 @@ def login():
         if 'frontend_base' in request.args and current_app.config['ENV'] == 'heroku':
             session['frontend_base'] = request.args['frontend_base']
 
-    redirect_uri = url_for('api.authorize', _external=True)
+    redirect_uri = url_for('auth.authorize', _external=True)
     return oauth.innopolis_sso.authorize_redirect(redirect_uri)
 
 
@@ -35,7 +35,7 @@ def login():
 def authorize():
     """Catch the user after the back-redirect and fetch the essential info."""
     token = oauth.innopolis_sso.authorize_access_token(
-        redirect_uri=url_for('api.authorize', _external=True))
+        redirect_uri=url_for('auth.authorize', _external=True))
     try:
         userinfo = oauth.innopolis_sso.parse_id_token(token)
     except (MissingClaimError, InvalidClaimError):
