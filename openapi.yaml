@@ -48,19 +48,30 @@ paths:
           schema:
             type: integer
             default: 1
+            minimum: 1
         - name: limit
           description: Maximum number of elemenets
           in: query
           schema:
             type: integer
-            default: 3
+            default: 24
+            minimum: 1
           example: 10
-        - name: order
+        - name: order_by
           description: Parameter to sort products by
           in: query
           schema:
             type: string
-            default: time
+            enum: [addition_time, price]
+            default: addition_time
+          example: price
+        - name: order
+          description: Which way to order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
           example: price
         - name: q
           description: Search query
@@ -68,8 +79,23 @@ paths:
           schema:
             type: string
           required: false
-
       responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    pages:
+                      type: integer
+                      description: total number of pages with the given limit
+                      minimum: 1
+                      example: 6
+                    data:
+                      $ref: '#/components/schemas/Product'
         400:
           description: Invalid query
           content:
@@ -80,14 +106,6 @@ paths:
                   message:
                     type: string
                     example: Bad query parameters
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Product'
     post:
       tags:
       - product
