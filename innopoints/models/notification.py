@@ -24,7 +24,7 @@ class NotificationType(Enum):
     project_review_requested = auto()
 
 
-class NotificationGroup(Enum):
+class NotificationGroup:
     """Represents notification groups."""
     innostore = 'innostore'
     volunteering = 'volunteering'
