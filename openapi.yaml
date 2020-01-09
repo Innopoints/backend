@@ -9,7 +9,7 @@ info:
   #   name: Apache 2.0
   #   url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.0
- 
+
 externalDocs:
   description: Additional detailed documentation on Notion
   url: https://www.notion.so/innopoints/
@@ -42,7 +42,7 @@ paths:
       - product
       summary: List all existing products
       operationId: listProducts
-      parameters: 
+      parameters:
         - name: page
           description: Page number
           in: query
@@ -128,7 +128,7 @@ paths:
                 $ref: '#/components/schemas/Product'
         400:
           description: Invalid input
-          content: 
+          content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
@@ -456,6 +456,296 @@ paths:
       security:
         - innopolis_sso: []
 
+  /projects:
+    get:
+      tags:
+      - project
+      parameters:
+        - name: order_by
+          in: query
+          schema:
+            type: string
+            enum: [creation, proximity]
+            default: creation
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+        - name: q
+          in: query
+          description: search query
+          schema:
+            type: string
+            nullable: true
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: integer
+                  - $ref: '#/components/schemas/Project'
+                  - type: object
+                    properties:
+                      varieties:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Activity'
+        400:
+          description: invalid query parameters
+    post:
+      tags:
+      - project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+  /projects/drafts:
+    get:
+      tags:
+      - project
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+  /projects/past:
+    get:
+      tags:
+      - project
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 12
+        - name: q
+          in: query
+          schema:
+            type: string
+          required: false
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+        400:
+          description: bad query parameters
+  /projects/for_review:
+    get:
+      tags:
+      - project
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+        401:
+          description: unauthorized. admins only
+      security:
+      - innopolis_sso: []
+  /projects/{project_id}/publish:
+    patch:
+      tags:
+      - project
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+        404:
+          description: project not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}/request_review:
+    patch:
+      tags:
+      - project
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+        404:
+          description: project not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}/finalize:
+    patch:
+      tags:
+      - project
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+        404:
+          description: project not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}/review_status:
+    patch:
+      tags:
+      - project
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                review_status:
+                  type: string
+                  enum: [approved, rejected]
+                admin_feedback:
+                  type: string
+                  nullable: true
+                  example: Great work everyone!       
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+        404:
+          description: project not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}:
+    parameters:
+    - name: project_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    get:
+      tags:
+        - project
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        404:
+          description: project not found
+    patch:
+      tags:
+      - project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+        404:
+          description: project not found
+    delete:
+      tags:
+      - project
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: data integrity violated
+        401:
+          description: unauthorized
+        404:
+          description: project not found
+      security:
+        - innopolis_sso: []
+
   /account/{email}:
     parameters:
     - name: email
@@ -632,7 +922,7 @@ components:
           minimum: 1
     StockChangeStatus:
       type: string
-      enum: 
+      enum:
       - pending
       - ready_for_pickup
       - carried_out
@@ -719,7 +1009,7 @@ components:
           example:
            - "What did you learn from this volunteering opportunity?"
            - "What could be improved in the organization?"
-  
+
     Error:
       type: object
       properties:
