@@ -182,7 +182,7 @@ paths:
         404:
           description: product not found
       security:
-        - innopoints_sso: []
+        - innopolis_sso: []
     delete:
       tags:
       - product
@@ -194,7 +194,7 @@ paths:
         404:
           description: product not found
       security:
-        - innopoints_sso: []
+        - innopolis_sso: []
 
   /products/{product_id}/varieties/:
     parameters:
@@ -226,7 +226,7 @@ paths:
           description: product not found
 
       security:
-        - innopoints_sso: []
+        - innopolis_sso: []
   /products/{product_id}/varieties/{variety_id}:
     parameters:
     - name: product_id
@@ -266,7 +266,7 @@ paths:
           description: product/variety not found
 
       security:
-        - innopoints_sso: []
+        - innopolis_sso: []
     delete:
       tags:
         - variety
@@ -281,7 +281,7 @@ paths:
           description: product/variety not found
 
       security:
-        - innopoints_sso: []
+        - innopolis_sso: []
   /products/{product_id}/varieties/{variety_id}/purchase:
     parameters:
     - name: product_id
@@ -326,7 +326,7 @@ paths:
           description: product/variety not found
 
       security:
-        - innopoints_sso: []
+        - innopolis_sso: []
   /stock_changes/for_review:
     get:
       tags:
@@ -343,7 +343,7 @@ paths:
         401:
           description: unauthorized. admins only
       security:
-        - innopoints_sso: []
+        - innopolis_sso: []
   /stock_changes/{stock_change_id}/status:
     parameters:
       - name: stock_change_id
@@ -367,7 +367,7 @@ paths:
         204:
           description: success
       security:
-        - innopoints_sso: []
+        - innopolis_sso: []
   /sizes:
     get:
       tags:
