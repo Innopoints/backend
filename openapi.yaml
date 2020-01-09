@@ -746,6 +746,166 @@ paths:
       security:
         - innopolis_sso: []
 
+  /projects/{project_id}/activities:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    post:
+      tags:
+      - activity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Activity'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: project not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}/activities/{activity_id}:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: activity_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    patch:
+      tags:
+      - activity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Activity'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+    delete:
+      tags:
+      - activity
+      responses:
+        200:
+          description: success
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+  /competences:
+    get:
+      tags:
+        - activity
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Competence'
+    post:
+      tags:
+        - activity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Competence'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Competence'
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+  /competences/{competence_id}:
+    parameters:
+      - name: competence_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    patch:
+      tags:
+        - activity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Competence'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Competence'
+        400:
+          description: invalide data
+        401:
+          description: unauthorized
+        404:
+          description: competence not found
+      security:
+        - innopolis_sso: []
+    delete:
+      tags:
+        - activity
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+
   /account/{email}:
     parameters:
     - name: email
@@ -1009,6 +1169,15 @@ components:
           example:
            - "What did you learn from this volunteering opportunity?"
            - "What could be improved in the organization?"
+    Competence:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          example: Teamwork
 
     Error:
       type: object
