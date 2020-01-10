@@ -3,17 +3,17 @@
 Account:
 - GET    /account
 - GET    /accounts
-- GET    /account/{email}
-- PATCH  /account/{email}/balance
+- GET    /accounts/{email}
+- PATCH  /accounts/{email}/balance
 - GET    /account/timeline
-- GET    /account/{email}/timeline
+- GET    /accounts/{email}/timeline
 - GET    /account/notification_settings
-- GET    /account/{email}/notification_settings
-- POST   /account/{email}/notify
+- GET    /accounts/{email}/notification_settings
+- POST   /accounts/{email}/notify
 - PATCH  /account/telegram
-- PATCH  /account/{email}/telegram
+- PATCH  /accounts/{email}/telegram
 - PATCH  /account/notification_settings
-- PATCH  /account/{email}/notification_settings
+- PATCH  /accounts/{email}/notification_settings
 """
 
 from datetime import datetime
@@ -68,7 +68,7 @@ def subquery_to_events(subquery, event_type):
 
 
 @api.route('/account', defaults={'email': None})
-@api.route('/account/<email>')
+@api.route('/accounts/<email>')
 @login_required
 def get_info(email):
     """Get information about an account.
@@ -123,7 +123,7 @@ def list_users():
                    data=schema.dump(db_query.all()))
 
 
-@api.route('/account/<string:email>/balance', methods=['PATCH'])
+@api.route('/accounts/<string:email>/balance', methods=['PATCH'])
 @login_required
 def change_balance(email):
     """Change a user's balance."""
@@ -156,7 +156,7 @@ def change_balance(email):
 
 
 @api.route('/account/timeline', defaults={'email': None})
-@api.route('/account/<email>/timeline')
+@api.route('/accounts/<email>/timeline')
 @login_required
 def get_timeline(email):
     """Get the timeline of the account.
@@ -232,7 +232,7 @@ def get_timeline(email):
 
 
 @api.route('/account/statistics', defaults={'email': None})
-@api.route('/account/<email>/statistics')
+@api.route('/accounts/<email>/statistics')
 @login_required
 def get_statistics(email):
     """Get the statistics of the account.
@@ -303,7 +303,7 @@ def get_statistics(email):
 
 
 @api.route('/account/notification_settings', defaults={'email': None})
-@api.route('/account/<email>/notification_settings')
+@api.route('/accounts/<email>/notification_settings')
 @login_required
 def get_notification_settings(email):
     """Get the notification settings of the account.
@@ -319,7 +319,7 @@ def get_notification_settings(email):
     return out_schema.jsonify(user.notification_settings)
 
 
-@api.route('/account/<email>/notify', methods=['POST'])
+@api.route('/accounts/<email>/notify', methods=['POST'])
 def service_notification(email):
     """Sends a custom service notification by the admin to any user."""
     user = Account.query.get_or_404(email)
@@ -344,7 +344,7 @@ def service_notification(email):
 
 
 @api.route('/account/telegram', methods=['PATCH'], defaults={'email': None})
-@api.route('/account/<email>/telegram', methods=['PATCH'])
+@api.route('/accounts/<email>/telegram', methods=['PATCH'])
 @login_required
 def change_telegram(email):
     """Change a user's Telegram username.
@@ -374,7 +374,7 @@ def change_telegram(email):
 
 
 @api.route('/account/notification_settings', methods=['PATCH'], defaults={'email': None})
-@api.route('/account/<email>/notification_settings', methods=['PATCH'])
+@api.route('/accounts/<email>/notification_settings', methods=['PATCH'])
 @login_required
 def change_notification_settings(email):
     """Get the notification settings of the account.
