@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2020-01-07T11:26:16.101Z",
+  "__export_date": "2020-01-10T13:17:59.812Z",
   "__export_source": "insomnia.desktop.app:v7.0.6",
   "resources": [
     {
@@ -226,7 +226,7 @@
       "isPrivate": false,
       "metaSortKey": -1578239911186,
       "method": "PATCH",
-      "modified": 1578240035513,
+      "modified": 1578662231133,
       "name": "Change Telegram username",
       "parameters": [],
       "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
@@ -236,7 +236,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/account/student1@innopolis.university/telegram",
+      "url": "{{url}}/accounts/student1@innopolis.university/telegram",
       "_type": "request"
     },
     {
@@ -281,7 +281,7 @@
       "isPrivate": false,
       "metaSortKey": -1578173761352,
       "method": "PATCH",
-      "modified": 1578316480996,
+      "modified": 1578662237505,
       "name": "Change balance",
       "parameters": [],
       "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
@@ -291,7 +291,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/account/student1@innopolis.university/balance",
+      "url": "{{url}}/accounts/student1@innopolis.university/balance",
       "_type": "request"
     },
     {
@@ -327,7 +327,7 @@
       "isPrivate": false,
       "metaSortKey": -1578173761277,
       "method": "GET",
-      "modified": 1578385683345,
+      "modified": 1578662242331,
       "name": "Get account timeline",
       "parameters": [],
       "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
@@ -337,7 +337,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/account/student2@innopolis.university/timeline",
+      "url": "{{url}}/accounts/student2@innopolis.university/timeline",
       "_type": "request"
     },
     {
@@ -350,7 +350,7 @@
       "isPrivate": false,
       "metaSortKey": -1578117737755,
       "method": "GET",
-      "modified": 1578393309787,
+      "modified": 1578662246175,
       "name": "Get account statistics",
       "parameters": [],
       "parentId": "fld_1a53ecf476e44d49bf2a9e365fb7cc58",
@@ -360,7 +360,7 @@
       "settingRebuildPath": true,
       "settingSendCookies": true,
       "settingStoreCookies": true,
-      "url": "{{url}}/account/student1@innopolis.university/statistics?end_date=2020-01-01T13:37:00+05:00",
+      "url": "{{url}}/accounts/student1@innopolis.university/statistics?end_date=2020-01-01T13:37:00+05:00",
       "_type": "request"
     },
     {
