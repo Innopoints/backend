@@ -49,11 +49,11 @@ log = logging.getLogger(__name__)
 def list_ongoing_projects():
     """List ongoing projects."""
     first_activity = db.func.min(Activity.start_date)
-    default_order_by = 'creation'
+    default_order_by = 'creation_time'
     default_order = 'asc'
     ordering = {
-        ('creation', 'asc'): Project.creation_time.asc(),
-        ('creation', 'desc'): Project.creation_time.desc(),
+        ('creation_time', 'asc'): Project.creation_time.asc(),
+        ('creation_time', 'desc'): Project.creation_time.desc(),
         ('proximity', 'asc'): first_activity.asc(),
         ('proximity', 'desc'): first_activity.desc(),
     }
