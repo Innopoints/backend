@@ -906,7 +906,49 @@ paths:
       security:
         - innopolis_sso: []
 
-  /account/{email}:
+  /accounts:
+    get:
+      tags:
+      - account
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 25
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    pages:
+                      type: integer
+                      example: 17
+                    data:
+                      $ref: '#/components/schemas/Account'
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+  /accounts/{email}:
     parameters:
     - name: email
       in: path
@@ -928,9 +970,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Account'
+        401:
+          description: unauthorized.
       security:
       - innopolis_sso: []
-  /account/{email}/balance:
+  /account:
+    $ref: '#/paths/~1accounts~1{email}'
+  /accounts/{email}/balance:
     parameters:
     - name: email
       in: path
@@ -958,6 +1004,179 @@ paths:
           description: success. no payload
       security:
       - innopolis_sso: []
+  /accounts/{email}/timeline:
+    parameters:
+      - name: email
+        in: path
+        required: true
+        schema:
+          type: string
+          format: email
+          nullable: false
+    get:
+      tags:
+      - account
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    entry_time:
+                      type: string
+                      format: date-time
+                    type:
+                      type: string
+                      enum: [application, purchase, promotion, project]
+                    payload:
+                      type: object
+                      oneOf:
+                      - $ref: '#/components/schemas/Application'
+                      - $ref: '#/components/schemas/StockChange'
+                      - $ref: '#/components/schemas/Notification'
+                      - $ref: '#/components/schemas/Project'
+        401:
+          description: unauthorized
+        404:
+          description: account not found
+      security:
+        - innopolis_sso: []
+  /account/timeline:
+    $ref: '#/paths/~1accounts~1{email}~1timeline'  
+  /accounts/{email}/statistics:
+    get:
+      tags:
+        - account
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hours:
+                    type: integer
+                    default: 0
+                    description: total number of hours volunteered
+                  positions:
+                    type: integer
+                    description: Number of times volunteered
+                  rating:
+                    type: number
+                    default: 0
+                  competences:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        amount:
+                          type: integer
+                        id:
+                          type: integer
+                        name:
+                          type: string
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+  /account/statistics:
+    $ref: '#/paths/~1accounts~1{email}~1statistics'
+  /accounts/{email}/notification_settings:
+    get:
+      tags:
+        - account
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSettings'
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+    patch:
+      tags:
+      - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSettings'
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized.
+      security:
+        - innopolis_sso: []
+  /account/notification_settings:
+    $ref: '#/paths/~1accounts~1{email}~1notification_settings'
+  /accounts/{email}/telegram:
+    patch:
+      tags:
+      - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                telegram_username:
+                  type: string
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+  /account/telegram:
+    $ref: '#/paths/~1accounts~1{email}~1telegram'
+  /accounts/{email}/notify:
+    post:
+      tags:
+        - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
 
 
 components:
@@ -1178,6 +1397,85 @@ components:
         name:
           type: string
           example: Teamwork
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        applicant_email:
+          type: string
+          format: email
+          maxLength: 128
+        activity_id:
+          type: integer
+          minimum: 1
+        comment:
+          type: string
+          maxLength: 1024
+        application_time:
+          type: string
+          format: date-time
+        telegram_username:
+          type: string
+          maxLength: 32
+        status:
+          type: string
+          enum: [approved, pending, rejected]
+        actual_hours:
+          type: integer
+    
+    Notification:
+      type: object
+      properties:  
+        id:
+          type: integer
+          minimum: 1
+        recipient_email:
+          type: integer
+          format: email
+        is_read:
+          type: boolean
+          default: false
+        payload:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum:
+          - purchase_status_changed
+          - new_arrivals
+          - claim_innopoints
+          - application_status_changed
+          - service
+          - manual_transaction
+          - project_review_status_changed
+          - all_feedback_in
+          - added_as_moderator
+          - out_of_stock
+          - new_purchase
+          - project_review_requested
+    NotificationSettings:
+      type: object
+      properties:
+        innostore:
+          type: string
+          enum: [off, email, push]
+        volunteering:
+          type: string
+          enum: [off, email, push]
+        project_creation:
+          type: string
+          enum: [off, email, push]
+        administration:
+          type: string
+          enum: [off, email, push]
+        service:
+          type: string
+          enum: [email, push]
 
     Error:
       type: object
