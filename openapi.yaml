@@ -65,7 +65,6 @@ paths:
             type: string
             enum: [addition_time, price]
             default: addition_time
-          example: price
         - name: order
           description: Which way to order
           in: query
@@ -73,7 +72,6 @@ paths:
             type: string
             enum: [asc, desc]
             default: asc
-          example: price
         - name: q
           description: Search query
           in: query
