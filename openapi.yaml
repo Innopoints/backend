@@ -84,16 +84,16 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    pages:
-                      type: integer
-                      description: total number of pages with the given limit
-                      minimum: 1
-                      example: 6
-                    data:
+                type: object
+                properties:
+                  pages:
+                    type: integer
+                    description: total number of pages with the given limit
+                    minimum: 1
+                    example: 6
+                  data:
+                    type: array
+                    items:
                       $ref: '#/components/schemas/Product'
         400:
           description: Invalid query
