@@ -62,7 +62,7 @@ def list_ongoing_projects():
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
         db_query = db_query.join(Project.activities).filter(
-            or_(Project.title.ilike(like_query),
+            or_(Project.name.ilike(like_query),
                 Activity.name.ilike(like_query),
                 Activity.description.ilike(like_query))
         ).distinct()
@@ -108,12 +108,12 @@ def list_past_projects():
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
         db_query = db_query.join(Project.activities).filter(
-            or_(Project.title.ilike(like_query),
+            or_(Project.name.ilike(like_query),
                 Activity.name.ilike(like_query),
                 Activity.description.ilike(like_query))
         ).distinct()
         count_query = count_query.join(Project.activities).filter(
-            or_(Project.title.ilike(like_query),
+            or_(Project.name.ilike(like_query),
                 Activity.name.ilike(like_query),
                 Activity.description.ilike(like_query))
         ).distinct()
