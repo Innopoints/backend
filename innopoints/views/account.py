@@ -82,7 +82,7 @@ def get_info(email):
 
     out_schema = AccountSchema(exclude=('moderated_projects', 'created_projects', 'stock_changes',
                                         'transactions', 'applications', 'reports',
-                                        'notification_settings'))
+                                        'notification_settings', 'static_files'))
     return out_schema.jsonify(user)
 
 
