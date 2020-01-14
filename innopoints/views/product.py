@@ -8,6 +8,7 @@ Product:
 - DELETE /products/{product_id}
 """
 
+import json
 import logging
 import math
 from datetime import date
@@ -23,7 +24,7 @@ from innopoints.blueprints import api
 from innopoints.core.helpers import abort
 from innopoints.core.notifications import notify_all
 from innopoints.extensions import db
-from innopoints.models import Product, Notification, Account, NotificationType
+from innopoints.models import Product, Variety, Notification, Account, NotificationType
 from innopoints.schemas import ProductSchema
 
 NO_PAYLOAD = ('', 204)
@@ -49,8 +50,18 @@ def list_products():
         page = int(request.args.get('page', default_page))
         order_by = request.args.get('order_by', default_order_by)
         order = request.args.get('order', default_order)
+        excluded_colors = json.loads(request.args.get('excludedColors', '[]'))
+        min_price = request.args.get('minPrice', 0, int)
+        max_price = request.args.get('maxPrice', type=int)
     except ValueError:
         abort(400, {'message': 'Bad query parameters.'})
+
+    if max_price is not None and max_price < min_price:
+        abort(400, {'message': 'Maximum price cannot be lower than minimum.'})
+
+    if not isinstance(excluded_colors, list) or not \
+        all(item is None or isinstance(item, str) for item in excluded_colors):
+        abort(400, {'message': 'Excluded colors has to be an array of strings and possibly null.'})
 
     if limit < 1 or page < 1:
         abort(400, {'message': 'Limit and page number must be positive.'})
@@ -66,6 +77,22 @@ def list_products():
                            Product.description.ilike(like_query))
         db_query = db_query.filter(or_condition)
         count_query = count_query.filter(or_condition)
+
+    if excluded_colors:
+        db_query = db_query.join(Variety)
+        if None in excluded_colors:
+            db_query = db_query.filter(Variety.color.isnot(None))
+            excluded_colors.remove(None)
+        excluded_colors = [color.lstrip('#') for color in excluded_colors]
+        db_query = db_query.filter(or_(
+            Variety.color.notin_(excluded_colors),
+            Variety.color.is_(None),
+        ))
+
+    db_query = db_query.filter(Product.price >= min_price)
+    if max_price is not None:
+        db_query = db_query.filter(Product.price <= max_price)
+
     db_query = db_query.order_by(ordering[order_by, order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
