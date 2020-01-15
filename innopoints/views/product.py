@@ -24,7 +24,15 @@ from innopoints.blueprints import api
 from innopoints.core.helpers import abort
 from innopoints.core.notifications import notify_all
 from innopoints.extensions import db
-from innopoints.models import Product, Variety, Notification, Account, NotificationType
+from innopoints.models import (
+    Account,
+    Notification,
+    NotificationType,
+    Product,
+    StockChange,
+    StockChangeStatus,
+    Variety,
+)
 from innopoints.schemas import ProductSchema
 
 NO_PAYLOAD = ('', 204)
@@ -34,6 +42,16 @@ log = logging.getLogger(__name__)
 @api.route('/products')
 def list_products():
     """List products available in InnoStore."""
+    purchases = (
+        # pylint: disable=bad-continuation, invalid-unary-operand-type
+        db.session.query(StockChange.variety_id,
+                         db.func.sum(StockChange.amount).label('variety_purchases'))
+            .join(Account)
+            .filter(StockChange.amount < 0,
+                    StockChange.status != StockChangeStatus.rejected,
+                    ~Account.is_admin)
+            .group_by(StockChange.variety_id).subquery()
+    )
     default_limit = 24
     default_page = 1
     default_order_by = 'addition_time'
@@ -42,7 +60,9 @@ def list_products():
         ('addition_time', 'asc'): Product.addition_time.asc(),
         ('addition_time', 'desc'): Product.addition_time.desc(),
         ('price', 'asc'): Product.price.asc(),
-        ('price', 'desc'): Product.price.desc()
+        ('price', 'desc'): Product.price.desc(),
+        ('purchases', 'asc'): db.nullsfirst(db.asc(-db.func.sum(purchases.c.variety_purchases))),
+        ('purchases', 'desc'): db.nullslast(db.desc(-db.func.sum(purchases.c.variety_purchases))),
     }
 
     try:
@@ -92,6 +112,13 @@ def list_products():
     db_query = db_query.filter(Product.price >= min_price)
     if max_price is not None:
         db_query = db_query.filter(Product.price <= max_price)
+
+    if order_by == 'purchases':
+        if not excluded_colors:
+            db_query = db_query.join(Variety)
+        db_query = (
+            db_query.outerjoin(purchases, Variety.id == purchases.c.variety_id).group_by(Product)
+        )
 
     db_query = db_query.order_by(ordering[order_by, order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
