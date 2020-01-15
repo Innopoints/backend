@@ -69,14 +69,14 @@ class Variety(db.Model):
     def purchases(self):
         """Return the amount of purchases of this variety, computed
            from the StockChange instances."""
+        # pylint: disable=invalid-unary-operand-type
         return -(db.session.query(
             db.func.sum(StockChange.amount)
         ).join(Account).filter(
             StockChange.variety_id == self.id,
             StockChange.status != StockChangeStatus.rejected,
             StockChange.amount < 0,
-            Account.email == StockChange.account_email,
-            not Account.is_admin
+            ~Account.is_admin
         ).scalar() or 0)
 
 
