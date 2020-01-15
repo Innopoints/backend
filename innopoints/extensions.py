@@ -27,4 +27,4 @@ oauth.register(
 )
 
 login_manager = LoginManager()
-login_manager.session_protection = 'strong'
+login_manager.session_protection = 'basic'
