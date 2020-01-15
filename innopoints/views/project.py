@@ -70,24 +70,41 @@ def list_ongoing_projects():
         abort(400, {'message': 'Bad query parameters.'})
 
     db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.ongoing)
+    narrowed_activity = None
+    narrowed_subquery = None
 
     if spots > 0:
-        spots_query = db.session.query(Activity.id, Activity.project_id.label('project_id')) \
+        narrowed_activity = Activity.query \
                     .join(Application).filter(Application.status == ApplicationStatus.approved) \
                     .add_column(
                         db.func.greatest(
                             Activity.people_required - db.func.count(Application.id), -1)
                         .label('spots')) \
                     .group_by(Activity.id, Activity.project_id)
-        spots_sub = spots_query.subquery()
-        db_query = db_query.join(spots_sub, Project.id == spots_sub.c.project_id) \
-                        .filter((spots_sub.c.spots >= spots) | (spots_sub.c.spots == -1)) \
+
+        narrowed_subquery = narrowed_activity.subquery()
+
+        # pylint: disable=bad-continuation
+        db_query = db_query.join(narrowed_subquery, Project.id == narrowed_subquery.c.project_id) \
+                        .filter((narrowed_subquery.c.spots >= spots)
+                              | (narrowed_subquery.c.spots == -1)) \
                         .group_by(Project.id)
-    elif excluded_competences or start_date or end_date or 'q' in request.args:
-        db_query = db_query.join(Project.activities)
+
+    if excluded_competences:
+        competence_array = db.func.ARRAY_AGG(activity_competence.c.competence_id)
+        narrowed_activity = (narrowed_activity or Activity.query).join(activity_competence) \
+                                .group_by(Activity) \
+                                .having(~(competence_array.op('&&')(excluded_competences)))
+        narrowed_subquery = narrowed_activity.subquery()
+        db_query = db_query.join(narrowed_subquery, Project.id == narrowed_subquery.c.project_id)
 
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
+        if narrowed_activity is None:
+            db_query = db_query.join(Activity)
+        else:
+            db_query = db_query.join(narrowed_subquery,
+                                     Project.id == narrowed_subquery.c.project_id)
         db_query = db_query.filter(
             or_(Project.name.ilike(like_query),
                 Activity.name.ilike(like_query),
@@ -96,15 +113,21 @@ def list_ongoing_projects():
 
     if start_date:
         last_activity_start = db.func.max(Activity.start_date)
+        if narrowed_activity is None:
+            db_query = db_query.join(Activity)
+        else:
+            db_query = db_query.join(narrowed_subquery,
+                                     Project.id == narrowed_subquery.c.project_id)
         db_query = db_query.group_by(Project).having(last_activity_start >= start_date)
+
     if end_date:
         first_activity_end = db.func.min(Activity.end_date)
+        if narrowed_activity is None:
+            db_query = db_query.join(Activity)
+        else:
+            db_query = db_query.join(narrowed_subquery,
+                                     Project.id == narrowed_subquery.c.project_id)
         db_query = db_query.group_by(Project).having(first_activity_end <= end_date)
-    if excluded_competences:
-        comps = db.func.ARRAY_AGG(activity_competence.c.competence_id)
-        sub_query = Activity.query.join(activity_competence).group_by(Activity) \
-                    .having(~(comps.op('&&')(excluded_competences))).subquery()
-        db_query = db_query.join(sub_query, Project.id == sub_query.c.project_id)
 
     order_by = request.args.get('order_by', default_order_by)
     order = request.args.get('order', default_order)
