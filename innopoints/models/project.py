@@ -4,6 +4,7 @@ from enum import Enum, auto
 
 from innopoints.core.timezone import tz_aware_now
 from innopoints.extensions import db
+from innopoints.models import Activity
 
 
 project_moderation = db.Table(
@@ -58,6 +59,24 @@ class Project(db.Model):
     files = db.relationship('ProjectFile',
                             cascade='all, delete-orphan',
                             backref='project')
+
+    @property
+    def start_date(self):
+        """Returns the project start date as the earliest start_time of its activities."""
+        return db.session.query(
+            db.func.min(Activity.start_date),
+        ).filter(
+            Activity.project_id == self.id,
+        ).scalar()
+
+    @property
+    def end_date(self):
+        """Returns the project end date as the earliest start_time of its activities."""
+        return db.session.query(
+            db.func.max(Activity.end_date),
+        ).filter(
+            Activity.project_id == self.id,
+        ).scalar()
 
     @property
     def image_url(self):
