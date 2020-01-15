@@ -15,6 +15,8 @@ Project:
 - PATCH  /projects/{project_id}/review_status
 """
 
+from datetime import datetime
+import json
 import logging
 import math
 
@@ -58,6 +60,14 @@ def list_ongoing_projects():
         ('proximity', 'desc'): first_activity.desc(),
     }
 
+    try:
+        spots = request.args.get('spots', 0, type=int)
+        excluded_competences = json.loads(request.args.get('excludedCompentences', '[]'))
+        start_date = request.args.get('startDate', type=datetime.fromisoformat)
+        end_date = request.args.get('endDate', type=datetime.fromisoformat)
+    except ValueError:
+        abort(400, {'message': 'Bad query parameters.'})
+
     db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.ongoing)
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
@@ -66,6 +76,20 @@ def list_ongoing_projects():
                 Activity.name.ilike(like_query),
                 Activity.description.ilike(like_query))
         ).distinct()
+
+    if spots > 0 or excluded_competences or start_date or end_date:
+        db_query = db_query.join(Project.activities)
+    # if spots > 0:
+    #     db_query = db_query.filter(or_(
+    #         Activity.vacant_spots >= spots,
+    #         Activity.vacant_spots == -1
+    #     ))
+    # if start_date:
+    #     db_query = db_query.add.filter(Project.start_date >= start_date)
+    # if end_date:
+    #     db_query = db_query.filter(Project.end_date <= end_date)
+    # if excluded_competences:
+    #     db_query = db_query.filter(      )
 
     order_by = request.args.get('order_by', default_order_by)
     order = request.args.get('order', default_order)
