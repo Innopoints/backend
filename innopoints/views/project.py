@@ -34,6 +34,7 @@ from innopoints.extensions import db
 from innopoints.models import (
     Account,
     Activity,
+    activity_competence,
     Application,
     ApplicationStatus,
     LifetimeStage,
@@ -69,27 +70,41 @@ def list_ongoing_projects():
         abort(400, {'message': 'Bad query parameters.'})
 
     db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.ongoing)
+
+    if spots > 0:
+        spots_query = db.session.query(Activity.id, Activity.project_id.label('project_id')) \
+                    .join(Application).filter(Application.status == ApplicationStatus.approved) \
+                    .add_column(
+                        db.func.greatest(
+                            Activity.people_required - db.func.count(Application.id), -1)
+                        .label('spots')) \
+                    .group_by(Activity.id, Activity.project_id)
+        spots_sub = spots_query.subquery()
+        db_query = db_query.join(spots_sub, Project.id == spots_sub.c.project_id) \
+                        .filter((spots_sub.c.spots >= spots) | (spots_sub.c.spots == -1)) \
+                        .group_by(Project.id)
+    elif excluded_competences or start_date or end_date or 'q' in request.args:
+        db_query = db_query.join(Project.activities)
+
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
-        db_query = db_query.join(Project.activities).filter(
+        db_query = db_query.filter(
             or_(Project.name.ilike(like_query),
                 Activity.name.ilike(like_query),
                 Activity.description.ilike(like_query))
         ).distinct()
 
-    if spots > 0 or excluded_competences or start_date or end_date:
-        db_query = db_query.join(Project.activities)
-    # if spots > 0:
-    #     db_query = db_query.filter(or_(
-    #         Activity.vacant_spots >= spots,
-    #         Activity.vacant_spots == -1
-    #     ))
-    # if start_date:
-    #     db_query = db_query.add.filter(Project.start_date >= start_date)
-    # if end_date:
-    #     db_query = db_query.filter(Project.end_date <= end_date)
-    # if excluded_competences:
-    #     db_query = db_query.filter(      )
+    if start_date:
+        last_activity_start = db.func.max(Activity.start_date)
+        db_query = db_query.group_by(Project).having(last_activity_start >= start_date)
+    if end_date:
+        first_activity_end = db.func.min(Activity.end_date)
+        db_query = db_query.group_by(Project).having(first_activity_end <= end_date)
+    if excluded_competences:
+        comps = db.func.ARRAY_AGG(activity_competence.c.competence_id)
+        sub_query = Activity.query.join(activity_competence).group_by(Activity) \
+                    .having(~(comps.op('&&')(excluded_competences))).subquery()
+        db_query = db_query.join(sub_query, Project.id == sub_query.c.project_id)
 
     order_by = request.args.get('order_by', default_order_by)
     order = request.args.get('order', default_order)
