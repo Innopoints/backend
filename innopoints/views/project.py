@@ -52,6 +52,7 @@ log = logging.getLogger(__name__)
 def list_ongoing_projects():
     """List ongoing projects."""
     first_activity = db.func.min(Activity.start_date)
+    competence_array = db.func.ARRAY_AGG(activity_competence.c.competence_id)
     default_order_by = 'creation_time'
     default_order = 'asc'
     ordering = {
@@ -70,63 +71,65 @@ def list_ongoing_projects():
         abort(400, {'message': 'Bad query parameters.'})
 
     db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.ongoing)
+
+    # pylint: disable=bad-continuation
     narrowed_activity = None
     narrowed_subquery = None
+    if spots > 0:
+        narrowed_activity = (
+            (narrowed_activity or Activity.query)
+                .outerjoin(Application, (Activity.id == Application.activity_id)
+                                      & (Application.status == ApplicationStatus.approved))
+                .add_column(
+                    db.func.greatest(
+                        Activity.people_required - db.func.count(Application.id), -1
+                    ).label('spots')
+                ).group_by(Activity)
+        )
+        narrowed_subquery = narrowed_activity.subquery()
+    if excluded_competences:
+        narrowed_activity = (
+            (narrowed_activity or Activity.query).join(activity_competence).group_by(Activity)
+                .having(~(competence_array.op('<@')(excluded_competences)))
+        )
+        narrowed_subquery = narrowed_activity.subquery()
+
+    if narrowed_subquery is not None:
+        db_query = db_query.join(narrowed_subquery, Project.id == narrowed_subquery.c.project_id)
+    else:
+        db_query = db_query.join(Activity)
 
     if spots > 0:
-        narrowed_activity = Activity.query \
-                    .join(Application).filter(Application.status == ApplicationStatus.approved) \
-                    .add_column(
-                        db.func.greatest(
-                            Activity.people_required - db.func.count(Application.id), -1)
-                        .label('spots')) \
-                    .group_by(Activity.id, Activity.project_id)
-
-        narrowed_subquery = narrowed_activity.subquery()
-
-        # pylint: disable=bad-continuation
-        db_query = db_query.join(narrowed_subquery, Project.id == narrowed_subquery.c.project_id) \
-                        .filter((narrowed_subquery.c.spots >= spots)
-                              | (narrowed_subquery.c.spots == -1)) \
-                        .group_by(Project.id)
-
-    if excluded_competences:
-        competence_array = db.func.ARRAY_AGG(activity_competence.c.competence_id)
-        narrowed_activity = (narrowed_activity or Activity.query).join(activity_competence) \
-                                .group_by(Activity) \
-                                .having(~(competence_array.op('&&')(excluded_competences)))
-        narrowed_subquery = narrowed_activity.subquery()
-        db_query = db_query.join(narrowed_subquery, Project.id == narrowed_subquery.c.project_id)
+        db_query = db_query.filter((narrowed_subquery.c.spots >= spots)
+                                 | (narrowed_subquery.c.spots == -1)).group_by(Project)
 
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
-        if narrowed_activity is None:
-            db_query = db_query.join(Activity)
+        if narrowed_subquery is None:
+            db_query = db_query.filter(
+                or_(Project.name.ilike(like_query),
+                    Activity.name.ilike(like_query),
+                    Activity.description.ilike(like_query))
+            )
         else:
-            db_query = db_query.join(narrowed_subquery,
-                                     Project.id == narrowed_subquery.c.project_id)
-        db_query = db_query.filter(
-            or_(Project.name.ilike(like_query),
-                Activity.name.ilike(like_query),
-                Activity.description.ilike(like_query))
-        ).distinct()
+            db_query = db_query.filter(
+                or_(Project.name.ilike(like_query),
+                    narrowed_subquery.c.name.ilike(like_query),
+                    narrowed_subquery.c.description.ilike(like_query))
+            )
 
     if start_date:
-        last_activity_start = db.func.max(Activity.start_date)
-        if narrowed_activity is None:
-            db_query = db_query.join(Activity)
+        if narrowed_subquery is None:
+            last_activity_start = db.func.max(Activity.start_date)
         else:
-            db_query = db_query.join(narrowed_subquery,
-                                     Project.id == narrowed_subquery.c.project_id)
+            last_activity_start = db.func.max(narrowed_subquery.c.start_date)
         db_query = db_query.group_by(Project).having(last_activity_start >= start_date)
 
     if end_date:
-        first_activity_end = db.func.min(Activity.end_date)
-        if narrowed_activity is None:
-            db_query = db_query.join(Activity)
+        if narrowed_subquery is None:
+            first_activity_end = db.func.min(Activity.end_date)
         else:
-            db_query = db_query.join(narrowed_subquery,
-                                     Project.id == narrowed_subquery.c.project_id)
+            first_activity_end = db.func.min(narrowed_subquery.c.end_date)
         db_query = db_query.group_by(Project).having(first_activity_end <= end_date)
 
     order_by = request.args.get('order_by', default_order_by)
@@ -291,7 +294,8 @@ def publish_project(project_id):
     if not db.session.query(external_activity.exists()).scalar():
         abort(400, {'message': 'The project must have at least one activity.'})
 
-    if not all(len(activity.competences) in range(1, 4) for activity in project.activities):
+    if not all(len(activity.competences) in range(1, 4) for activity in project.activities
+               if not activity.internal):
         abort(400, {'message': 'The activities must have from 1 to 3 competences.'})
 
     project.lifetime_stage = LifetimeStage.ongoing
