@@ -94,6 +94,7 @@ def list_products():
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
         or_condition = or_(Product.name.ilike(like_query),
+                           Product.type.ilike(like_query),
                            Product.description.ilike(like_query))
         db_query = db_query.filter(or_condition).distinct()
 
