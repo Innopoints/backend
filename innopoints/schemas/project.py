@@ -25,3 +25,5 @@ class ProjectSchema(ma.ModelSchema):
     lifetime_stage = EnumField(LifetimeStage)
     activities = ma.Nested('ActivitySchema', many=True)
     moderators = ma.Nested('AccountSchema', only=('full_name', 'email'), many=True)
+    start_date = ma.DateTime()
+    end_date = ma.DateTime()
