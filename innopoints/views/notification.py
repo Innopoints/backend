@@ -4,6 +4,7 @@
 - PATCH /notifications/{notification_id}/read
 """
 
+from flask import request
 from flask_login import login_required, current_user
 
 from innopoints.blueprints import api
@@ -20,6 +21,8 @@ NO_PAYLOAD = ('', 204)
 def get_notifications():
     """Gets all notifications of the current user."""
     query = Notification.query.filter_by(recipient_email=current_user.email)
+    if 'unread' in request.args:
+        query = query.filter_by(is_read=False)
     return NotificationSchema(many=True).jsonify(query.all())
 
 
