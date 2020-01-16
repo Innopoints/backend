@@ -170,6 +170,7 @@ def edit_application(project_id, activity_id, application_id):
 
     if application.status != old_status:
         notify(application.applicant_email, NotificationType.application_status_changed, {
+            'project_id': project_id,
             'activity_id': activity_id,
             'application_id': application_id,
         })

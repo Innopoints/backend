@@ -22,6 +22,7 @@ def get_notifications():
     query = Notification.query.filter_by(recipient_email=current_user.email)
     return NotificationSchema(many=True).jsonify(query.all())
 
+
 @api.route('/notifications/<int:notification_id>/read', methods=['PATCH'])
 @login_required
 def read_notification(notification_id):
