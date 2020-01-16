@@ -64,9 +64,9 @@ def list_ongoing_projects():
 
     try:
         spots = request.args.get('spots', 0, type=int)
-        excluded_competences = json.loads(request.args.get('excludedCompentences', '[]'))
-        start_date = request.args.get('startDate', type=datetime.fromisoformat)
-        end_date = request.args.get('endDate', type=datetime.fromisoformat)
+        excluded_competences = json.loads(request.args.get('excluded_compentences', '[]'))
+        start_date = request.args.get('start_date', type=datetime.fromisoformat)
+        end_date = request.args.get('end_date', type=datetime.fromisoformat)
     except ValueError:
         abort(400, {'message': 'Bad query parameters.'})
 
@@ -166,18 +166,9 @@ def list_past_projects():
 
     db_query = Project.query.filter(or_(Project.lifetime_stage == LifetimeStage.finalizing,
                                         Project.lifetime_stage == LifetimeStage.finished))
-    count_query = db.session.query(db.func.count(Project.id)).filter(
-        or_(Project.lifetime_stage == LifetimeStage.finalizing,
-            Project.lifetime_stage == LifetimeStage.finished)
-    )
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
         db_query = db_query.join(Project.activities).filter(
-            or_(Project.name.ilike(like_query),
-                Activity.name.ilike(like_query),
-                Activity.description.ilike(like_query))
-        ).distinct()
-        count_query = count_query.join(Project.activities).filter(
             or_(Project.name.ilike(like_query),
                 Activity.name.ilike(like_query),
                 Activity.description.ilike(like_query))
@@ -192,6 +183,7 @@ def list_past_projects():
     if limit < 1 or page < 1:
         abort(400, {'message': 'Limit and page number must be positive.'})
 
+    count = db.session.query(db_query.subquery()).count()
     db_query = db_query.order_by(Project.creation_time.desc())
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
@@ -209,7 +201,7 @@ def list_past_projects():
                                                             'applications', 'existing_application',
                                                             'feedback_questions')]
     schema = ProjectSchema(many=True, exclude=exclude + activity_exclude + conditional_exclude)
-    return jsonify(pages=math.ceil(count_query.scalar() / limit),
+    return jsonify(pages=math.ceil(count / limit),
                    data=schema.dump(db_query.all()))
 
 

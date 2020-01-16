@@ -42,8 +42,8 @@ log = logging.getLogger(__name__)
 @api.route('/products')
 def list_products():
     """List products available in InnoStore."""
+    # pylint: disable=bad-continuation, invalid-unary-operand-type
     purchases = (
-        # pylint: disable=bad-continuation, invalid-unary-operand-type
         db.session.query(StockChange.variety_id,
                          db.func.sum(StockChange.amount).label('variety_purchases'))
             .join(Account)
@@ -52,6 +52,7 @@ def list_products():
                     ~Account.is_admin)
             .group_by(StockChange.variety_id).subquery()
     )
+    color_array = db.func.ARRAY_AGG(Variety.color)
     default_limit = 24
     default_page = 1
     default_order_by = 'addition_time'
@@ -70,9 +71,9 @@ def list_products():
         page = int(request.args.get('page', default_page))
         order_by = request.args.get('order_by', default_order_by)
         order = request.args.get('order', default_order)
-        excluded_colors = json.loads(request.args.get('excludedColors', '[]'))
-        min_price = request.args.get('minPrice', 0, int)
-        max_price = request.args.get('maxPrice', type=int)
+        excluded_colors = json.loads(request.args.get('excluded_colors', '[]'))
+        min_price = request.args.get('min_price', 0, int)
+        max_price = request.args.get('max_price', type=int)
     except ValueError:
         abort(400, {'message': 'Bad query parameters.'})
 
@@ -90,13 +91,11 @@ def list_products():
         abort(400, {'message': 'Invalid ordering specified.'})
 
     db_query = Product.query
-    count_query = db.session.query(db.func.count(Product.id))
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
         or_condition = or_(Product.name.ilike(like_query),
                            Product.description.ilike(like_query))
-        db_query = db_query.filter(or_condition)
-        count_query = count_query.filter(or_condition)
+        db_query = db_query.filter(or_condition).distinct()
 
     if excluded_colors:
         db_query = db_query.join(Variety)
@@ -104,21 +103,25 @@ def list_products():
             db_query = db_query.filter(Variety.color.isnot(None))
             excluded_colors.remove(None)
         excluded_colors = [color.lstrip('#') for color in excluded_colors]
-        db_query = db_query.filter(or_(
-            Variety.color.notin_(excluded_colors),
-            Variety.color.is_(None),
-        ))
+        db_query = (
+            db_query.group_by(Product)
+                .having(~(color_array.cast(db.ARRAY(db.Text)).op('<@')(excluded_colors)))
+        )
 
     db_query = db_query.filter(Product.price >= min_price)
     if max_price is not None:
         db_query = db_query.filter(Product.price <= max_price)
 
+    count = db.session.query(db_query.subquery()).count()
     if order_by == 'purchases':
-        if not excluded_colors:
-            db_query = db_query.join(Variety)
+        if excluded_colors:
+            abort(400, {'message': 'Ordering by purchases is not allowed when filtering.'})
         db_query = (
-            db_query.outerjoin(purchases, Variety.id == purchases.c.variety_id).group_by(Product)
+            db_query.join(Variety)
+                .outerjoin(purchases, Variety.id == purchases.c.variety_id)
+                .group_by(Product)
         )
+
 
     db_query = db_query.order_by(ordering[order_by, order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
@@ -127,7 +130,7 @@ def list_products():
                                                'varieties.stock_changes',
                                                'varieties.product',
                                                'varieties.product_id'))
-    return jsonify(pages=math.ceil(count_query.scalar() / limit),
+    return jsonify(pages=math.ceil(count / limit),
                    data=schema.dump(db_query.all()))
 
 
