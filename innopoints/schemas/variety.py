@@ -89,7 +89,7 @@ class VarietySchema(ma.ModelSchema):
                                               key=lambda x: x['order'])]
         return data
 
-    images = ma.Nested('ProductImageSchema', many=True, validate=validate.Length(min=1))
+    images = ma.Nested('ProductImageSchema', many=True)
     stock_changes = ma.Nested('StockChangeSchema', many=True)
     amount = ma.Int(dump_only=True)
     purchases = ma.Int(dump_only=True)

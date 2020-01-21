@@ -85,7 +85,7 @@ def login_cheat(email):
     login_user(user, remember=True)
 
     if 'no_redirect' not in request.args:
-        final_redirect_uri = session.pop('final_redirect_location', '/')
-        frontend_base = session.pop('frontend_base', current_app.config['FRONTEND_BASE'])
+        final_redirect_uri = request.args.get('final_redirect_location', '/')
+        frontend_base = request.args.get('frontend_base', current_app.config['FRONTEND_BASE'])
         return redirect(urljoin(frontend_base, final_redirect_uri))
     return NO_PAYLOAD
