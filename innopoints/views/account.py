@@ -200,36 +200,30 @@ def get_timeline(email):
                    Application.status.label('application_status'))
             .add_column(Application.application_time.label('entry_time'))
             .filter_by(applicant=user)
-            .filter(Application.application_time >= start_date,
-                    Application.application_time <= end_date)
             .join(Activity).add_columns(Activity.name.label('activity_name'),
                                         Activity.id.label('activity_id'))
             .join(Project).add_columns(Project.name.label('project_name'),
                                        Project.id.label('project_id'))
             .add_column((Application.actual_hours * Activity.reward_rate).label('reward'))
-    ).subquery()
+    )
 
     purchases = (
         db.session
             .query(StockChange.id.label('stock_change_id'),
                    StockChange.status.label('stock_change_status'),
                    StockChange.time.label('entry_time'))
-            .filter(StockChange.time >= start_date,
-                    StockChange.time <= end_date)
             .filter_by(account=user)
             .filter(StockChange.amount < 0)
             .join(Variety).join(Product).add_columns(Product.id.label('product_id'),
                                                      Product.name.label('product_name'),
                                                      Product.type.label('product_type'))
-    ).subquery()
+    )
 
     promotions = (
         # pylint: disable=unsubscriptable-object
         db.session
             .query(Notification.payload['project_id'].label('project_id'),
                    Notification.timestamp.label('entry_time'))
-            .filter(Notification.timestamp >= start_date,
-                    Notification.timestamp <= end_date)
             .filter_by(recipient_email=user.email, type=NotificationType.added_as_moderator)
             .join(Project,
                   Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
@@ -240,7 +234,7 @@ def get_timeline(email):
             .outerjoin(Application, (Application.activity_id == Activity.id)
                                   & (Application.applicant == user))
             .add_column(Application.id.label('application_id'))
-    ).subquery()
+    )
 
     projects = (
         db.session
@@ -248,19 +242,51 @@ def get_timeline(email):
                    Project.name.label('project_name'),
                    Project.review_status,
                    Project.creation_time.label('entry_time'))
-            .filter(Project.creation_time >= start_date,
-                    Project.creation_time <= end_date)
             .filter_by(creator=user)
-    ).subquery()
+    )
 
-    timeline = (subquery_to_events(applications, 'application')
-         .union(subquery_to_events(purchases, 'purchase'))
-         .union(subquery_to_events(promotions, 'promotion'))
-         .union(subquery_to_events(projects, 'project'))
-         .order_by(db.desc('entry_time')))
+    timeline = (
+        subquery_to_events(
+            applications.filter(Application.application_time >= start_date,
+                                Application.application_time <= end_date).subquery(),
+            'application'
+        )
+        .union(subquery_to_events(
+            purchases.filter(StockChange.time >= start_date,
+                             StockChange.time <= end_date).subquery(),
+            'purchase'
+        ))
+        .union(subquery_to_events(
+            promotions.filter(Notification.timestamp >= start_date,
+                              Notification.timestamp <= end_date).subquery(),
+            'promotion'
+        ))
+        .union(subquery_to_events(
+            projects.filter(Project.creation_time >= start_date,
+                            Project.creation_time <= end_date).subquery(),
+            'project'
+        ))
+    ).order_by(db.desc('entry_time'))
+
+    leftover_applications = db.session.query(
+        applications.filter(Application.application_time <= start_date).exists()
+    ).scalar()
+    leftover_purchases = db.session.query(
+        purchases.filter(StockChange.time <= start_date).exists()
+    ).scalar()
+    leftover_promotions = db.session.query(
+        promotions.filter(Notification.timestamp <= start_date).exists()
+    ).scalar()
+    leftover_projects = db.session.query(
+        projects.filter(Project.creation_time <= start_date).exists()
+    ).scalar()
 
     out_schema = TimelineSchema(many=True)
-    return out_schema.jsonify(timeline.all())
+    return jsonify(data=out_schema.dump(timeline.all()),
+                   more=any((leftover_applications,
+                             leftover_purchases,
+                             leftover_promotions,
+                             leftover_applications)))
 
 
 @api.route('/account/statistics', defaults={'email': None})
