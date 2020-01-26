@@ -170,6 +170,28 @@ def get_timeline(email):
             abort(401)
         user = Account.query.get_or_404(email)
 
+    if 'start_date' in request.args:
+        try:
+            start_date = datetime.fromisoformat(request.args['start_date'])
+        except ValueError:
+            abort(400, {'message': 'The datetime must be in ISO format with timezone.'})
+
+        if start_date.tzinfo is None:
+            abort(400, {'message': 'The timezone must be passed.'})
+    else:
+        start_date = unix_epoch
+
+    if 'end_date' in request.args:
+        try:
+            end_date = datetime.fromisoformat(request.args['end_date'])
+        except ValueError:
+            abort(400, {'message': 'The datetime must be in ISO format with timezone.'})
+
+        if end_date.tzinfo is None:
+            abort(400, {'message': 'The timezone must be passed.'})
+    else:
+        end_date = tz_aware_now()
+
     # pylint: disable=bad-continuation
 
     applications = (
@@ -178,6 +200,8 @@ def get_timeline(email):
                    Application.status.label('application_status'))
             .add_column(Application.application_time.label('entry_time'))
             .filter_by(applicant=user)
+            .filter(Application.application_time >= start_date,
+                    Application.application_time <= end_date)
             .join(Activity).add_columns(Activity.name.label('activity_name'),
                                         Activity.id.label('activity_id'))
             .join(Project).add_columns(Project.name.label('project_name'),
@@ -190,6 +214,8 @@ def get_timeline(email):
             .query(StockChange.id.label('stock_change_id'),
                    StockChange.status.label('stock_change_status'),
                    StockChange.time.label('entry_time'))
+            .filter(StockChange.time >= start_date,
+                    StockChange.time <= end_date)
             .filter_by(account=user)
             .filter(StockChange.amount < 0)
             .join(Variety).join(Product).add_columns(Product.id.label('product_id'),
@@ -202,6 +228,8 @@ def get_timeline(email):
         db.session
             .query(Notification.payload['project_id'].label('project_id'),
                    Notification.timestamp.label('entry_time'))
+            .filter(Notification.timestamp >= start_date,
+                    Notification.timestamp <= end_date)
             .filter_by(recipient_email=user.email, type=NotificationType.added_as_moderator)
             .join(Project,
                   Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
@@ -220,6 +248,8 @@ def get_timeline(email):
                    Project.name.label('project_name'),
                    Project.review_status,
                    Project.creation_time.label('entry_time'))
+            .filter(Project.creation_time >= start_date,
+                    Project.creation_time <= end_date)
             .filter_by(creator=user)
     ).subquery()
 
