@@ -7,6 +7,8 @@ Account:
 - PATCH  /accounts/{email}/balance
 - GET    /account/timeline
 - GET    /accounts/{email}/timeline
+- GET    /account/statistics
+- GET    /accounts/{email}/statistics
 - GET    /account/notification_settings
 - GET    /accounts/{email}/notification_settings
 - POST   /accounts/{email}/notify
@@ -267,7 +269,7 @@ def get_statistics(email):
         end_date = tz_aware_now()
 
     volunteering = (
-        # pylint: disable=bad-continuation,invalid-unary-operand-type
+        # pylint: disable=bad-continuation, invalid-unary-operand-type
         db.session.query(db.func.sum(Application.actual_hours),
                          db.func.count(Application.id))
             .filter_by(applicant=user, status=ApplicationStatus.approved)

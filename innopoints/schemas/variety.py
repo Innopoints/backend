@@ -1,7 +1,7 @@
 """Schema for the Variety, Color, Size, StockChange and ProductImage models."""
 
 from marshmallow_enum import EnumField
-from marshmallow import ValidationError, pre_load, post_dump, validate
+from marshmallow import ValidationError, pre_load, post_dump
 
 from innopoints.extensions import ma, db
 from innopoints.models import Variety, Color, Size, StockChange, StockChangeStatus, ProductImage
