@@ -203,7 +203,9 @@ def get_timeline(email):
             .join(Activity).add_columns(Activity.name.label('activity_name'),
                                         Activity.id.label('activity_id'))
             .join(Project).add_columns(Project.name.label('project_name'),
-                                       Project.id.label('project_id'))
+                                       Project.id.label('project_id'),
+                                       Project.lifetime_stage.label('project_stage'))
+            .outerjoin(Feedback).add_column(Feedback.application_id.label('feedback_id'))
             .add_column((Application.actual_hours * Activity.reward_rate).label('reward'))
     )
 
