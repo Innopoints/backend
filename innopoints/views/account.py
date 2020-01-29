@@ -288,7 +288,7 @@ def get_timeline(email):
                    more=any((leftover_applications,
                              leftover_purchases,
                              leftover_promotions,
-                             leftover_applications)))
+                             leftover_projects)))
 
 
 @api.route('/account/statistics', defaults={'email': None})
