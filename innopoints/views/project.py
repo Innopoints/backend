@@ -357,7 +357,9 @@ def finalize_project(project_id):
     else:
         for moderator in project.moderators:
             moderation.applications.append(
-                Application(applicant=moderator, status=ApplicationStatus.approved)
+                Application(applicant=moderator,
+                            status=ApplicationStatus.approved,
+                            actual_hours=0)
             )
 
     try:
