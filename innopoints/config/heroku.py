@@ -14,7 +14,8 @@ JSON_SORT_KEYS = False
 
 
 CORS_ORIGINS = ['https://innopoints-frontend.herokuapp.com',
-                re.compile(r'https?://(?:localhost|0.0.0.0):\d{4}')]
+                re.compile(r'https?://(?:localhost|0.0.0.0):\d{4}'),
+                'http://10.90.137.157']
 
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
