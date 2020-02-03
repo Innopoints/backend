@@ -146,7 +146,7 @@ def list_ongoing_projects():
         conditional_exclude.remove('moderators')
         if not current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'files', 'image_id',
+    exclude = ['admin_feedback', 'files',
                'lifetime_stage', 'admin_feedback']
     activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
                                                             'fixed_reward', 'working_hours',
@@ -192,7 +192,7 @@ def list_past_projects():
         conditional_exclude.remove('moderators')
         if not current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'files', 'image_id',
+    exclude = ['admin_feedback', 'files',
                'lifetime_stage', 'admin_feedback']
     activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
                                                             'fixed_reward', 'working_hours',
@@ -261,7 +261,7 @@ def create_project():
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files', 'image_id'),
+    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files'),
                                context={'user': current_user})
     return out_schema.jsonify(new_project)
 
@@ -433,8 +433,7 @@ class ProjectDetailAPI(MethodView):
     def get(self, project_id):
         """Get full information about the project"""
         project = Project.query.get_or_404(project_id)
-        exclude = ['image_id',
-                   'files',
+        exclude = ['files',
                    'moderators',
                    'review_status',
                    'admin_feedback',
@@ -485,7 +484,7 @@ class ProjectDetailAPI(MethodView):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
-        out_schema = ProjectSchema(only=('id', 'name', 'image_url', 'organizer', 'moderators'))
+        out_schema = ProjectSchema(only=('id', 'name', 'image_id', 'organizer', 'moderators'))
         return out_schema.jsonify(updated_project)
 
     @login_required

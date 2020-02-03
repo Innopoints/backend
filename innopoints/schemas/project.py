@@ -19,8 +19,7 @@ class ProjectSchema(ma.ModelSchema):
                   validate=validate.Length(min=1, max=128),
                   error_messages={'required': 'A project name is required.',
                                   'validator_failed': 'The name must be between 1 and 128 chars.'})
-    image_id = ma.Int()
-    image_url = ma.Str(dump_only=True)
+    image_id = ma.Int(allow_none=True)
     review_status = EnumField(ReviewStatus)
     lifetime_stage = EnumField(LifetimeStage)
     activities = ma.Nested('ActivitySchema', many=True)
