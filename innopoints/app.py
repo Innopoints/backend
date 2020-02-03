@@ -1,13 +1,15 @@
 """Flask application factory."""
 
 from importlib import import_module
-import logging.config
+import logging, logging.config
 
 from flask import Flask
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade
 
 from innopoints.extensions import db, ma, cors, oauth, login_manager
 from innopoints.blueprints import all_blueprints
+
+log = logging.getLogger(__name__)
 
 
 def create_app(config='config/prod.py'):
@@ -57,6 +59,10 @@ def create_app(config='config/prod.py'):
     # Initialize extensions/add-ons/plugins.
     db.init_app(app)
     Migrate(app, db)
+    with app.app_context():
+        upgrade()
+        log.debug('DB upgraded.')
+
     ma.init_app(app)
     cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     oauth.init_app(app)
