@@ -138,7 +138,7 @@ def list_ongoing_projects():
         abort(400, {'message': 'Invalid ordering specified.'})
 
     if order_by == 'proximity':
-        db_query = db_query.join(Activity).group_by(Project.id)
+        db_query = db_query.group_by(Project.id)
     db_query = db_query.order_by(ordering[order_by, order])
 
     conditional_exclude = ['review_status', 'moderators']
