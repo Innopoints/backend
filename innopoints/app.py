@@ -1,5 +1,6 @@
 """Flask application factory."""
 
+import time
 from importlib import import_module
 import logging, logging.config
 
@@ -59,6 +60,15 @@ def create_app(config='config/prod.py'):
     # Initialize extensions/add-ons/plugins.
     db.init_app(app)
     Migrate(app, db)
+    while True:
+        try:
+            with app.app_context():
+                db.engine.connect()
+            break
+        except RuntimeError as err:
+            log.exception(f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..')
+            time.sleep(2)
+
     with app.app_context():
         upgrade()
         log.debug('DB upgraded.')
