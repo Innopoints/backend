@@ -235,7 +235,9 @@ def create_project():
         abort(400, {'message': 'The request should be in JSON.'})
 
     in_schema = ProjectSchema(exclude=('id', 'creation_time', 'creator', 'admin_feedback',
-                                       'review_status', 'lifetime_stage', 'files'))
+                                       'review_status', 'lifetime_stage', 'files',
+                                       'activities.internal', 'activities.id',
+                                       'activities.project', 'activities.applications'))
 
     try:
         new_project = in_schema.load(request.json)
