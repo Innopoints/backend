@@ -210,7 +210,7 @@ def list_past_projects():
 def list_drafts():
     """Return a list of drafts for the logged in user."""
     db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.draft,
-                                       creator=current_user)
+                                       creator=current_user).order_by(Project.creation_time.desc())
     schema = ProjectSchema(many=True, only=('id', 'name', 'creation_time'))
     return schema.jsonify(db_query.all())
 
