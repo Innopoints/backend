@@ -15,6 +15,28 @@ log = logging.getLogger(__name__)
 
 def create_app(config='config/prod.py'):
     """Create Flask application with given configuration"""
+    app = Flask(__name__, static_folder=None)
+    app.config.from_pyfile(config)
+
+    # Import DB models. Flask-SQLAlchemy doesn't do this automatically.
+    with app.app_context():
+        import_module('innopoints.models')
+
+    # Initialize extensions/add-ons/plugins.
+    db.init_app(app)
+    Migrate(app, db)
+    while True:
+        try:
+            with app.app_context():
+                db.engine.connect()
+            break
+        except RuntimeError as err:
+            log.exception(f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..')
+            time.sleep(2)
+
+    with app.app_context():
+        upgrade()
+    
     logging.config.dictConfig({
         'version': 1,
         'formatters': {
@@ -49,29 +71,6 @@ def create_app(config='config/prod.py'):
             'handlers': ['stderr', 'logfile']
         }
     })
-
-    app = Flask(__name__, static_folder=None)
-    app.config.from_pyfile(config)
-
-    # Import DB models. Flask-SQLAlchemy doesn't do this automatically.
-    with app.app_context():
-        import_module('innopoints.models')
-
-    # Initialize extensions/add-ons/plugins.
-    db.init_app(app)
-    Migrate(app, db)
-    while True:
-        try:
-            with app.app_context():
-                db.engine.connect()
-            break
-        except RuntimeError as err:
-            log.exception(f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..')
-            time.sleep(2)
-
-    with app.app_context():
-        upgrade()
-        log.debug('DB upgraded.')
 
     ma.init_app(app)
     cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
