@@ -5,6 +5,7 @@ Project:
 - GET    /projects/past
 - GET    /projects/drafts
 - GET    /projects/for_review
+- GET    /projects/name_available
 - POST   /projects
 - PATCH  /projects/{project_id}/publish
 - GET    /projects/{project_id}
@@ -225,6 +226,16 @@ def list_projects_for_review():
     db_query = Project.query.filter_by(review_status=ReviewStatus.pending)
     schema = ProjectSchema(many=True, only=('id', 'name', 'organizer'))
     return schema.jsonify(db_query.all())
+
+
+@api.route('/projects/name_available')
+@login_required
+def check_name_availability():
+    """Check if a project with this name can be created."""
+    name = request.args.get('name')
+    if not name:
+        abort(400, {'message': 'A non-empty name must be passed.'})
+    return jsonify(not db.session.query(Project.query.filter_by(name=name).exists()).scalar())
 
 
 @api.route('/projects', methods=['POST'])
