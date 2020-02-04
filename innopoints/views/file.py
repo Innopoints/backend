@@ -1,7 +1,7 @@
 """Views related to file management.
 
 StaticFile:
-- POST /file/{namespace}
+- POST /file
 - GET /file/{file_id}
 - DELETE /file/{file_id}
 """
@@ -35,10 +35,10 @@ def get_mimetype(file: werkzeug.datastructures.FileStorage) -> str:
     return mimetypes.guess_type(file.filename)[0]
 
 
-@api.route('/file/<namespace>', methods=['POST'])
+@api.route('/file', methods=['POST'])
 @login_required
-def upload_file(namespace):
-    """Upload a file to a given namespace."""
+def upload_file():
+    """Upload a file."""
     if 'file' not in request.files:
         abort(400, {'message': 'No file attached.'})
 
@@ -51,11 +51,11 @@ def upload_file(namespace):
     if mimetype not in ALLOWED_MIMETYPES:
         abort(400, {'message': f'Mimetype "{mimetype}" is not allowed'})
 
-    new_file = StaticFile(mimetype=mimetype, namespace=namespace, owner=current_user)
+    new_file = StaticFile(mimetype=mimetype, owner=current_user)
     db.session.add(new_file)
     db.session.commit()
     try:
-        file_manager.store(file, str(new_file.id), new_file.namespace)
+        file_manager.store(file, str(new_file.id))
     except (OSError, requests.exceptions.HTTPError) as err:
         log.exception(err)
         db.session.delete(new_file)
@@ -69,7 +69,7 @@ def retrieve_file(file_id):
     """Get the chosen static file."""
     file = StaticFile.query.get_or_404(file_id)
     try:
-        file_data = file_manager.retrieve(str(file.id), file.namespace)
+        file_data = file_manager.retrieve(str(file.id))
     except FileNotFoundError:
         abort(404)
 
@@ -87,7 +87,7 @@ def delete_file(file_id):
         abort(401)
 
     try:
-        file_manager.delete(str(file_id), file.namespace)
+        file_manager.delete(str(file_id))
     except FileNotFoundError:
         abort(404, 'File not found on storage')
 
