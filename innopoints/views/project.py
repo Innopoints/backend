@@ -489,6 +489,9 @@ class ProjectDetailAPI(MethodView):
         except ValidationError as err:
             abort(400, {'message': err.messages})
 
+        if current_user not in updated_project.moderators:
+            updated_project.moderators.append(current_user)
+
         try:
             db.session.add(updated_project)
             db.session.commit()
