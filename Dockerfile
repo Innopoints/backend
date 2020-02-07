@@ -22,8 +22,11 @@ COPY run.py /app/
 EXPOSE 7507
 
 ENV INNOPOLIS_SSO_BASE https://sso.university.innopolis.ru/adfs
+ENV FLASK_APP run.py
+ENV FLASK_RUN_PORT 7507
+ENV FLASK_ENV development
+
+VOLUME [ "/app/static_files" ]
 
 # define the default command to run when starting the container
-# CMD ["gunicorn", "--bind", ":7507", "--access-logfile", "-", "run:app"]
-# CMD ["flask", "run", "--host=0.0.0.0"]
-CMD flask db upgrade && flask run --host=0.0.0.0
+CMD [ "flask", "run", "--host=0.0.0.0"]
