@@ -70,7 +70,8 @@ def create_app(config='config/prod.py'):
         'root': {
             'level': 'DEBUG',
             'handlers': ['stderr', 'logfile']
-        }
+        },
+        'disable_existing_loggers': False,
     })
 
     ma.init_app(app)
