@@ -6,6 +6,7 @@ import logging, logging.config
 
 from flask import Flask
 from flask_migrate import Migrate, upgrade
+from werkzeug.middleware.proxy_fix import ProxyFix
 from psycopg2 import OperationalError
 
 from innopoints.extensions import db, ma, cors, oauth, login_manager
@@ -17,6 +18,7 @@ log = logging.getLogger(__name__)
 def create_app(config='config/prod.py'):
     """Create Flask application with given configuration"""
     app = Flask(__name__, static_folder=None)
+    app = ProxyFix(app)
     app.config.from_pyfile(config)
 
     # Import DB models. Flask-SQLAlchemy doesn't do this automatically.
