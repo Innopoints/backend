@@ -18,7 +18,6 @@ log = logging.getLogger(__name__)
 def create_app(config='config/prod.py'):
     """Create Flask application with given configuration"""
     app = Flask(__name__, static_folder=None)
-    app = ProxyFix(app)
     app.config.from_pyfile(config)
 
     # Import DB models. Flask-SQLAlchemy doesn't do this automatically.
@@ -85,4 +84,6 @@ def create_app(config='config/prod.py'):
         import_module(blueprint.import_name)
         app.register_blueprint(blueprint)
 
+    # Needed when running behind Nginx under Docker for authorization
+    app = ProxyFix(app, x_for=1, x_host=1)
     return app
