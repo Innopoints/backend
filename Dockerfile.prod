@@ -28,4 +28,4 @@ ENV FLASK_ENV production
 VOLUME [ "/app/static_files" ]
 
 # define the default command to run when starting the container
-CMD ["gunicorn", "--bind", ":7507", "--access-logfile", "-", "run:app"]
+CMD ["gunicorn", "--bind", ":7507", "--log-level=info", "--access-logfile", "-", "run:app"]
