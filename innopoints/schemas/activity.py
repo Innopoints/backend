@@ -89,7 +89,9 @@ class ActivitySchema(ma.ModelSchema):
     working_hours = ma.Int(validate=validate.Range(min=1))
     reward_rate = ma.Int(validate=validate.Range(min=1))
     people_required = ma.Int(validate=validate.Range(min=0))
-    application_deadline = ma.DateTime(format='iso', data_key='application_deadline')
+    application_deadline = ma.DateTime(format='iso',
+                                       data_key='application_deadline',
+                                       allow_none=True)
     vacant_spots = ma.Int(dump_only=True)
     applications = ma.Method(serialize='get_applications',
                              dump_only=True)
