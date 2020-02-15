@@ -85,5 +85,5 @@ def create_app(config='config/prod.py'):
         app.register_blueprint(blueprint)
 
     # Needed when running behind Nginx under Docker for authorization
-    app = ProxyFix(app, x_for=1, x_host=1)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1)
     return app
