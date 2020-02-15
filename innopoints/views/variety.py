@@ -244,7 +244,7 @@ def get_purchases_for_review():
     db_query = StockChange.query.filter(
         StockChange.status.in_((StockChangeStatus.pending, StockChangeStatus.ready_for_pickup))
     )
-    schema = StockChangeSchema(many=True, exclude=('transaction', 'account'))
+    schema = StockChangeSchema(many=True, exclude=('transaction',))
     return schema.jsonify(db_query.all())
 
 

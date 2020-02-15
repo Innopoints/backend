@@ -1,10 +1,10 @@
 """Schema for the Variety, Color, Size, StockChange and ProductImage models."""
 
 from marshmallow_enum import EnumField
-from marshmallow import ValidationError, pre_load, post_dump
+from marshmallow import ValidationError, pre_load, post_dump, pre_dump
 
 from innopoints.extensions import ma, db
-from innopoints.models import Variety, Color, Size, StockChange, StockChangeStatus, ProductImage
+from innopoints.models import Variety, Color, Size, StockChange, StockChangeStatus, ProductImage, Product
 
 
 # pylint: disable=missing-docstring
@@ -142,6 +142,14 @@ class StockChangeSchema(ma.ModelSchema):
         sqla_session = db.session
 
     status = EnumField(StockChangeStatus)
+    variety = ma.Nested(VarietySchema, exclude=('stock_changes',))
+    account = ma.Nested('AccountSchema', only=('email', 'full_name'))
+    product = ma.Nested('ProductSchema', only=('id', 'name', 'type'))
+
+    @pre_dump
+    def get_product(self, stock_change, **kwargs):
+        stock_change.product = Product.query.get(stock_change.variety.product_id)
+        return stock_change
 
 
 class ProductImageSchema(ma.ModelSchema):
