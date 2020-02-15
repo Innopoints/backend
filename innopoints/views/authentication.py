@@ -24,7 +24,7 @@ def login():
     """Redirect the user to the Innopolis SSO login page."""
     if 'final_redirect_location' in request.args:
         session['final_redirect_location'] = request.args['final_redirect_location']
-        if 'frontend_base' in request.args and current_app.config['ENV'] == 'heroku':
+        if 'frontend_base' in request.args:
             session['frontend_base'] = request.args['frontend_base']
 
     redirect_uri = url_for('auth.authorize', _external=True)

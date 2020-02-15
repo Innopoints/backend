@@ -6,6 +6,8 @@ import logging, logging.config
 
 from flask import Flask
 from flask_migrate import Migrate, upgrade
+from werkzeug.middleware.proxy_fix import ProxyFix
+from psycopg2 import OperationalError
 
 from innopoints.extensions import db, ma, cors, oauth, login_manager
 from innopoints.blueprints import all_blueprints
@@ -30,13 +32,13 @@ def create_app(config='config/prod.py'):
             with app.app_context():
                 db.engine.connect()
             break
-        except RuntimeError as err:
+        except (RuntimeError, OperationalError) as err:
             log.exception(f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..')
             time.sleep(2)
 
     with app.app_context():
         upgrade()
-    
+
     logging.config.dictConfig({
         'version': 1,
         'formatters': {
@@ -69,7 +71,8 @@ def create_app(config='config/prod.py'):
         'root': {
             'level': 'DEBUG',
             'handlers': ['stderr', 'logfile']
-        }
+        },
+        'disable_existing_loggers': False,
     })
 
     ma.init_app(app)
@@ -81,4 +84,6 @@ def create_app(config='config/prod.py'):
         import_module(blueprint.import_name)
         app.register_blueprint(blueprint)
 
+    # Needed when running behind Nginx under Docker for authorization
+    app = ProxyFix(app, x_for=1, x_host=1)
     return app

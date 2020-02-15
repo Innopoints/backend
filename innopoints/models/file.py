@@ -9,7 +9,6 @@ class StaticFile(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     mimetype = db.Column(db.String(255), nullable=False)
-    namespace = db.Column(db.String(64), nullable=False)
     owner_email = db.Column(db.String(128),
                             db.ForeignKey('accounts.email', ondelete='CASCADE'),
                             nullable=False)
