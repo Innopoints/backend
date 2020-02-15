@@ -7,7 +7,8 @@ import logging, logging.config
 from flask import Flask
 from flask_migrate import Migrate, upgrade
 from werkzeug.middleware.proxy_fix import ProxyFix
-from psycopg2 import OperationalError
+import psycopg2
+import sqlalchemy.exc
 
 from innopoints.extensions import db, ma, cors, oauth, login_manager
 from innopoints.blueprints import all_blueprints
@@ -32,7 +33,7 @@ def create_app(config='config/prod.py'):
             with app.app_context():
                 db.engine.connect()
             break
-        except (RuntimeError, OperationalError) as err:
+        except (RuntimeError, psycopg2.OperationalError, sqlalchemy.exc.OperationalError) as err:
             log.exception(f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..')
             time.sleep(2)
 
