@@ -28,6 +28,7 @@ class PayloadSchema(ma.Schema):
     application = ma.Nested('ApplicationSchema', only=('id', 'status', 'actual_hours'))
     stock_change = ma.Nested('StockChangeSchema', only=('id', 'amount', 'status'))
     transaction = ma.Nested('TransactionSchema', only=('id', 'change'))
+    message = ma.Str()
 
     @pre_dump
     def fill_data(self, data, **kwargs):  # pylint: disable=unused-argument

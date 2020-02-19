@@ -117,6 +117,7 @@ class StockChange(db.Model):
     variety_id = db.Column(db.Integer,
                            db.ForeignKey('varieties.id', ondelete='CASCADE'),
                            nullable=False)
+    variety = db.relationship('Variety')
     transaction = db.relationship('Transaction', uselist=False)
 
 
