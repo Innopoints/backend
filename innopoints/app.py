@@ -16,14 +16,14 @@ from innopoints.blueprints import all_blueprints
 log = logging.getLogger(__name__)
 
 
-def create_app(config="config/prod.py"):
+def create_app(config='config/prod.py'):
     """Create Flask application with given configuration"""
     app = Flask(__name__, static_folder=None)
     app.config.from_pyfile(config)
 
     # Import DB models. Flask-SQLAlchemy doesn't do this automatically.
     with app.app_context():
-        import_module("innopoints.models")
+        import_module('innopoints.models')
 
     # Initialize extensions/add-ons/plugins.
     db.init_app(app)
@@ -33,51 +33,51 @@ def create_app(config="config/prod.py"):
             with app.app_context():
                 db.engine.connect()
             break
-        except (
-            RuntimeError,
-            psycopg2.OperationalError,
-            sqlalchemy.exc.OperationalError,
-        ) as err:
-            log.exception(
-                f"Couldn't connect to DB. Error: {err.with_traceback(None)}. retrying.."
-            )
+        except (RuntimeError, psycopg2.OperationalError, sqlalchemy.exc.OperationalError) as err:
+            log.exception(f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..')
             time.sleep(2)
 
     with app.app_context():
         upgrade()
 
-    logging.config.dictConfig(
-        {
-            "version": 1,
-            "formatters": {
-                "default": {
-                    "datefmt": "%d/%m %H:%M:%S",
-                    "format": "[%(asctime)s] [%(levelname)8s] %(message)s (%(name)s:%(lineno)s)",
-                }
+    logging.config.dictConfig({
+        'version': 1,
+        'formatters': {
+            'default': {
+                'datefmt': '%d/%m %H:%M:%S',
+                'format': '[%(asctime)s] [%(levelname)8s] %(message)s (%(name)s:%(lineno)s)',
+            }
+        },
+        'handlers': {
+            'stderr': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'default',
+                'level': 'DEBUG',
             },
-            "handlers": {
-                "stderr": {
-                    "class": "logging.StreamHandler",
-                    "formatter": "default",
-                    "level": "DEBUG",
-                },
-                "logfile": {
-                    "class": "logging.handlers.TimedRotatingFileHandler",
-                    "filename": "./innopoints.log",
-                    "formatter": "default",
-                    "when": "W0",  # will start a new file each Monday
-                    "backupCount": 5,  # will only keep the 5 latest files,
-                    "level": "ERROR",
-                },
-            },
-            "loggers": {"werkzeug": {"handlers": ["stderr"], "propagate": False,}},
-            "root": {"level": "DEBUG", "handlers": ["stderr", "logfile"]},
-            "disable_existing_loggers": False,
-        }
-    )
+            'logfile': {
+                'class': 'logging.handlers.TimedRotatingFileHandler',
+                'filename': './innopoints.log',
+                'formatter': 'default',
+                'when': 'W0',  # will start a new file each Monday
+                'backupCount': 5,  # will only keep the 5 latest files,
+                'level': 'ERROR',
+            }
+        },
+        'loggers': {
+            'werkzeug': {
+                'handlers': ['stderr'],
+                'propagate': False,
+            }
+        },
+        'root': {
+            'level': 'DEBUG',
+            'handlers': ['stderr', 'logfile']
+        },
+        'disable_existing_loggers': False,
+    })
 
     ma.init_app(app)
-    cors.init_app(app, origins=app.config["CORS_ORIGINS"], supports_credentials=True)
+    cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     oauth.init_app(app)
     login_manager.init_app(app)
 

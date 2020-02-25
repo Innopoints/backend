@@ -8,7 +8,6 @@ from innopoints.models import Account, Transaction
 
 # pylint: disable=missing-docstring
 
-
 class AccountSchema(ma.ModelSchema):
     class Meta:
         model = Account
@@ -39,7 +38,7 @@ class NotificationSettingsSchema(ma.Schema):
     class Meta:
         ordered = True
         sqla_session = db.session
-        notification_modes = ["off", "email", "push"]
+        notification_modes = ['off', 'email', 'push']
 
     innostore = ma.Str(validate=validate.OneOf(Meta.notification_modes))
     volunteering = ma.Str(validate=validate.OneOf(Meta.notification_modes))

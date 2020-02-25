@@ -14,30 +14,28 @@ log = logging.getLogger(__name__)
 def notify(recipient_email: str, notification_type: NotificationType, payload=None):
     """Sends a notification to the specified user."""
     notification_group = type_to_group[notification_type]
-    channel = (
-        db.session.query(
-            # pylint: disable=unsubscriptable-object
-            Account.notification_settings[notification_group]
-        )
-        .filter_by(email=recipient_email)
-        .scalar()
-    )
+    channel = db.session.query(
+        # pylint: disable=unsubscriptable-object
+        Account.notification_settings[notification_group]
+    ).filter_by(email=recipient_email).scalar()
 
-    if channel == "email":
+    if channel == 'email':
         # TODO: send Email
         pass
-    elif channel == "push":
+    elif channel == 'push':
         # TODO: send Push
         pass
 
     notification = Notification(
-        recipient_email=recipient_email, type=notification_type, payload=payload,
+        recipient_email=recipient_email,
+        type=notification_type,
+        payload=payload,
     )
 
     try:
         db.session.add(notification)
         db.session.commit()
-        log.info(f"Sent a notification to {recipient_email}")
+        log.info(f'Sent a notification to {recipient_email}')
         return notification
     except IntegrityError as exc:
         db.session.rollback()
