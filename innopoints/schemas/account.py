@@ -8,6 +8,7 @@ from innopoints.models import Account, Transaction
 
 # pylint: disable=missing-docstring
 
+
 class AccountSchema(ma.ModelSchema):
     class Meta:
         model = Account

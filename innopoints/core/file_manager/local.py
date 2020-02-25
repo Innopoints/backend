@@ -8,6 +8,7 @@ from .base import FileManagerBase
 
 class FileManagerLocal(FileManagerBase):
     """Implementation of the file manager using local file system."""
+
     def __init__(self, url='./static_files/'):
         super().__init__(url)
         if not os.path.exists(url):

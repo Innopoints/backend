@@ -65,7 +65,9 @@ def list_ongoing_projects():
 
     try:
         spots = request.args.get('spots', 0, type=int)
-        excluded_competences = json.loads(request.args.get('excluded_compentences', '[]'))
+        excluded_competences = json.loads(
+            request.args.get('excluded_compentences', '[]')
+        )
         start_date = request.args.get('start_date', type=datetime.fromisoformat)
         end_date = request.args.get('end_date', type=datetime.fromisoformat)
     except ValueError:
@@ -79,44 +81,57 @@ def list_ongoing_projects():
     if spots > 0:
         narrowed_activity = (
             (narrowed_activity or Activity.query)
-                .outerjoin(Application, (Activity.id == Application.activity_id)
-                                      & (Application.status == ApplicationStatus.approved))
-                .add_column(
-                    db.func.greatest(
-                        Activity.people_required - db.func.count(Application.id), -1
-                    ).label('spots')
-                ).group_by(Activity)
+            .outerjoin(
+                Application,
+                (Activity.id == Application.activity_id)
+                & (Application.status == ApplicationStatus.approved),
+            )
+            .add_column(
+                db.func.greatest(
+                    Activity.people_required - db.func.count(Application.id), -1
+                ).label('spots')
+            )
+            .group_by(Activity)
         )
         narrowed_subquery = narrowed_activity.subquery()
     if excluded_competences:
         narrowed_activity = (
-            (narrowed_activity or Activity.query).join(activity_competence).group_by(Activity)
-                .having(~(competence_array.op('<@')(excluded_competences)))
+            (narrowed_activity or Activity.query)
+            .join(activity_competence)
+            .group_by(Activity)
+            .having(~(competence_array.op('<@')(excluded_competences)))
         )
         narrowed_subquery = narrowed_activity.subquery()
 
     if narrowed_subquery is not None:
-        db_query = db_query.join(narrowed_subquery, Project.id == narrowed_subquery.c.project_id)
+        db_query = db_query.join(
+            narrowed_subquery, Project.id == narrowed_subquery.c.project_id
+        )
     else:
         db_query = db_query.join(Activity)
 
     if spots > 0:
-        db_query = db_query.filter((narrowed_subquery.c.spots >= spots)
-                                 | (narrowed_subquery.c.spots == -1)).group_by(Project)
+        db_query = db_query.filter(
+            (narrowed_subquery.c.spots >= spots) | (narrowed_subquery.c.spots == -1)
+        ).group_by(Project)
 
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
         if narrowed_subquery is None:
             db_query = db_query.filter(
-                or_(Project.name.ilike(like_query),
+                or_(
+                    Project.name.ilike(like_query),
                     Activity.name.ilike(like_query),
-                    Activity.description.ilike(like_query))
+                    Activity.description.ilike(like_query),
+                )
             )
         else:
             db_query = db_query.filter(
-                or_(Project.name.ilike(like_query),
+                or_(
+                    Project.name.ilike(like_query),
                     narrowed_subquery.c.name.ilike(like_query),
-                    narrowed_subquery.c.description.ilike(like_query))
+                    narrowed_subquery.c.description.ilike(like_query),
+                )
             )
 
     if start_date:
@@ -147,15 +162,26 @@ def list_ongoing_projects():
         conditional_exclude.remove('moderators')
         if not current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'files',
-               'lifetime_stage', 'admin_feedback']
-    activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
-                                                            'fixed_reward', 'working_hours',
-                                                            'reward_rate', 'people_required',
-                                                            'application_deadline', 'project',
-                                                            'applications', 'existing_application',
-                                                            'feedback_questions')]
-    schema = ProjectSchema(many=True, exclude=exclude + activity_exclude + conditional_exclude)
+    exclude = ['admin_feedback', 'files', 'lifetime_stage', 'admin_feedback']
+    activity_exclude = [
+        f'activities.{field}'
+        for field in (
+            'description',
+            'telegram_required',
+            'fixed_reward',
+            'working_hours',
+            'reward_rate',
+            'people_required',
+            'application_deadline',
+            'project',
+            'applications',
+            'existing_application',
+            'feedback_questions',
+        )
+    ]
+    schema = ProjectSchema(
+        many=True, exclude=exclude + activity_exclude + conditional_exclude
+    )
     return schema.jsonify(db_query.all())
 
 
@@ -165,15 +191,25 @@ def list_past_projects():
     default_page = 1
     default_limit = 12
 
-    db_query = Project.query.filter(or_(Project.lifetime_stage == LifetimeStage.finalizing,
-                                        Project.lifetime_stage == LifetimeStage.finished))
+    db_query = Project.query.filter(
+        or_(
+            Project.lifetime_stage == LifetimeStage.finalizing,
+            Project.lifetime_stage == LifetimeStage.finished,
+        )
+    )
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
-        db_query = db_query.join(Project.activities).filter(
-            or_(Project.name.ilike(like_query),
-                Activity.name.ilike(like_query),
-                Activity.description.ilike(like_query))
-        ).distinct()
+        db_query = (
+            db_query.join(Project.activities)
+            .filter(
+                or_(
+                    Project.name.ilike(like_query),
+                    Activity.name.ilike(like_query),
+                    Activity.description.ilike(like_query),
+                )
+            )
+            .distinct()
+        )
 
     try:
         limit = int(request.args.get('limit', default_limit))
@@ -193,25 +229,36 @@ def list_past_projects():
         conditional_exclude.remove('moderators')
         if not current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'files',
-               'lifetime_stage', 'admin_feedback']
-    activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
-                                                            'fixed_reward', 'working_hours',
-                                                            'reward_rate', 'people_required',
-                                                            'application_deadline', 'project',
-                                                            'applications', 'existing_application',
-                                                            'feedback_questions')]
-    schema = ProjectSchema(many=True, exclude=exclude + activity_exclude + conditional_exclude)
-    return jsonify(pages=math.ceil(count / limit),
-                   data=schema.dump(db_query.all()))
+    exclude = ['admin_feedback', 'files', 'lifetime_stage', 'admin_feedback']
+    activity_exclude = [
+        f'activities.{field}'
+        for field in (
+            'description',
+            'telegram_required',
+            'fixed_reward',
+            'working_hours',
+            'reward_rate',
+            'people_required',
+            'application_deadline',
+            'project',
+            'applications',
+            'existing_application',
+            'feedback_questions',
+        )
+    ]
+    schema = ProjectSchema(
+        many=True, exclude=exclude + activity_exclude + conditional_exclude
+    )
+    return jsonify(pages=math.ceil(count / limit), data=schema.dump(db_query.all()))
 
 
 @api.route('/projects/drafts')
 @login_required
 def list_drafts():
     """Return a list of drafts for the logged in user."""
-    db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.draft,
-                                       creator=current_user).order_by(Project.creation_time.desc())
+    db_query = Project.query.filter_by(
+        lifetime_stage=LifetimeStage.draft, creator=current_user
+    ).order_by(Project.creation_time.desc())
     schema = ProjectSchema(many=True, only=('id', 'name', 'creation_time'))
     return schema.jsonify(db_query.all())
 
@@ -235,7 +282,9 @@ def check_name_availability():
     name = request.args.get('name')
     if not name:
         abort(400, {'message': 'A non-empty name must be passed.'})
-    return jsonify(not db.session.query(Project.query.filter_by(name=name).exists()).scalar())
+    return jsonify(
+        not db.session.query(Project.query.filter_by(name=name).exists()).scalar()
+    )
 
 
 @api.route('/projects', methods=['POST'])
@@ -245,10 +294,21 @@ def create_project():
     if not request.is_json:
         abort(400, {'message': 'The request should be in JSON.'})
 
-    in_schema = ProjectSchema(exclude=('id', 'creation_time', 'creator', 'admin_feedback',
-                                       'review_status', 'lifetime_stage', 'files',
-                                       'activities.internal', 'activities.id',
-                                       'activities.project', 'activities.applications'))
+    in_schema = ProjectSchema(
+        exclude=(
+            'id',
+            'creation_time',
+            'creator',
+            'admin_feedback',
+            'review_status',
+            'lifetime_stage',
+            'files',
+            'activities.internal',
+            'activities.id',
+            'activities.project',
+            'activities.applications',
+        )
+    )
 
     try:
         new_project = in_schema.load(request.json)
@@ -274,8 +334,10 @@ def create_project():
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files'),
-                               context={'user': current_user})
+    out_schema = ProjectSchema(
+        exclude=('admin_feedback', 'review_status', 'files'),
+        context={'user': current_user},
+    )
     return out_schema.jsonify(new_project)
 
 
@@ -299,17 +361,21 @@ def publish_project(project_id):
     if not db.session.query(external_activity.exists()).scalar():
         abort(400, {'message': 'The project must have at least one activity.'})
 
-    if not all(len(activity.competences) in range(1, 4) for activity in project.activities
-               if not activity.internal):
+    if not all(
+        len(activity.competences) in range(1, 4)
+        for activity in project.activities
+        if not activity.internal
+    ):
         abort(400, {'message': 'The activities must have from 1 to 3 competences.'})
 
     project.lifetime_stage = LifetimeStage.ongoing
     db.session.commit()
 
-    notify_all(project.moderators, NotificationType.added_as_moderator, {
-        'project_id': project.id,
-        'account_email': current_user.email,
-    })
+    notify_all(
+        project.moderators,
+        NotificationType.added_as_moderator,
+        {'project_id': project.id, 'account_email': current_user.email,},
+    )
 
     return NO_PAYLOAD
 
@@ -340,9 +406,9 @@ def request_review(project_id):
         abort(400, {'message': 'Data integrity violated.'})
 
     admins = Account.query.filter_by(is_admin=True).all()
-    notify_all(admins, NotificationType.project_review_requested, {
-        'project_id': project.id,
-    })
+    notify_all(
+        admins, NotificationType.project_review_requested, {'project_id': project.id,}
+    )
 
     return NO_PAYLOAD
 
@@ -361,18 +427,20 @@ def finalize_project(project_id):
 
     project.lifetime_stage = LifetimeStage.finalizing
 
-    moderation = Activity.query.filter_by(project=project,
-                                          internal=True,
-                                          name='Moderation').one_or_none()
+    moderation = Activity.query.filter_by(
+        project=project, internal=True, name='Moderation'
+    ).one_or_none()
     if moderation is None:
         log.error('The moderation activity couldn\'t be found.')
         abort(500)
     else:
         for moderator in project.moderators:
             moderation.applications.append(
-                Application(applicant=moderator,
-                            status=ApplicationStatus.approved,
-                            actual_hours=0)
+                Application(
+                    applicant=moderator,
+                    status=ApplicationStatus.approved,
+                    actual_hours=0,
+                )
             )
 
     try:
@@ -425,17 +493,23 @@ def review_project(project_id):
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    notify_all(project.moderators, NotificationType.project_review_status_changed, {
-        'project_id': project.id,
-    })
+    notify_all(
+        project.moderators,
+        NotificationType.project_review_status_changed,
+        {'project_id': project.id,},
+    )
     if project.review_status == ReviewStatus.approved:
         for activity in project.activities:
             for application in activity.applications:
-                notify(application.applicant_email, NotificationType.claim_innopoints, {
-                    'project_id': project.id,
-                    'activity_id': activity.id,
-                    'application_id': application.id,
-                })
+                notify(
+                    application.applicant_email,
+                    NotificationType.claim_innopoints,
+                    {
+                        'project_id': project.id,
+                        'activity_id': activity.id,
+                        'application_id': application.id,
+                    },
+                )
 
     return NO_PAYLOAD
 
@@ -446,14 +520,16 @@ class ProjectDetailAPI(MethodView):
     def get(self, project_id):
         """Get full information about the project"""
         project = Project.query.get_or_404(project_id)
-        exclude = ['files',
-                   'moderators',
-                   'review_status',
-                   'admin_feedback',
-                   'activities.applications',
-                   'activities.existing_application',
-                   'activities.applications.telegram',
-                   'activities.applications.comment']
+        exclude = [
+            'files',
+            'moderators',
+            'review_status',
+            'admin_feedback',
+            'activities.applications',
+            'activities.existing_application',
+            'activities.applications.telegram',
+            'activities.applications.comment',
+        ]
 
         if current_user.is_authenticated:
             exclude.remove('moderators')
@@ -480,12 +556,17 @@ class ProjectDetailAPI(MethodView):
             abort(401)
 
         if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
-            abort(400, {'The project may only be edited during its draft and ongoing stages.'})
+            abort(
+                400,
+                {'The project may only be edited during its draft and ongoing stages.'},
+            )
 
         in_schema = ProjectSchema(only=('name', 'image_id', 'organizer', 'moderators'))
 
         try:
-            updated_project = in_schema.load(request.json, instance=project, partial=True)
+            updated_project = in_schema.load(
+                request.json, instance=project, partial=True
+            )
         except ValidationError as err:
             abort(400, {'message': err.messages})
 
@@ -500,7 +581,9 @@ class ProjectDetailAPI(MethodView):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
-        out_schema = ProjectSchema(only=('id', 'name', 'image_id', 'organizer', 'moderators'))
+        out_schema = ProjectSchema(
+            only=('id', 'name', 'image_id', 'organizer', 'moderators')
+        )
         return out_schema.jsonify(updated_project)
 
     @login_required
@@ -521,6 +604,8 @@ class ProjectDetailAPI(MethodView):
 
 
 project_api = ProjectDetailAPI.as_view('project_detail_api')
-api.add_url_rule('/projects/<int:project_id>',
-                 view_func=project_api,
-                 methods=('GET', 'PATCH', 'DELETE'))
+api.add_url_rule(
+    '/projects/<int:project_id>',
+    view_func=project_api,
+    methods=('GET', 'PATCH', 'DELETE'),
+)

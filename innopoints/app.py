@@ -33,48 +33,48 @@ def create_app(config='config/prod.py'):
             with app.app_context():
                 db.engine.connect()
             break
-        except (RuntimeError, psycopg2.OperationalError, sqlalchemy.exc.OperationalError) as err:
-            log.exception(f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..')
+        except (
+            RuntimeError,
+            psycopg2.OperationalError,
+            sqlalchemy.exc.OperationalError,
+        ) as err:
+            log.exception(
+                f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..'
+            )
             time.sleep(2)
 
     with app.app_context():
         upgrade()
 
-    logging.config.dictConfig({
-        'version': 1,
-        'formatters': {
-            'default': {
-                'datefmt': '%d/%m %H:%M:%S',
-                'format': '[%(asctime)s] [%(levelname)8s] %(message)s (%(name)s:%(lineno)s)',
-            }
-        },
-        'handlers': {
-            'stderr': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'default',
-                'level': 'DEBUG',
+    logging.config.dictConfig(
+        {
+            'version': 1,
+            'formatters': {
+                'default': {
+                    'datefmt': '%d/%m %H:%M:%S',
+                    'format': '[%(asctime)s] [%(levelname)8s] %(message)s (%(name)s:%(lineno)s)',
+                }
             },
-            'logfile': {
-                'class': 'logging.handlers.TimedRotatingFileHandler',
-                'filename': './innopoints.log',
-                'formatter': 'default',
-                'when': 'W0',  # will start a new file each Monday
-                'backupCount': 5,  # will only keep the 5 latest files,
-                'level': 'ERROR',
-            }
-        },
-        'loggers': {
-            'werkzeug': {
-                'handlers': ['stderr'],
-                'propagate': False,
-            }
-        },
-        'root': {
-            'level': 'DEBUG',
-            'handlers': ['stderr', 'logfile']
-        },
-        'disable_existing_loggers': False,
-    })
+            'handlers': {
+                'stderr': {
+                    'class': 'logging.StreamHandler',
+                    'formatter': 'default',
+                    'level': 'DEBUG',
+                },
+                'logfile': {
+                    'class': 'logging.handlers.TimedRotatingFileHandler',
+                    'filename': './innopoints.log',
+                    'formatter': 'default',
+                    'when': 'W0',  # will start a new file each Monday
+                    'backupCount': 5,  # will only keep the 5 latest files,
+                    'level': 'ERROR',
+                },
+            },
+            'loggers': {'werkzeug': {'handlers': ['stderr'], 'propagate': False,}},
+            'root': {'level': 'DEBUG', 'handlers': ['stderr', 'logfile']},
+            'disable_existing_loggers': False,
+        }
+    )
 
     ma.init_app(app)
     cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)

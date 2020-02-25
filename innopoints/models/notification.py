@@ -10,6 +10,7 @@ from innopoints.core.timezone import tz_aware_now
 
 class NotificationType(Enum):
     """Represents various notifications."""
+
     purchase_status_changed = auto()
     new_arrivals = auto()
     claim_innopoints = auto()
@@ -26,6 +27,7 @@ class NotificationType(Enum):
 
 class NotificationGroup:
     """Represents notification groups."""
+
     innostore = 'innostore'
     volunteering = 'volunteering'
     service = 'service'
@@ -34,28 +36,33 @@ class NotificationGroup:
 
 
 type_to_group = {
-    NotificationType.purchase_status_changed:       NotificationGroup.innostore,
-    NotificationType.new_arrivals:                  NotificationGroup.innostore,
-    NotificationType.claim_innopoints:              NotificationGroup.volunteering,
-    NotificationType.application_status_changed:    NotificationGroup.volunteering,
-    NotificationType.service:                       NotificationGroup.service,
-    NotificationType.manual_transaction:            NotificationGroup.service,
+    NotificationType.purchase_status_changed: NotificationGroup.innostore,
+    NotificationType.new_arrivals: NotificationGroup.innostore,
+    NotificationType.claim_innopoints: NotificationGroup.volunteering,
+    NotificationType.application_status_changed: NotificationGroup.volunteering,
+    NotificationType.service: NotificationGroup.service,
+    NotificationType.manual_transaction: NotificationGroup.service,
     NotificationType.project_review_status_changed: NotificationGroup.project_creation,
-    NotificationType.all_feedback_in:               NotificationGroup.project_creation,
-    NotificationType.added_as_moderator:            NotificationGroup.project_creation,
-    NotificationType.out_of_stock:                  NotificationGroup.administration,
-    NotificationType.new_purchase:                  NotificationGroup.administration,
-    NotificationType.project_review_requested:      NotificationGroup.administration,
+    NotificationType.all_feedback_in: NotificationGroup.project_creation,
+    NotificationType.added_as_moderator: NotificationGroup.project_creation,
+    NotificationType.out_of_stock: NotificationGroup.administration,
+    NotificationType.new_purchase: NotificationGroup.administration,
+    NotificationType.project_review_requested: NotificationGroup.administration,
 }
 
 
 class Notification(db.Model):
     """Represents a notification about a certain event."""
+
     __tablename__ = 'notifications'
 
     id = db.Column(db.Integer, primary_key=True)
-    recipient_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
+    recipient_email = db.Column(
+        db.String(128), db.ForeignKey('accounts.email'), nullable=False
+    )
     is_read = db.Column(db.Boolean, nullable=False, default=False)
     payload = db.Column(JSONB, nullable=True)
-    timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
+    timestamp = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=tz_aware_now
+    )
     type = db.Column(db.Enum(NotificationType), nullable=False)

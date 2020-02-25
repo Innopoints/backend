@@ -4,10 +4,16 @@ from marshmallow import validate, pre_load, ValidationError, validates
 from marshmallow_enum import EnumField
 
 from innopoints.extensions import ma, db
-from innopoints.models import Application, ApplicationStatus, VolunteeringReport, Feedback
+from innopoints.models import (
+    Application,
+    ApplicationStatus,
+    VolunteeringReport,
+    Feedback,
+)
 
 
 # pylint: disable=missing-docstring
+
 
 class ApplicationSchema(ma.ModelSchema):
     class Meta:
@@ -35,7 +41,7 @@ class FeedbackSchema(ma.ModelSchema):
         model = Feedback
         ordered = True
         sqla_session = db.session
-        exclude=('transaction',)
+        exclude = ('transaction',)
 
     @pre_load
     def wrap_competences(self, data, **kwargs):  # pylint: disable=unused-argument

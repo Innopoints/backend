@@ -7,6 +7,7 @@ from .base import FileManagerBase, FileStorage
 
 class FileManagerS3(FileManagerBase):
     """Implementation of file manager using Amazon S3."""
+
     def __init__(self, url='http://innopoints.s3.amazonaws.com'):
         super().__init__(url)
 
@@ -23,7 +24,9 @@ class FileManagerS3(FileManagerBase):
         of the AWS S3 bucket. Will raise a requests.exceptions.HTTPError on errors."""
         filename = f'{namespace}/{handle}'
         stream = file.stream
-        response = requests.post(self.BASE_PATH, data={'key': filename}, files={'file': stream})
+        response = requests.post(
+            self.BASE_PATH, data={'key': filename}, files={'file': stream}
+        )
         response.raise_for_status()
 
     def delete(self, handle: str, namespace: str):

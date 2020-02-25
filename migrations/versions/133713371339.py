@@ -18,14 +18,19 @@ depends_on = None
 
 def upgrade():
     op.execute("ALTER TYPE lifetimestage RENAME TO lifetimestage_old;")
-    op.execute("CREATE TYPE lifetimestage AS enum('draft', 'ongoing', 'finalizing', 'finished');")
-    op.execute("ALTER TABLE projects ALTER COLUMN lifetime_stage TYPE lifetimestage USING lifetime_stage::text::lifetimestage;")
+    op.execute(
+        "CREATE TYPE lifetimestage AS enum('draft', 'ongoing', 'finalizing', 'finished');"
+    )
+    op.execute(
+        "ALTER TABLE projects ALTER COLUMN lifetime_stage TYPE lifetimestage USING lifetime_stage::text::lifetimestage;"
+    )
     op.execute("DROP TYPE lifetimestage_old;")
-
 
 
 def downgrade():
     op.execute("ALTER TYPE lifetimestage RENAME TO lifetimestage_old;")
     op.execute("CREATE TYPE lifetimestage AS enum('draft', 'ongoing', 'past');")
-    op.execute("ALTER TABLE projects ALTER COLUMN lifetime_stage TYPE lifetimestage USING lifetime_stage::text::lifetimestage;")
+    op.execute(
+        "ALTER TABLE projects ALTER COLUMN lifetime_stage TYPE lifetimestage USING lifetime_stage::text::lifetimestage;"
+    )
     op.execute("DROP TYPE lifetimestage_old;")

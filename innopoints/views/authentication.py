@@ -35,7 +35,8 @@ def login():
 def authorize():
     """Catch the user after the back-redirect and fetch the essential info."""
     token = oauth.innopolis_sso.authorize_access_token(
-        redirect_uri=url_for('auth.authorize', _external=True))
+        redirect_uri=url_for('auth.authorize', _external=True)
+    )
     try:
         userinfo = oauth.innopolis_sso.parse_id_token(token)
     except (MissingClaimError, InvalidClaimError):
@@ -43,10 +44,12 @@ def authorize():
 
     user = Account.query.get(userinfo['email'])
     if user is None:
-        user = Account(email=userinfo['email'],
-                       full_name=userinfo['commonname'],
-                       group=userinfo['role'],
-                       is_admin=current_app.config['IS_ADMIN'](userinfo))
+        user = Account(
+            email=userinfo['email'],
+            full_name=userinfo['commonname'],
+            group=userinfo['role'],
+            is_admin=current_app.config['IS_ADMIN'](userinfo),
+        )
         db.session.add(user)
         db.session.commit()
 
@@ -86,6 +89,8 @@ def login_cheat(email):
 
     if 'no_redirect' not in request.args:
         final_redirect_uri = request.args.get('final_redirect_location', '/')
-        frontend_base = request.args.get('frontend_base', current_app.config['FRONTEND_BASE'])
+        frontend_base = request.args.get(
+            'frontend_base', current_app.config['FRONTEND_BASE']
+        )
         return redirect(urljoin(frontend_base, final_redirect_uri))
     return NO_PAYLOAD

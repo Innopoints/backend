@@ -20,7 +20,9 @@ NO_PAYLOAD = ('', 204)
 @login_required
 def get_notifications():
     """Gets all notifications of the current user."""
-    query = Notification.query.filter_by(recipient_email=current_user.email).order_by(Notification.timestamp.desc())
+    query = Notification.query.filter_by(recipient_email=current_user.email).order_by(
+        Notification.timestamp.desc()
+    )
     if 'unread' in request.args:
         query = query.filter_by(is_read=False)
     return NotificationSchema(many=True).jsonify(query.all())

@@ -17,7 +17,11 @@ depends_on = None
 
 
 def upgrade():
-    op.create_check_constraint('reward policy', 'activities', '(fixed_reward AND working_hours = 1) OR (NOT fixed_reward AND reward_rate = 70)')
+    op.create_check_constraint(
+        'reward policy',
+        'activities',
+        '(fixed_reward AND working_hours = 1) OR (NOT fixed_reward AND reward_rate = 70)',
+    )
 
 
 def downgrade():

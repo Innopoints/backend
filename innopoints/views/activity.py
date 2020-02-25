@@ -23,7 +23,13 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
-from innopoints.models import Activity, Project, IPTS_PER_HOUR, Competence, LifetimeStage
+from innopoints.models import (
+    Activity,
+    Project,
+    IPTS_PER_HOUR,
+    Competence,
+    LifetimeStage,
+)
 from innopoints.schemas import ActivitySchema, CompetenceSchema
 
 NO_PAYLOAD = ('', 204)
@@ -42,7 +48,12 @@ def create_activity(project_id):
         abort(401)
 
     if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
-        abort(400, {'message': 'Activities may only be created on draft and ongoing projects.'})
+        abort(
+            400,
+            {
+                'message': 'Activities may only be created on draft and ongoing projects.'
+            },
+        )
 
     in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
 
@@ -61,8 +72,9 @@ def create_activity(project_id):
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ActivitySchema(exclude=('existing_application',),
-                                context={'user': current_user})
+    out_schema = ActivitySchema(
+        exclude=('existing_application',), context={'user': current_user}
+    )
     return out_schema.jsonify(new_activity)
 
 
@@ -80,7 +92,12 @@ class ActivityAPI(MethodView):
             abort(401)
 
         if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
-            abort(400, {'message': 'Activities may only be edited on draft and ongoing projects.'})
+            abort(
+                400,
+                {
+                    'message': 'Activities may only be edited on draft and ongoing projects.'
+                },
+            )
 
         activity = Activity.query.get_or_404(activity_id)
         if activity.internal:
@@ -89,15 +106,24 @@ class ActivityAPI(MethodView):
         if activity.project != project:
             abort(400, {'message': 'The specified project and activity are unrelated.'})
 
-        in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
+        in_schema = ActivitySchema(
+            exclude=('id', 'project', 'applications', 'internal')
+        )
 
         try:
-            updated_activity = in_schema.load(request.json, instance=activity, partial=True)
+            updated_activity = in_schema.load(
+                request.json, instance=activity, partial=True
+            )
         except ValidationError as err:
             abort(400, {'message': err.messages})
 
         if not activity.fixed_reward and activity.reward_rate != IPTS_PER_HOUR:
-            abort(400, {'message': 'The reward rate for hourly activities may not be changed.'})
+            abort(
+                400,
+                {
+                    'message': 'The reward rate for hourly activities may not be changed.'
+                },
+            )
 
         try:
             db.session.add(updated_activity)
@@ -107,8 +133,9 @@ class ActivityAPI(MethodView):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
-        out_schema = ActivitySchema(exclude=('existing_application',),
-                                    context={'user': current_user})
+        out_schema = ActivitySchema(
+            exclude=('existing_application',), context={'user': current_user}
+        )
         return out_schema.jsonify(updated_activity)
 
     @login_required
@@ -119,7 +146,12 @@ class ActivityAPI(MethodView):
             abort(401)
 
         if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
-            abort(400, {'message': 'Activities may only be deleted on draft and ongoing projects.'})
+            abort(
+                400,
+                {
+                    'message': 'Activities may only be deleted on draft and ongoing projects.'
+                },
+            )
 
         activity = Activity.query.get_or_404(activity_id)
         if activity.internal:
@@ -140,12 +172,15 @@ class ActivityAPI(MethodView):
 
 
 activity_api = ActivityAPI.as_view('activity_api')
-api.add_url_rule('/projects/<int:project_id>/activities/<int:activity_id>',
-                 view_func=activity_api,
-                 methods=('PATCH', 'DELETE'))
+api.add_url_rule(
+    '/projects/<int:project_id>/activities/<int:activity_id>',
+    view_func=activity_api,
+    methods=('PATCH', 'DELETE'),
+)
 
 
 # ----- Competence -----
+
 
 @api.route('/competences')
 def list_competences():
@@ -199,7 +234,9 @@ class CompetenceAPI(MethodView):
         in_schema = CompetenceSchema(exclude=('id',))
 
         try:
-            updated_competence = in_schema.load(request.json, instance=competence, partial=True)
+            updated_competence = in_schema.load(
+                request.json, instance=competence, partial=True
+            )
         except ValidationError as err:
             abort(400, {'message': err.messages})
 
@@ -230,6 +267,6 @@ class CompetenceAPI(MethodView):
 
 
 competence_api = CompetenceAPI.as_view('competence_api')
-api.add_url_rule('/competences/<int:compt_id>',
-                 view_func=competence_api,
-                 methods=('PATCH', 'DELETE'))
+api.add_url_rule(
+    '/competences/<int:compt_id>', view_func=competence_api, methods=('PATCH', 'DELETE')
+)

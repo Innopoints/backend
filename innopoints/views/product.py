@@ -44,13 +44,18 @@ def list_products():
     """List products available in InnoStore."""
     # pylint: disable=bad-continuation, invalid-unary-operand-type
     purchases = (
-        db.session.query(StockChange.variety_id,
-                         db.func.sum(StockChange.amount).label('variety_purchases'))
-            .join(Account)
-            .filter(StockChange.amount < 0,
-                    StockChange.status != StockChangeStatus.rejected,
-                    ~Account.is_admin)
-            .group_by(StockChange.variety_id).subquery()
+        db.session.query(
+            StockChange.variety_id,
+            db.func.sum(StockChange.amount).label('variety_purchases'),
+        )
+        .join(Account)
+        .filter(
+            StockChange.amount < 0,
+            StockChange.status != StockChangeStatus.rejected,
+            ~Account.is_admin,
+        )
+        .group_by(StockChange.variety_id)
+        .subquery()
     )
     color_array = db.func.ARRAY_AGG(Variety.color)
     default_limit = 24
@@ -62,8 +67,12 @@ def list_products():
         ('addition_time', 'desc'): Product.addition_time.desc(),
         ('price', 'asc'): Product.price.asc(),
         ('price', 'desc'): Product.price.desc(),
-        ('purchases', 'asc'): db.nullsfirst(db.asc(-db.func.sum(purchases.c.variety_purchases))),
-        ('purchases', 'desc'): db.nullslast(db.desc(-db.func.sum(purchases.c.variety_purchases))),
+        ('purchases', 'asc'): db.nullsfirst(
+            db.asc(-db.func.sum(purchases.c.variety_purchases))
+        ),
+        ('purchases', 'desc'): db.nullslast(
+            db.desc(-db.func.sum(purchases.c.variety_purchases))
+        ),
     }
 
     try:
@@ -80,9 +89,15 @@ def list_products():
     if max_price is not None and max_price < min_price:
         abort(400, {'message': 'Maximum price cannot be lower than minimum.'})
 
-    if not isinstance(excluded_colors, list) or not \
-        all(item is None or isinstance(item, str) for item in excluded_colors):
-        abort(400, {'message': 'Excluded colors has to be an array of strings and possibly null.'})
+    if not isinstance(excluded_colors, list) or not all(
+        item is None or isinstance(item, str) for item in excluded_colors
+    ):
+        abort(
+            400,
+            {
+                'message': 'Excluded colors has to be an array of strings and possibly null.'
+            },
+        )
 
     if limit < 1 or page < 1:
         abort(400, {'message': 'Limit and page number must be positive.'})
@@ -93,9 +108,11 @@ def list_products():
     db_query = Product.query
     if 'q' in request.args:
         like_query = f'%{request.args["q"]}%'
-        or_condition = or_(Product.name.ilike(like_query),
-                           Product.type.ilike(like_query),
-                           Product.description.ilike(like_query))
+        or_condition = or_(
+            Product.name.ilike(like_query),
+            Product.type.ilike(like_query),
+            Product.description.ilike(like_query),
+        )
         db_query = db_query.filter(or_condition).distinct()
 
     if excluded_colors:
@@ -104,9 +121,8 @@ def list_products():
             db_query = db_query.filter(Variety.color.isnot(None))
             excluded_colors.remove(None)
         excluded_colors = [color.lstrip('#') for color in excluded_colors]
-        db_query = (
-            db_query.group_by(Product)
-                .having(~(color_array.cast(db.ARRAY(db.Text)).op('<@')(excluded_colors)))
+        db_query = db_query.group_by(Product).having(
+            ~(color_array.cast(db.ARRAY(db.Text)).op('<@')(excluded_colors))
         )
 
     db_query = db_query.filter(Product.price >= min_price)
@@ -116,23 +132,28 @@ def list_products():
     count = db.session.query(db_query.subquery()).count()
     if order_by == 'purchases':
         if excluded_colors:
-            abort(400, {'message': 'Ordering by purchases is not allowed when filtering.'})
+            abort(
+                400, {'message': 'Ordering by purchases is not allowed when filtering.'}
+            )
         db_query = (
             db_query.join(Variety)
-                .outerjoin(purchases, Variety.id == purchases.c.variety_id)
-                .group_by(Product)
+            .outerjoin(purchases, Variety.id == purchases.c.variety_id)
+            .group_by(Product)
         )
-
 
     db_query = db_query.order_by(ordering[order_by, order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
-    schema = ProductSchema(many=True, exclude=('description',
-                                               'varieties.stock_changes',
-                                               'varieties.product',
-                                               'varieties.product_id'))
-    return jsonify(pages=math.ceil(count / limit),
-                   data=schema.dump(db_query.all()))
+    schema = ProductSchema(
+        many=True,
+        exclude=(
+            'description',
+            'varieties.stock_changes',
+            'varieties.product',
+            'varieties.product_id',
+        ),
+    )
+    return jsonify(pages=math.ceil(count / limit), data=schema.dump(db_query.all()))
 
 
 @api.route('/products', methods=['POST'])
@@ -145,11 +166,16 @@ def create_product():
     if not current_user.is_admin:
         abort(401)
 
-    in_schema = ProductSchema(exclude=('id', 'addition_time',
-                                       'varieties.stock_changes.variety_id',
-                                       'varieties.product_id',
-                                       'varieties.images.variety_id'),
-                              context={'user': current_user})
+    in_schema = ProductSchema(
+        exclude=(
+            'id',
+            'addition_time',
+            'varieties.stock_changes.variety_id',
+            'varieties.product_id',
+            'varieties.images.variety_id',
+        ),
+        context={'user': current_user},
+    )
 
     try:
         new_product = in_schema.load(request.json)
@@ -180,28 +206,37 @@ def create_product():
     # Check if a notification has been sent today
     already_sent = Notification.query.filter(
         Notification.type == NotificationType.new_arrivals,
-        Notification.timestamp >= date.today()
+        Notification.timestamp >= date.today(),
     ).exists()
     if not db.session.query(already_sent).scalar():
         users = Account.query.filter_by(is_admin=False).all()
         notify_all(users, NotificationType.new_arrivals)
 
-    out_schema = ProductSchema(exclude=('varieties.product_id',
-                                        'varieties.product',
-                                        'varieties.images.variety_id',
-                                        'varieties.images.id',
-                                        'varieties.stock_changes'))
+    out_schema = ProductSchema(
+        exclude=(
+            'varieties.product_id',
+            'varieties.product',
+            'varieties.images.variety_id',
+            'varieties.images.id',
+            'varieties.stock_changes',
+        )
+    )
     return out_schema.jsonify(new_product)
 
 
 class ProductDetailAPI(MethodView):
     """REST views for the Product model"""
+
     def get(self, product_id):
         """Get a single product."""
         product = Product.query.get_or_404(product_id)
-        schema = ProductSchema(exclude=('varieties.stock_changes',
-                                        'varieties.product',
-                                        'varieties.product_id'))
+        schema = ProductSchema(
+            exclude=(
+                'varieties.stock_changes',
+                'varieties.product',
+                'varieties.product_id',
+            )
+        )
         return schema.jsonify(product)
 
     @login_required
@@ -217,7 +252,9 @@ class ProductDetailAPI(MethodView):
         in_out_schema = ProductSchema(exclude=('id', 'varieties', 'addition_time'))
 
         try:
-            updated_product = in_out_schema.load(request.json, instance=product, partial=True)
+            updated_product = in_out_schema.load(
+                request.json, instance=product, partial=True
+            )
         except ValidationError as err:
             abort(400, {'message': err.messages})
 
@@ -249,6 +286,8 @@ class ProductDetailAPI(MethodView):
 
 
 product_api = ProductDetailAPI.as_view('product_api')
-api.add_url_rule('/products/<int:product_id>',
-                 view_func=product_api,
-                 methods=('GET', 'PATCH', 'DELETE'))
+api.add_url_rule(
+    '/products/<int:product_id>',
+    view_func=product_api,
+    methods=('GET', 'PATCH', 'DELETE'),
+)

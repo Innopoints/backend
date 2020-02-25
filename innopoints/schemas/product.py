@@ -8,6 +8,7 @@ from innopoints.models import Product
 
 # pylint: disable=missing-docstring
 
+
 class ProductSchema(ma.ModelSchema):
     class Meta:
         model = Product

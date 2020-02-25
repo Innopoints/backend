@@ -5,7 +5,8 @@ from marshmallow_enum import EnumField
 
 from innopoints.extensions import ma
 from innopoints.models import (
-    Notification, NotificationType,
+    Notification,
+    NotificationType,
     Project,
     Activity,
     Product,
@@ -19,8 +20,11 @@ from innopoints.models import (
 
 # pylint: disable=missing-docstring
 
+
 class PayloadSchema(ma.Schema):
-    project = ma.Nested('ProjectSchema', only=('id', 'name', 'review_status', 'lifetime_stage'))
+    project = ma.Nested(
+        'ProjectSchema', only=('id', 'name', 'review_status', 'lifetime_stage')
+    )
     activity = ma.Nested('ActivitySchema', only=('id', 'name', 'internal'))
     product = ma.Nested('ProductSchema', only=('id', 'name', 'type', 'price'))
     variety = ma.Nested('VarietySchema', only=('id', 'size', 'color'))
@@ -54,5 +58,6 @@ class PayloadSchema(ma.Schema):
 class NotificationSchema(ma.ModelSchema):
     class Meta:
         model = Notification
+
     type = EnumField(NotificationType)
     payload = ma.Nested(PayloadSchema)

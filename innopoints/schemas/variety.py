@@ -4,10 +4,19 @@ from marshmallow_enum import EnumField
 from marshmallow import ValidationError, pre_load, post_dump, pre_dump
 
 from innopoints.extensions import ma, db
-from innopoints.models import Variety, Color, Size, StockChange, StockChangeStatus, ProductImage, Product
+from innopoints.models import (
+    Variety,
+    Color,
+    Size,
+    StockChange,
+    StockChangeStatus,
+    ProductImage,
+    Product,
+)
 
 
 # pylint: disable=missing-docstring
+
 
 class VarietySchema(ma.ModelSchema):
     class Meta:
@@ -20,7 +29,9 @@ class VarietySchema(ma.ModelSchema):
     def create_stock_change(self, data, **kwargs):  # pylint: disable=unused-argument
         """Convert the integer `amount` property into a stock change."""
         if 'stock_changes' in data:
-            raise ValidationError('The stock changes are not to be specified explicitly.')
+            raise ValidationError(
+                'The stock changes are not to be specified explicitly.'
+            )
 
         if self.context.get('update', False):
             return data
@@ -29,11 +40,13 @@ class VarietySchema(ma.ModelSchema):
             raise ValidationError('The amount for a variety is not specified.')
 
         amount = data.pop('amount')
-        data['stock_changes'] = [{
-            'amount': amount,
-            'account_email': self.context['user'].email,
-            'status': 'carried_out',
-        }]
+        data['stock_changes'] = [
+            {
+                'amount': amount,
+                'account_email': self.context['user'].email,
+                'status': 'carried_out',
+            }
+        ]
         return data
 
     @pre_load
@@ -52,7 +65,8 @@ class VarietySchema(ma.ModelSchema):
 
         if len(data['color']) != 6:
             raise ValidationError(
-                f'The color value is {len(data["color"])} characters long, 6 expected.')
+                f'The color value is {len(data["color"])} characters long, 6 expected.'
+            )
 
         return data
 
@@ -61,12 +75,16 @@ class VarietySchema(ma.ModelSchema):
         """Convert the array of URL strings to an array of image objects with order."""
         if self.context.get('update', False):
             if 'images' in data:
-                data['images'] = [{'order': idx, 'image_id': int(url.split('/')[2])}
-                                  for (idx, url) in enumerate(data['images'], start=1)]
+                data['images'] = [
+                    {'order': idx, 'image_id': int(url.split('/')[2])}
+                    for (idx, url) in enumerate(data['images'], start=1)
+                ]
         else:
             try:
-                data['images'] = [{'order': idx, 'image_id': int(url.split('/')[2])}
-                                  for (idx, url) in enumerate(data['images'], start=1)]
+                data['images'] = [
+                    {'order': idx, 'image_id': int(url.split('/')[2])}
+                    for (idx, url) in enumerate(data['images'], start=1)
+                ]
             except KeyError:
                 raise ValidationError('Images must be specified.')
         return data
@@ -84,9 +102,10 @@ class VarietySchema(ma.ModelSchema):
         if 'images' not in data:
             return data
 
-        data['images'] = [f'/file/{image["image_id"]}'
-                          for image in sorted(data['images'],
-                                              key=lambda x: x['order'])]
+        data['images'] = [
+            f'/file/{image["image_id"]}'
+            for image in sorted(data['images'], key=lambda x: x['order'])
+        ]
         return data
 
     images = ma.Nested('ProductImageSchema', many=True)
@@ -110,7 +129,8 @@ class ColorSchema(ma.ModelSchema):
 
         if len(data['value']) != 6:
             raise ValidationError(
-                f'The color value is {len(data["value"])} characters long, 6 expected.')
+                f'The color value is {len(data["value"])} characters long, 6 expected.'
+            )
 
         data['value'] = data['value'].upper()
 

@@ -9,6 +9,7 @@ from .application import ApplicationSchema
 
 # pylint: disable=missing-docstring
 
+
 class ActivitySchema(ma.ModelSchema):
     class Meta:
         model = Activity
@@ -39,7 +40,7 @@ class ActivitySchema(ma.ModelSchema):
 
         data['timeframe'] = {
             'start': data.pop('start_date'),
-            'end': data.pop('end_date')
+            'end': data.pop('end_date'),
         }
         return data
 
@@ -47,7 +48,9 @@ class ActivitySchema(ma.ModelSchema):
     def work_hours_mutex(self, data, **kwargs):  # pylint: disable=unused-argument
         """Ensure that working hours aren't specified along with the reward_rate."""
         if 'work_hours' in data and 'reward_rate' in data:
-            raise ValidationError('Working hours and reward rate are mutually exclusive.')
+            raise ValidationError(
+                'Working hours and reward rate are mutually exclusive.'
+            )
 
     @validates_schema
     def valid_date_range(self, data, **kwargs):  # pylint: disable=unused-argument
@@ -59,8 +62,7 @@ class ActivitySchema(ma.ModelSchema):
     def get_applications(self, activity):
         """Retrieve the approved applications for a particular activity."""
         fields = ['id', 'applicant']
-        filtering = {'activity_id': activity.id,
-                     'status': ApplicationStatus.approved}
+        filtering = {'activity_id': activity.id, 'status': ApplicationStatus.approved}
 
         if 'user' not in self.context or not self.context['user'].is_authenticated:
             return None
@@ -79,8 +81,9 @@ class ActivitySchema(ma.ModelSchema):
         for the existing application of a volunteer."""
         appl_schema = ApplicationSchema(only=('id', 'telegram_username', 'comment'))
         if 'user' in self.context and self.context['user'].is_authenticated:
-            application = Application.query.filter_by(applicant_email=self.context['user'].email,
-                                                      activity_id=activity.id).one_or_none()
+            application = Application.query.filter_by(
+                applicant_email=self.context['user'].email, activity_id=activity.id
+            ).one_or_none()
             if application is None:
                 return None
             return appl_schema.dump(application)
@@ -89,14 +92,14 @@ class ActivitySchema(ma.ModelSchema):
     working_hours = ma.Int(validate=validate.Range(min=1))
     reward_rate = ma.Int(validate=validate.Range(min=1))
     people_required = ma.Int(validate=validate.Range(min=0))
-    application_deadline = ma.DateTime(format='iso',
-                                       data_key='application_deadline',
-                                       allow_none=True)
+    application_deadline = ma.DateTime(
+        format='iso', data_key='application_deadline', allow_none=True
+    )
     vacant_spots = ma.Int(dump_only=True)
-    applications = ma.Method(serialize='get_applications',
-                             dump_only=True)
-    existing_application = ma.Method(serialize='get_existing_application',
-                                     dump_only=True)
+    applications = ma.Method(serialize='get_applications', dump_only=True)
+    existing_application = ma.Method(
+        serialize='get_existing_application', dump_only=True
+    )
 
 
 class CompetenceSchema(ma.ModelSchema):

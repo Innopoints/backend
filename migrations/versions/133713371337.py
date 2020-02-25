@@ -17,7 +17,16 @@ depends_on = None
 
 
 def upgrade():
-    op.create_index('unique_varieties', 'varieties', ['product_id', sa.text("coalesce(color_value, '')"), sa.text("coalesce(size_id, '')")], unique=True)
+    op.create_index(
+        'unique_varieties',
+        'varieties',
+        [
+            'product_id',
+            sa.text("coalesce(color_value, '')"),
+            sa.text("coalesce(size_id, '')"),
+        ],
+        unique=True,
+    )
 
 
 def downgrade():

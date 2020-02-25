@@ -33,13 +33,21 @@ from innopoints.models import (
     Transaction,
     VolunteeringReport,
 )
-from innopoints.schemas import ApplicationSchema, VolunteeringReportSchema, FeedbackSchema
+from innopoints.schemas import (
+    ApplicationSchema,
+    VolunteeringReportSchema,
+    FeedbackSchema,
+)
 
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
 
-@api.route('/projects/<int:project_id>/activities/<int:activity_id>/applications', methods=['POST'])
+
+@api.route(
+    '/projects/<int:project_id>/activities/<int:activity_id>/applications',
+    methods=['POST'],
+)
 @login_required
 def apply_for_activity(project_id, activity_id):
     """Apply for volunteering on a particular activity."""
@@ -63,15 +71,20 @@ def apply_for_activity(project_id, activity_id):
     if activity.telegram_required and not isinstance(request.json.get('telegram'), str):
         abort(400, {'message': 'This activity requires a Telegram username.'})
 
-    if activity.application_deadline is not None and activity.application_deadline < tz_aware_now():
+    if (
+        activity.application_deadline is not None
+        and activity.application_deadline < tz_aware_now()
+    ):
         abort(400, {'message': 'The application is past the deadline.'})
 
-    new_application = Application(applicant=current_user,
-                                  activity_id=activity_id,
-                                  comment=request.json.get('comment'),
-                                  telegram_username=request.json.get('telegram'),
-                                  actual_hours=activity.working_hours,
-                                  status=ApplicationStatus.pending)
+    new_application = Application(
+        applicant=current_user,
+        activity_id=activity_id,
+        comment=request.json.get('comment'),
+        telegram_username=request.json.get('telegram'),
+        actual_hours=activity.working_hours,
+        status=ApplicationStatus.pending,
+    )
     db.session.add(new_application)
     try:
         db.session.commit()
@@ -84,8 +97,10 @@ def apply_for_activity(project_id, activity_id):
     return out_schema.jsonify(new_application)
 
 
-@api.route('/projects/<int:project_id>/activities/<int:activity_id>/applications',
-           methods=['DELETE'])
+@api.route(
+    '/projects/<int:project_id>/activities/<int:activity_id>/applications',
+    methods=['DELETE'],
+)
 @login_required
 def take_back_application(project_id, activity_id):
     """Take back a volunteering application on a particular activity."""
@@ -97,13 +112,17 @@ def take_back_application(project_id, activity_id):
     if activity.project != project:
         abort(400, {'message': 'The specified project and activity are unrelated.'})
 
-    application = Application.query.filter_by(activity_id=activity_id,
-                                              applicant=current_user).one_or_none()
+    application = Application.query.filter_by(
+        activity_id=activity_id, applicant=current_user
+    ).one_or_none()
     if application is None:
         abort(400, {'message': 'No application exists for this activity.'})
 
     if project.lifetime_stage != LifetimeStage.ongoing:
-        abort(400, {'message': 'Applications may only be taken back from ongoing projects.'})
+        abort(
+            400,
+            {'message': 'Applications may only be taken back from ongoing projects.'},
+        )
 
     db.session.delete(application)
     try:
@@ -116,8 +135,11 @@ def take_back_application(project_id, activity_id):
     return NO_PAYLOAD
 
 
-@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
-           '/applications/<int:application_id>/status', methods=['PATCH'])
+@api.route(
+    '/projects/<int:project_id>/activities/<int:activity_id>'
+    '/applications/<int:application_id>/status',
+    methods=['PATCH'],
+)
 @login_required
 def edit_application(project_id, activity_id, application_id):
     """Change the status or the actual hours of an application."""
@@ -129,18 +151,31 @@ def edit_application(project_id, activity_id, application_id):
     project = Project.query.get_or_404(project_id)
 
     if activity.project != project or application.activity_id != activity.id:
-        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+        abort(
+            400,
+            {
+                'message': 'The specified project, activity and application are unrelated.'
+            },
+        )
 
     if current_user not in project.moderators and not current_user.is_admin:
         abort(401)
 
     if activity.internal:
         if project.lifetime_stage != LifetimeStage.finalizing:
-            abort(400, {'message': 'Internal activity applications may only be edited '
-                                   'in the finalizing stage.'})
+            abort(
+                400,
+                {
+                    'message': 'Internal activity applications may only be edited '
+                    'in the finalizing stage.'
+                },
+            )
     else:
         if project.lifetime_stage != LifetimeStage.ongoing:
-            abort(400, {'message': 'The application may only be edited for ongoing projects.'})
+            abort(
+                400,
+                {'message': 'The application may only be edited for ongoing projects.'},
+            )
 
     old_status = application.status
     if 'status' in request.json:
@@ -158,7 +193,12 @@ def edit_application(project_id, activity_id, application_id):
             abort(400, {'message': 'Actual hours must be a non-negative integer.'})
 
         if activity.fixed_reward:
-            abort(400, {'Working hours may only be changed on hourly-rate activity applications.'})
+            abort(
+                400,
+                {
+                    'Working hours may only be changed on hourly-rate activity applications.'
+                },
+            )
         application.actual_hours = actual_hours
 
     try:
@@ -169,11 +209,15 @@ def edit_application(project_id, activity_id, application_id):
         abort(400, {'message': 'Data integrity violated.'})
 
     if application.status != old_status:
-        notify(application.applicant_email, NotificationType.application_status_changed, {
-            'project_id': project_id,
-            'activity_id': activity_id,
-            'application_id': application_id,
-        })
+        notify(
+            application.applicant_email,
+            NotificationType.application_status_changed,
+            {
+                'project_id': project_id,
+                'activity_id': activity_id,
+                'application_id': application_id,
+            },
+        )
 
     out_schema = ApplicationSchema()
     return out_schema.jsonify(application)
@@ -181,8 +225,11 @@ def edit_application(project_id, activity_id, application_id):
 
 # ----- VolunteeringReport -----
 
-@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
-           '/applications/<int:application_id>/report_info')
+
+@api.route(
+    '/projects/<int:project_id>/activities/<int:activity_id>'
+    '/applications/<int:application_id>/report_info'
+)
 @login_required
 def get_report_info(project_id, activity_id, application_id):
     """Get the reports from the moderators of the project and an average rating."""
@@ -193,35 +240,55 @@ def get_report_info(project_id, activity_id, application_id):
     project = Project.query.get_or_404(project_id)
 
     if activity.project != project or application.activity_id != activity.id:
-        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+        abort(
+            400,
+            {
+                'message': 'The specified project, activity and application are unrelated.'
+            },
+        )
 
     if current_user not in project.moderators and not current_user.is_admin:
         abort(401)
 
-    avg_rating = db.session.query(
-        db.func.round(db.func.avg(VolunteeringReport.rating))
-    ).join(Application).join(Activity).join(
-        project_moderation,
-        VolunteeringReport.reporter_email == project_moderation.c.account_email
-    ).filter(
-        Application.applicant_email == application.applicant_email,
-        project_moderation.c.project_id == project_id,
-    ).scalar() or 0
+    avg_rating = (
+        db.session.query(db.func.round(db.func.avg(VolunteeringReport.rating)))
+        .join(Application)
+        .join(Activity)
+        .join(
+            project_moderation,
+            VolunteeringReport.reporter_email == project_moderation.c.account_email,
+        )
+        .filter(
+            Application.applicant_email == application.applicant_email,
+            project_moderation.c.project_id == project_id,
+        )
+        .scalar()
+        or 0
+    )
 
-    reports = VolunteeringReport.query.join(Application).join(Activity).join(
-        project_moderation,
-        VolunteeringReport.reporter_email == project_moderation.c.account_email
-    ).filter(
-        Application.applicant_email == application.applicant_email,
-        project_moderation.c.project_id == project_id,
-    ).all()
+    reports = (
+        VolunteeringReport.query.join(Application)
+        .join(Activity)
+        .join(
+            project_moderation,
+            VolunteeringReport.reporter_email == project_moderation.c.account_email,
+        )
+        .filter(
+            Application.applicant_email == application.applicant_email,
+            project_moderation.c.project_id == project_id,
+        )
+        .all()
+    )
 
     out_schema = VolunteeringReportSchema(only=('content', 'rating', 'time'), many=True)
     return jsonify(average_rating=int(avg_rating), reports=out_schema.dump(reports))
 
 
-@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
-           '/applications/<int:application_id>/report', methods=['POST'])
+@api.route(
+    '/projects/<int:project_id>/activities/<int:activity_id>'
+    '/applications/<int:application_id>/report',
+    methods=['POST'],
+)
 @login_required
 def create_report(project_id, activity_id, application_id):
     """Create a volunteering report on an application."""
@@ -235,7 +302,12 @@ def create_report(project_id, activity_id, application_id):
     project = Project.query.get_or_404(project_id)
 
     if activity.project != project or application.activity_id != activity.id:
-        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+        abort(
+            400,
+            {
+                'message': 'The specified project, activity and application are unrelated.'
+            },
+        )
 
     if current_user not in project.moderators and not current_user.is_admin:
         abort(401)
@@ -266,8 +338,11 @@ def create_report(project_id, activity_id, application_id):
 
 # ----- Feedback -----
 
-@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
-           '/applications/<int:application_id>/feedback')
+
+@api.route(
+    '/projects/<int:project_id>/activities/<int:activity_id>'
+    '/applications/<int:application_id>/feedback'
+)
 @login_required
 def read_feedback(project_id, activity_id, application_id):
     """Get the feedback from a volunteer on a particular volunteering experience."""
@@ -276,7 +351,12 @@ def read_feedback(project_id, activity_id, application_id):
     project = Project.query.get_or_404(project_id)
 
     if activity.project != project or application.activity_id != activity.id:
-        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+        abort(
+            400,
+            {
+                'message': 'The specified project, activity and application are unrelated.'
+            },
+        )
 
     if current_user not in project.moderators and not current_user.is_admin:
         abort(401)
@@ -285,8 +365,11 @@ def read_feedback(project_id, activity_id, application_id):
     return out_schema.jsonify(application.feedback)
 
 
-@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
-           '/applications/<int:application_id>/feedback', methods=['POST'])
+@api.route(
+    '/projects/<int:project_id>/activities/<int:activity_id>'
+    '/applications/<int:application_id>/feedback',
+    methods=['POST'],
+)
 @login_required
 def leave_feedback(project_id, activity_id, application_id):
     """Leave feedback on a particular volunteering experience."""
@@ -298,7 +381,12 @@ def leave_feedback(project_id, activity_id, application_id):
     project = Project.query.get_or_404(project_id)
 
     if activity.project != project or application.activity_id != activity.id:
-        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+        abort(
+            400,
+            {
+                'message': 'The specified project, activity and application are unrelated.'
+            },
+        )
 
     if application.applicant != current_user:
         abort(401)
@@ -313,14 +401,21 @@ def leave_feedback(project_id, activity_id, application_id):
         abort(400, {'message': err.messages})
 
     if len(new_feedback.answers) != len(activity.feedback_questions):
-        abort(400, {'message': f'Expected {len(activity.feedback_questions)} answer(s), '
-                               f'found {len(new_feedback.answers)}.'})
+        abort(
+            400,
+            {
+                'message': f'Expected {len(activity.feedback_questions)} answer(s), '
+                f'found {len(new_feedback.answers)}.'
+            },
+        )
     new_feedback.application_id = application_id
     db.session.add(new_feedback)
 
-    new_transaction = Transaction(account=current_user,
-                                  change=application.actual_hours * activity.reward_rate,
-                                  feedback_id=new_feedback)
+    new_transaction = Transaction(
+        account=current_user,
+        change=application.actual_hours * activity.reward_rate,
+        feedback_id=new_feedback,
+    )
     new_feedback.transaction = new_transaction
     db.session.add(new_transaction)
 
@@ -331,14 +426,14 @@ def leave_feedback(project_id, activity_id, application_id):
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    all_feedback_in = all(application.feedback is not None
-                          for activity in project.activities
-                          for application in activity.applications)
+    all_feedback_in = all(
+        application.feedback is not None
+        for activity in project.activities
+        for application in activity.applications
+    )
     if all_feedback_in:
         mods = [*project.moderators, project.creator]
-        notify_all(mods, NotificationType.all_feedback_in, {
-            'project_id': project.id,
-        })
+        notify_all(mods, NotificationType.all_feedback_in, {'project_id': project.id,})
 
     out_schema = FeedbackSchema()
     return out_schema.jsonify(new_feedback)
