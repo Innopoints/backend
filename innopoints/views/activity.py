@@ -23,33 +23,44 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
-from innopoints.models import Activity, Project, IPTS_PER_HOUR, Competence, LifetimeStage
+from innopoints.models import (
+    Activity,
+    Project,
+    IPTS_PER_HOUR,
+    Competence,
+    LifetimeStage,
+)
 from innopoints.schemas import ActivitySchema, CompetenceSchema
 
-NO_PAYLOAD = ('', 204)
+NO_PAYLOAD = ("", 204)
 log = logging.getLogger(__name__)
 
 
-@api.route('/projects/<int:project_id>/activities', methods=['POST'])
+@api.route("/projects/<int:project_id>/activities", methods=["POST"])
 @login_required
 def create_activity(project_id):
     """Create a new activity to an existing project."""
     if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
+        abort(400, {"message": "The request should be in JSON."})
 
     project = Project.query.get_or_404(project_id)
     if not current_user.is_admin and current_user not in project.moderators:
         abort(401)
 
     if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
-        abort(400, {'message': 'Activities may only be created on draft and ongoing projects.'})
+        abort(
+            400,
+            {
+                "message": "Activities may only be created on draft and ongoing projects."
+            },
+        )
 
-    in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
+    in_schema = ActivitySchema(exclude=("id", "project", "applications", "internal"))
 
     try:
         new_activity = in_schema.load(request.json)
     except ValidationError as err:
-        abort(400, {'message': err.messages})
+        abort(400, {"message": err.messages})
 
     new_activity.project = project
 
@@ -59,10 +70,11 @@ def create_activity(project_id):
     except IntegrityError as err:
         db.session.rollback()
         log.exception(err)
-        abort(400, {'message': 'Data integrity violated.'})
+        abort(400, {"message": "Data integrity violated."})
 
-    out_schema = ActivitySchema(exclude=('existing_application',),
-                                context={'user': current_user})
+    out_schema = ActivitySchema(
+        exclude=("existing_application",), context={"user": current_user}
+    )
     return out_schema.jsonify(new_activity)
 
 
@@ -73,31 +85,45 @@ class ActivityAPI(MethodView):
     def patch(self, project_id, activity_id):
         """Edit the activity."""
         if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
+            abort(400, {"message": "The request should be in JSON."})
 
         project = Project.query.get_or_404(project_id)
         if not current_user.is_admin and current_user not in project.moderators:
             abort(401)
 
         if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
-            abort(400, {'message': 'Activities may only be edited on draft and ongoing projects.'})
+            abort(
+                400,
+                {
+                    "message": "Activities may only be edited on draft and ongoing projects."
+                },
+            )
 
         activity = Activity.query.get_or_404(activity_id)
         if activity.internal:
             abort(404)
 
         if activity.project != project:
-            abort(400, {'message': 'The specified project and activity are unrelated.'})
+            abort(400, {"message": "The specified project and activity are unrelated."})
 
-        in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
+        in_schema = ActivitySchema(
+            exclude=("id", "project", "applications", "internal")
+        )
 
         try:
-            updated_activity = in_schema.load(request.json, instance=activity, partial=True)
+            updated_activity = in_schema.load(
+                request.json, instance=activity, partial=True
+            )
         except ValidationError as err:
-            abort(400, {'message': err.messages})
+            abort(400, {"message": err.messages})
 
         if not activity.fixed_reward and activity.reward_rate != IPTS_PER_HOUR:
-            abort(400, {'message': 'The reward rate for hourly activities may not be changed.'})
+            abort(
+                400,
+                {
+                    "message": "The reward rate for hourly activities may not be changed."
+                },
+            )
 
         try:
             db.session.add(updated_activity)
@@ -105,10 +131,11 @@ class ActivityAPI(MethodView):
         except IntegrityError as err:
             db.session.rollback()
             log.exception(err)
-            abort(400, {'message': 'Data integrity violated.'})
+            abort(400, {"message": "Data integrity violated."})
 
-        out_schema = ActivitySchema(exclude=('existing_application',),
-                                    context={'user': current_user})
+        out_schema = ActivitySchema(
+            exclude=("existing_application",), context={"user": current_user}
+        )
         return out_schema.jsonify(updated_activity)
 
     @login_required
@@ -119,14 +146,19 @@ class ActivityAPI(MethodView):
             abort(401)
 
         if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
-            abort(400, {'message': 'Activities may only be deleted on draft and ongoing projects.'})
+            abort(
+                400,
+                {
+                    "message": "Activities may only be deleted on draft and ongoing projects."
+                },
+            )
 
         activity = Activity.query.get_or_404(activity_id)
         if activity.internal:
             abort(404)
 
         if activity.project != project:
-            abort(400, {'message': 'The specified project and activity are unrelated.'})
+            abort(400, {"message": "The specified project and activity are unrelated."})
 
         db.session.delete(activity)
 
@@ -135,41 +167,44 @@ class ActivityAPI(MethodView):
         except IntegrityError as err:
             db.session.rollback()
             log.exception(err)
-            abort(400, {'message': 'Data integrity violated.'})
+            abort(400, {"message": "Data integrity violated."})
         return NO_PAYLOAD
 
 
-activity_api = ActivityAPI.as_view('activity_api')
-api.add_url_rule('/projects/<int:project_id>/activities/<int:activity_id>',
-                 view_func=activity_api,
-                 methods=('PATCH', 'DELETE'))
+activity_api = ActivityAPI.as_view("activity_api")
+api.add_url_rule(
+    "/projects/<int:project_id>/activities/<int:activity_id>",
+    view_func=activity_api,
+    methods=("PATCH", "DELETE"),
+)
 
 
 # ----- Competence -----
 
-@api.route('/competences')
+
+@api.route("/competences")
 def list_competences():
     """List all of the existing competences."""
     schema = CompetenceSchema(many=True)
     return schema.jsonify(Competence.query.all())
 
 
-@api.route('/competences', methods=['POST'])
+@api.route("/competences", methods=["POST"])
 @login_required
 def create_competence():
     """Create a new competence."""
     if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
+        abort(400, {"message": "The request should be in JSON."})
 
     if not current_user.is_admin:
         abort(401)
 
-    in_schema = CompetenceSchema(exclude=('id',))
+    in_schema = CompetenceSchema(exclude=("id",))
 
     try:
         new_competence = in_schema.load(request.json)
     except ValidationError as err:
-        abort(400, {'message': err.messages})
+        abort(400, {"message": err.messages})
 
     try:
         db.session.add(new_competence)
@@ -177,7 +212,7 @@ def create_competence():
     except IntegrityError as err:
         db.session.rollback()
         log.exception(err)
-        abort(400, {'message': 'Data integrity violated.'})
+        abort(400, {"message": "Data integrity violated."})
 
     out_schema = CompetenceSchema()
     return out_schema.jsonify(new_competence)
@@ -190,18 +225,20 @@ class CompetenceAPI(MethodView):
     def patch(self, compt_id):
         """Edit the competence."""
         if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
+            abort(400, {"message": "The request should be in JSON."})
 
         competence = Competence.query.get_or_404(compt_id)
         if not current_user.is_admin:
             abort(401)
 
-        in_schema = CompetenceSchema(exclude=('id',))
+        in_schema = CompetenceSchema(exclude=("id",))
 
         try:
-            updated_competence = in_schema.load(request.json, instance=competence, partial=True)
+            updated_competence = in_schema.load(
+                request.json, instance=competence, partial=True
+            )
         except ValidationError as err:
-            abort(400, {'message': err.messages})
+            abort(400, {"message": err.messages})
 
         try:
             db.session.add(updated_competence)
@@ -209,7 +246,7 @@ class CompetenceAPI(MethodView):
         except IntegrityError as err:
             db.session.rollback()
             log.exception(err)
-            abort(400, {'message': 'Data integrity violated.'})
+            abort(400, {"message": "Data integrity violated."})
 
         out_schema = CompetenceSchema()
         return out_schema.jsonify(updated_competence)
@@ -225,11 +262,11 @@ class CompetenceAPI(MethodView):
         except IntegrityError as err:
             db.session.rollback()
             log.exception(err)
-            abort(400, {'message': 'Data integrity violated.'})
+            abort(400, {"message": "Data integrity violated."})
         return NO_PAYLOAD
 
 
-competence_api = CompetenceAPI.as_view('competence_api')
-api.add_url_rule('/competences/<int:compt_id>',
-                 view_func=competence_api,
-                 methods=('PATCH', 'DELETE'))
+competence_api = CompetenceAPI.as_view("competence_api")
+api.add_url_rule(
+    "/competences/<int:compt_id>", view_func=competence_api, methods=("PATCH", "DELETE")
+)

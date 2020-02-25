@@ -8,6 +8,7 @@ from sqlalchemy.ext.compiler import compiles
 
 # Source: https://github.com/sqlalchemy/sqlalchemy/issues/3566#issuecomment-441931331
 
+
 class as_row(ColumnElement):
     def __init__(self, expr):
         assert isinstance(expr, Alias)

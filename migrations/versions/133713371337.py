@@ -10,15 +10,24 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '133713371337'
-down_revision = '1d3051931992'
+revision = "133713371337"
+down_revision = "1d3051931992"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    op.create_index('unique_varieties', 'varieties', ['product_id', sa.text("coalesce(color_value, '')"), sa.text("coalesce(size_id, '')")], unique=True)
+    op.create_index(
+        "unique_varieties",
+        "varieties",
+        [
+            "product_id",
+            sa.text("coalesce(color_value, '')"),
+            sa.text("coalesce(size_id, '')"),
+        ],
+        unique=True,
+    )
 
 
 def downgrade():
-    op.drop_index('unique_varieties', 'varieties')
+    op.drop_index("unique_varieties", "varieties")

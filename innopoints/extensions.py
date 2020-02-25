@@ -21,10 +21,10 @@ cors = CORS()
 
 oauth = OAuth()
 oauth.register(
-    'innopolis_sso',
+    "innopolis_sso",
     server_metadata_url=f'{os.environ["INNOPOLIS_SSO_BASE"]}/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid'},
+    client_kwargs={"scope": "openid"},
 )
 
 login_manager = LoginManager()
-login_manager.session_protection = 'basic'
+login_manager.session_protection = "basic"

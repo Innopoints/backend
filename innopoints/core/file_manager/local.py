@@ -8,7 +8,8 @@ from .base import FileManagerBase
 
 class FileManagerLocal(FileManagerBase):
     """Implementation of the file manager using local file system."""
-    def __init__(self, url='./static_files/'):
+
+    def __init__(self, url="./static_files/"):
         super().__init__(url)
         if not os.path.exists(url):
             os.makedirs(url)
@@ -22,7 +23,7 @@ class FileManagerLocal(FileManagerBase):
         path = self._join_base(handle)
         if not os.path.exists(path):
             raise FileNotFoundError()
-        file = open(path, 'rb')
+        file = open(path, "rb")
         return file.read()
 
     def store(self, file: FileStorage, handle: str):

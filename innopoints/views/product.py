@@ -35,67 +35,84 @@ from innopoints.models import (
 )
 from innopoints.schemas import ProductSchema
 
-NO_PAYLOAD = ('', 204)
+NO_PAYLOAD = ("", 204)
 log = logging.getLogger(__name__)
 
 
-@api.route('/products')
+@api.route("/products")
 def list_products():
     """List products available in InnoStore."""
     # pylint: disable=bad-continuation, invalid-unary-operand-type
     purchases = (
-        db.session.query(StockChange.variety_id,
-                         db.func.sum(StockChange.amount).label('variety_purchases'))
-            .join(Account)
-            .filter(StockChange.amount < 0,
-                    StockChange.status != StockChangeStatus.rejected,
-                    ~Account.is_admin)
-            .group_by(StockChange.variety_id).subquery()
+        db.session.query(
+            StockChange.variety_id,
+            db.func.sum(StockChange.amount).label("variety_purchases"),
+        )
+        .join(Account)
+        .filter(
+            StockChange.amount < 0,
+            StockChange.status != StockChangeStatus.rejected,
+            ~Account.is_admin,
+        )
+        .group_by(StockChange.variety_id)
+        .subquery()
     )
     color_array = db.func.ARRAY_AGG(Variety.color)
     default_limit = 24
     default_page = 1
-    default_order_by = 'addition_time'
-    default_order = 'asc'
+    default_order_by = "addition_time"
+    default_order = "asc"
     ordering = {
-        ('addition_time', 'asc'): Product.addition_time.asc(),
-        ('addition_time', 'desc'): Product.addition_time.desc(),
-        ('price', 'asc'): Product.price.asc(),
-        ('price', 'desc'): Product.price.desc(),
-        ('purchases', 'asc'): db.nullsfirst(db.asc(-db.func.sum(purchases.c.variety_purchases))),
-        ('purchases', 'desc'): db.nullslast(db.desc(-db.func.sum(purchases.c.variety_purchases))),
+        ("addition_time", "asc"): Product.addition_time.asc(),
+        ("addition_time", "desc"): Product.addition_time.desc(),
+        ("price", "asc"): Product.price.asc(),
+        ("price", "desc"): Product.price.desc(),
+        ("purchases", "asc"): db.nullsfirst(
+            db.asc(-db.func.sum(purchases.c.variety_purchases))
+        ),
+        ("purchases", "desc"): db.nullslast(
+            db.desc(-db.func.sum(purchases.c.variety_purchases))
+        ),
     }
 
     try:
-        limit = int(request.args.get('limit', default_limit))
-        page = int(request.args.get('page', default_page))
-        order_by = request.args.get('order_by', default_order_by)
-        order = request.args.get('order', default_order)
-        excluded_colors = json.loads(request.args.get('excluded_colors', '[]'))
-        min_price = request.args.get('min_price', 0, int)
-        max_price = request.args.get('max_price', type=int)
+        limit = int(request.args.get("limit", default_limit))
+        page = int(request.args.get("page", default_page))
+        order_by = request.args.get("order_by", default_order_by)
+        order = request.args.get("order", default_order)
+        excluded_colors = json.loads(request.args.get("excluded_colors", "[]"))
+        min_price = request.args.get("min_price", 0, int)
+        max_price = request.args.get("max_price", type=int)
     except ValueError:
-        abort(400, {'message': 'Bad query parameters.'})
+        abort(400, {"message": "Bad query parameters."})
 
     if max_price is not None and max_price < min_price:
-        abort(400, {'message': 'Maximum price cannot be lower than minimum.'})
+        abort(400, {"message": "Maximum price cannot be lower than minimum."})
 
-    if not isinstance(excluded_colors, list) or not \
-        all(item is None or isinstance(item, str) for item in excluded_colors):
-        abort(400, {'message': 'Excluded colors has to be an array of strings and possibly null.'})
+    if not isinstance(excluded_colors, list) or not all(
+        item is None or isinstance(item, str) for item in excluded_colors
+    ):
+        abort(
+            400,
+            {
+                "message": "Excluded colors has to be an array of strings and possibly null."
+            },
+        )
 
     if limit < 1 or page < 1:
-        abort(400, {'message': 'Limit and page number must be positive.'})
+        abort(400, {"message": "Limit and page number must be positive."})
 
     if (order_by, order) not in ordering:
-        abort(400, {'message': 'Invalid ordering specified.'})
+        abort(400, {"message": "Invalid ordering specified."})
 
     db_query = Product.query
-    if 'q' in request.args:
+    if "q" in request.args:
         like_query = f'%{request.args["q"]}%'
-        or_condition = or_(Product.name.ilike(like_query),
-                           Product.type.ilike(like_query),
-                           Product.description.ilike(like_query))
+        or_condition = or_(
+            Product.name.ilike(like_query),
+            Product.type.ilike(like_query),
+            Product.description.ilike(like_query),
+        )
         db_query = db_query.filter(or_condition).distinct()
 
     if excluded_colors:
@@ -103,10 +120,9 @@ def list_products():
         if None in excluded_colors:
             db_query = db_query.filter(Variety.color.isnot(None))
             excluded_colors.remove(None)
-        excluded_colors = [color.lstrip('#') for color in excluded_colors]
-        db_query = (
-            db_query.group_by(Product)
-                .having(~(color_array.cast(db.ARRAY(db.Text)).op('<@')(excluded_colors)))
+        excluded_colors = [color.lstrip("#") for color in excluded_colors]
+        db_query = db_query.group_by(Product).having(
+            ~(color_array.cast(db.ARRAY(db.Text)).op("<@")(excluded_colors))
         )
 
     db_query = db_query.filter(Product.price >= min_price)
@@ -114,54 +130,64 @@ def list_products():
         db_query = db_query.filter(Product.price <= max_price)
 
     count = db.session.query(db_query.subquery()).count()
-    if order_by == 'purchases':
+    if order_by == "purchases":
         if excluded_colors:
-            abort(400, {'message': 'Ordering by purchases is not allowed when filtering.'})
+            abort(
+                400, {"message": "Ordering by purchases is not allowed when filtering."}
+            )
         db_query = (
             db_query.join(Variety)
-                .outerjoin(purchases, Variety.id == purchases.c.variety_id)
-                .group_by(Product)
+            .outerjoin(purchases, Variety.id == purchases.c.variety_id)
+            .group_by(Product)
         )
-
 
     db_query = db_query.order_by(ordering[order_by, order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
 
-    schema = ProductSchema(many=True, exclude=('description',
-                                               'varieties.stock_changes',
-                                               'varieties.product',
-                                               'varieties.product_id'))
-    return jsonify(pages=math.ceil(count / limit),
-                   data=schema.dump(db_query.all()))
+    schema = ProductSchema(
+        many=True,
+        exclude=(
+            "description",
+            "varieties.stock_changes",
+            "varieties.product",
+            "varieties.product_id",
+        ),
+    )
+    return jsonify(pages=math.ceil(count / limit), data=schema.dump(db_query.all()))
 
 
-@api.route('/products', methods=['POST'])
+@api.route("/products", methods=["POST"])
 @login_required
 def create_product():
     """Create a new product."""
     if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
+        abort(400, {"message": "The request should be in JSON."})
 
     if not current_user.is_admin:
         abort(401)
 
-    in_schema = ProductSchema(exclude=('id', 'addition_time',
-                                       'varieties.stock_changes.variety_id',
-                                       'varieties.product_id',
-                                       'varieties.images.variety_id'),
-                              context={'user': current_user})
+    in_schema = ProductSchema(
+        exclude=(
+            "id",
+            "addition_time",
+            "varieties.stock_changes.variety_id",
+            "varieties.product_id",
+            "varieties.images.variety_id",
+        ),
+        context={"user": current_user},
+    )
 
     try:
         new_product = in_schema.load(request.json)
     except ValidationError as err:
-        abort(400, {'message': err.messages})
+        abort(400, {"message": err.messages})
 
     duplicate = Product.query.filter_by(name=new_product.name, type=new_product.type)
     if db.session.query(duplicate.exists()).scalar():
-        abort(400, {'message': 'A product with this name and type exists.'})
+        abort(400, {"message": "A product with this name and type exists."})
 
     if not new_product.varieties:
-        abort(400, {'message': 'Please provide at least one variety.'})
+        abort(400, {"message": "Please provide at least one variety."})
 
     try:
         for variety in new_product.varieties:
@@ -174,52 +200,63 @@ def create_product():
     except IntegrityError as err:
         db.session.rollback()
         log.exception(err)
-        abort(400, {'message': 'Data integrity violated.'})
+        abort(400, {"message": "Data integrity violated."})
 
     # TODO: replace the following with proper debounce
     # Check if a notification has been sent today
     already_sent = Notification.query.filter(
         Notification.type == NotificationType.new_arrivals,
-        Notification.timestamp >= date.today()
+        Notification.timestamp >= date.today(),
     ).exists()
     if not db.session.query(already_sent).scalar():
         users = Account.query.filter_by(is_admin=False).all()
         notify_all(users, NotificationType.new_arrivals)
 
-    out_schema = ProductSchema(exclude=('varieties.product_id',
-                                        'varieties.product',
-                                        'varieties.images.variety_id',
-                                        'varieties.images.id',
-                                        'varieties.stock_changes'))
+    out_schema = ProductSchema(
+        exclude=(
+            "varieties.product_id",
+            "varieties.product",
+            "varieties.images.variety_id",
+            "varieties.images.id",
+            "varieties.stock_changes",
+        )
+    )
     return out_schema.jsonify(new_product)
 
 
 class ProductDetailAPI(MethodView):
     """REST views for the Product model"""
+
     def get(self, product_id):
         """Get a single product."""
         product = Product.query.get_or_404(product_id)
-        schema = ProductSchema(exclude=('varieties.stock_changes',
-                                        'varieties.product',
-                                        'varieties.product_id'))
+        schema = ProductSchema(
+            exclude=(
+                "varieties.stock_changes",
+                "varieties.product",
+                "varieties.product_id",
+            )
+        )
         return schema.jsonify(product)
 
     @login_required
     def patch(self, product_id):
         """Edit the product."""
         if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
+            abort(400, {"message": "The request should be in JSON."})
 
         if not current_user.is_admin:
             abort(401)
         product = Product.query.get_or_404(product_id)
 
-        in_out_schema = ProductSchema(exclude=('id', 'varieties', 'addition_time'))
+        in_out_schema = ProductSchema(exclude=("id", "varieties", "addition_time"))
 
         try:
-            updated_product = in_out_schema.load(request.json, instance=product, partial=True)
+            updated_product = in_out_schema.load(
+                request.json, instance=product, partial=True
+            )
         except ValidationError as err:
-            abort(400, {'message': err.messages})
+            abort(400, {"message": err.messages})
 
         try:
             db.session.add(updated_product)
@@ -227,7 +264,7 @@ class ProductDetailAPI(MethodView):
         except IntegrityError as err:
             db.session.rollback()
             log.exception(err)
-            abort(400, {'message': 'Data integrity violated.'})
+            abort(400, {"message": "Data integrity violated."})
 
         return in_out_schema.jsonify(updated_product)
 
@@ -244,11 +281,13 @@ class ProductDetailAPI(MethodView):
         except IntegrityError as err:
             db.session.rollback()
             log.exception(err)
-            abort(400, {'message': 'Data integrity violated.'})
+            abort(400, {"message": "Data integrity violated."})
         return NO_PAYLOAD
 
 
-product_api = ProductDetailAPI.as_view('product_api')
-api.add_url_rule('/products/<int:product_id>',
-                 view_func=product_api,
-                 methods=('GET', 'PATCH', 'DELETE'))
+product_api = ProductDetailAPI.as_view("product_api")
+api.add_url_rule(
+    "/products/<int:product_id>",
+    view_func=product_api,
+    methods=("GET", "PATCH", "DELETE"),
+)

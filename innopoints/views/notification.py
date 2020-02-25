@@ -13,20 +13,22 @@ from innopoints.extensions import db
 from innopoints.models import Notification
 from innopoints.schemas import NotificationSchema
 
-NO_PAYLOAD = ('', 204)
+NO_PAYLOAD = ("", 204)
 
 
-@api.route('/notifications')
+@api.route("/notifications")
 @login_required
 def get_notifications():
     """Gets all notifications of the current user."""
-    query = Notification.query.filter_by(recipient_email=current_user.email).order_by(Notification.timestamp.desc())
-    if 'unread' in request.args:
+    query = Notification.query.filter_by(recipient_email=current_user.email).order_by(
+        Notification.timestamp.desc()
+    )
+    if "unread" in request.args:
         query = query.filter_by(is_read=False)
     return NotificationSchema(many=True).jsonify(query.all())
 
 
-@api.route('/notifications/<int:notification_id>/read', methods=['PATCH'])
+@api.route("/notifications/<int:notification_id>/read", methods=["PATCH"])
 @login_required
 def read_notification(notification_id):
     """Marks a notification as read."""
