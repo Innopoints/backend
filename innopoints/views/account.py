@@ -78,7 +78,7 @@ def get_info(email):
     if email is None:
         user = current_user
     else:
-        if not current_user.is_admin:
+        if not current_user.is_admin and email != current_user.email:
             abort(401)
         user = Account.query.get_or_404(email)
 
@@ -166,7 +166,7 @@ def get_timeline(email):
     if email is None:
         user = current_user
     else:
-        if not current_user.is_admin:
+        if not current_user.is_admin and email != current_user.email:
             abort(401)
         user = Account.query.get_or_404(email)
 
@@ -300,7 +300,7 @@ def get_statistics(email):
     if email is None:
         user = current_user
     else:
-        if not current_user.is_admin:
+        if not current_user.is_admin and email != current_user.email:
             abort(401)
         user = Account.query.get_or_404(email)
 
@@ -371,7 +371,7 @@ def get_notification_settings(email):
     if email is None:
         user = current_user
     else:
-        if not current_user.is_admin:
+        if not current_user.is_admin and email != current_user.email:
             abort(401)
         user = Account.query.get_or_404(email)
 
@@ -415,7 +415,7 @@ def change_telegram(email):
     if email is None:
         user = current_user
     else:
-        if not current_user.is_admin:
+        if not current_user.is_admin and email != current_user.email:
             abort(401)
         user = Account.query.get_or_404(email)
 
@@ -445,7 +445,7 @@ def change_notification_settings(email):
     if email is None:
         user = current_user
     else:
-        if not current_user.is_admin:
+        if not current_user.is_admin and email != current_user.email:
             abort(401)
         user = Account.query.get_or_404(email)
 
