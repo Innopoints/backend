@@ -58,7 +58,7 @@ class ActivitySchema(ma.ModelSchema):
 
     def get_applications(self, activity):
         """Retrieve the approved applications for a particular activity."""
-        fields = ['id', 'applicant']
+        fields = ['id', 'applicant', 'status']
         filtering = {'activity_id': activity.id,
                      'status': ApplicationStatus.approved}
 
@@ -77,7 +77,8 @@ class ActivitySchema(ma.ModelSchema):
     def get_existing_application(self, activity):
         """Using the user information from the context, provide a shorthand
         for the existing application of a volunteer."""
-        appl_schema = ApplicationSchema(only=('id', 'telegram_username', 'comment'))
+        appl_schema = ApplicationSchema(only=('id', 'telegram_username', 'comment',
+                                              'actual_hours', 'status'))
         if 'user' in self.context and self.context['user'].is_authenticated:
             application = Application.query.filter_by(applicant_email=self.context['user'].email,
                                                       activity_id=activity.id).one_or_none()
