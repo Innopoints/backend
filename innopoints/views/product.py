@@ -22,7 +22,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
-from innopoints.core.notifications import notify_all
+from innopoints.core.notifications import notify_all, remove_notifications
 from innopoints.extensions import db
 from innopoints.models import (
     Account,
@@ -245,6 +245,9 @@ class ProductDetailAPI(MethodView):
             db.session.rollback()
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
+        remove_notifications({
+            'product_id': product_id,
+        })
         return NO_PAYLOAD
 
 
