@@ -30,7 +30,7 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
-from innopoints.core.notifications import notify_all, notify
+from innopoints.core.notifications import notify_all, notify, remove_notifications
 from innopoints.models import (
     Account,
     Color,
@@ -156,6 +156,9 @@ class VarietyAPI(MethodView):
             db.session.rollback()
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
+        remove_notifications({
+            'variety_id': variety_id,
+        })
         return NO_PAYLOAD
 
 
@@ -269,6 +272,9 @@ def edit_purchase_status(stock_change_id):
         product = variety.product
         if status == StockChangeStatus.rejected:
             db.session.delete(stock_change.transaction)
+            remove_notifications({
+                'transaction_id': stock_change.transaction.id,
+            })
         elif stock_change.status == StockChangeStatus.rejected:
             new_transaction = Transaction(account=stock_change.account,
                                           change=product.price * stock_change.amount,
