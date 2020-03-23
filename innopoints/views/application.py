@@ -19,7 +19,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
-from innopoints.core.notifications import notify, notify_all
+from innopoints.core.notifications import notify, notify_all, remove_notifications
 from innopoints.core.timezone import tz_aware_now
 from innopoints.extensions import db
 from innopoints.models import (
@@ -108,6 +108,9 @@ def take_back_application(project_id, activity_id):
     db.session.delete(application)
     try:
         db.session.commit()
+        remove_notifications({
+            'application_id': application.id,
+        })
     except IntegrityError as err:
         db.session.rollback()
         log.exception(err)

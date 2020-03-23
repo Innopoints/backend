@@ -30,7 +30,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
-from innopoints.core.notifications import notify, notify_all
+from innopoints.core.notifications import notify, notify_all, remove_notifications
 from innopoints.extensions import db
 from innopoints.models import (
     Account,
@@ -509,6 +509,8 @@ class ProjectDetailAPI(MethodView):
         project = Project.query.get_or_404(project_id)
         if not current_user.is_admin and current_user != project.creator:
             abort(401)
+        if project.lifetime_stage == LifetimeStage.finished:
+            abort(400, {'message': 'Cannot delete a finished project'})
 
         try:
             db.session.delete(project)
@@ -517,6 +519,9 @@ class ProjectDetailAPI(MethodView):
             db.session.rollback()
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
+        remove_notifications({
+            'project_id': project_id,
+        })
         return NO_PAYLOAD
 
 

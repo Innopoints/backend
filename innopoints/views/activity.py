@@ -23,6 +23,7 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
+from innopoints.core.notifications import remove_notifications
 from innopoints.models import Activity, Project, IPTS_PER_HOUR, Competence, LifetimeStage
 from innopoints.schemas import ActivitySchema, CompetenceSchema
 
@@ -132,6 +133,9 @@ class ActivityAPI(MethodView):
 
         try:
             db.session.commit()
+            remove_notifications({
+                'activity_id': activity_id,
+            })
         except IntegrityError as err:
             db.session.rollback()
             log.exception(err)
