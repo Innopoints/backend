@@ -509,6 +509,8 @@ class ProjectDetailAPI(MethodView):
         project = Project.query.get_or_404(project_id)
         if not current_user.is_admin and current_user != project.creator:
             abort(401)
+        if project.lifetime_stage == LifetimeStage.finished:
+            abort(400, {'message': 'Cannot delete a finished project'})
 
         try:
             db.session.delete(project)
