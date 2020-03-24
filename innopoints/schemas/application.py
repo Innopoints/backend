@@ -35,7 +35,7 @@ class FeedbackSchema(ma.ModelSchema):
         model = Feedback
         ordered = True
         sqla_session = db.session
-        exclude=('transaction',)
+        exclude = ('transaction',)
 
     @pre_load
     def wrap_competences(self, data, **kwargs):  # pylint: disable=unused-argument
