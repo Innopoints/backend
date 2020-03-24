@@ -84,7 +84,9 @@ class Transaction(db.Model):
                               nullable=False)
     # property `account` created with a backref
     change = db.Column(db.Integer, nullable=False)
-    stock_change_id = db.Column(db.Integer, db.ForeignKey('stock_changes.id'), nullable=True)
+    stock_change_id = db.Column(db.Integer,
+                            db.ForeignKey('stock_changes.id', ondelete='CASCADE'),
+                            nullable=True)
     feedback_id = db.Column(db.Integer,
                             db.ForeignKey('feedback.application_id', ondelete='SET NULL'),
                             nullable=True)
