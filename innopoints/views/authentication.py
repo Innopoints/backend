@@ -45,7 +45,7 @@ def authorize():
     if user is None:
         user = Account(email=userinfo['email'],
                        full_name=userinfo['commonname'],
-                       group=userinfo['role'],
+                       group=userinfo.get('role'),
                        is_admin=current_app.config['IS_ADMIN'](userinfo))
         db.session.add(user)
         db.session.commit()
@@ -53,8 +53,8 @@ def authorize():
     if user.full_name != userinfo['commonname']:
         user.full_name = userinfo['commonname']
 
-    if user.group != userinfo['role']:
-        user.group = userinfo['role']
+    if user.group != userinfo.get('role'):
+        user.group = userinfo.get('role')
 
     if user.is_admin != current_app.config['IS_ADMIN'](userinfo):
         user.is_admin = current_app.config['IS_ADMIN'](userinfo)
