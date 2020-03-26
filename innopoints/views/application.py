@@ -3,7 +3,7 @@
 Application:
 - POST   /projects/{project_id}/activities/{activity_id}/applications
 - DELETE /projects/{project_id}/activities/{activity_id}/applications
-- PATCH  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/status
+- PATCH  /projects/{project_id}/activities/{activity_id}/applications/{application_id}
 
 VolunteeringReport:
 - GET  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report_info
@@ -120,7 +120,7 @@ def take_back_application(project_id, activity_id):
 
 
 @api.route('/projects/<int:project_id>/activities/<int:activity_id>'
-           '/applications/<int:application_id>/status', methods=['PATCH'])
+           '/applications/<int:application_id>', methods=['PATCH'])
 @login_required
 def edit_application(project_id, activity_id, application_id):
     """Change the status or the actual hours of an application."""
@@ -137,25 +137,23 @@ def edit_application(project_id, activity_id, application_id):
     if current_user not in project.moderators and not current_user.is_admin:
         abort(401)
 
-    if activity.internal:
-        if project.lifetime_stage != LifetimeStage.finalizing:
-            abort(400, {'message': 'Internal activity applications may only be edited '
-                                   'in the finalizing stage.'})
-    else:
-        if project.lifetime_stage != LifetimeStage.ongoing:
-            abort(400, {'message': 'The application may only be edited for ongoing projects.'})
-
     old_status = application.status
     if 'status' in request.json:
+        if project.lifetime_stage != LifetimeStage.ongoing:
+            abort(400, {'message': 'The status of applications may only be changed '
+                                   'for ongoing projects.'})
         try:
             status = getattr(ApplicationStatus, request.json['status'])
         except AttributeError:
             abort(400, {'message': 'A valid application status must be specified.'})
         if activity.internal and old_status != status:
-            abort(400, {'message': 'Cannot modify the status of internal activities.'})
+            abort(400, {'message': 'Cannot modify the status of internal applications.'})
         application.status = status
 
     if 'actual_hours' in request.json:
+        if project.lifetime_stage != LifetimeStage.finalizing:
+            abort(400, {'message': 'The actual hours of applications may only be changed '
+                                   'for finalizing projects.'})
         actual_hours = request.json['actual_hours']
         if not isinstance(actual_hours, int) or actual_hours < 0:
             abort(400, {'message': 'Actual hours must be a non-negative integer.'})
