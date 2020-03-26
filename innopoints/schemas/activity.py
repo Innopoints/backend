@@ -59,7 +59,7 @@ class ActivitySchema(ma.ModelSchema):
     def get_applications(self, activity):
         """Retrieve the applications for a particular activity.
            For non-moderators will only return the approved applications."""
-        fields = ['id', 'applicant', 'status']
+        fields = ['id', 'applicant', 'status', 'actual_hours']
         filtering = {'activity_id': activity.id,
                      'status': ApplicationStatus.approved}
 
