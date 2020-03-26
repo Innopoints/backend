@@ -23,7 +23,7 @@ FRONTEND_BASE = 'https://ipts.innopolis.university'
 # Until the SSO is properly set up with admin group
 admins = [
     'a.blakunovs@innopolis.ru',
-    'a.abounegm@innopolis.university',
+    'innopoints@innopolis.university',
 ]
 
 def is_admin(userinfo):  # pylint: disable=unused-argument
