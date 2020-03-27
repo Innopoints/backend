@@ -8,6 +8,9 @@ Application:
 VolunteeringReport:
 - GET  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report_info
 - POST /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
+
+Feedback:
+- POST /projects/{project_id}/activities/{activity_id}/applications/{application_id}/feedback
 """
 
 import logging
@@ -266,25 +269,6 @@ def create_report(project_id, activity_id, application_id):
 
 
 # ----- Feedback -----
-
-@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
-           '/applications/<int:application_id>/feedback')
-@login_required
-def read_feedback(project_id, activity_id, application_id):
-    """Get the feedback from a volunteer on a particular volunteering experience."""
-    application = Application.query.get_or_404(application_id)
-    activity = Activity.query.get_or_404(activity_id)
-    project = Project.query.get_or_404(project_id)
-
-    if activity.project != project or application.activity_id != activity.id:
-        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
-
-    if current_user not in project.moderators and not current_user.is_admin:
-        abort(401)
-
-    out_schema = FeedbackSchema()
-    return out_schema.jsonify(application.feedback)
-
 
 @api.route('/projects/<int:project_id>/activities/<int:activity_id>'
            '/applications/<int:application_id>/feedback', methods=['POST'])
