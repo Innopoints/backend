@@ -41,6 +41,9 @@ class Application(db.Model):
     feedback = db.relationship('Feedback',
                                uselist=False,
                                cascade='all, delete-orphan')
+    activity = db.relationship('Activity',
+                               uselist=False,
+                               single_parent=True)
 
 
 class VolunteeringReport(db.Model):
@@ -61,6 +64,9 @@ class VolunteeringReport(db.Model):
                        db.CheckConstraint('rating <= 5 AND rating >= 1'),
                        nullable=False)
     content = db.Column(db.String(1024), nullable=True)
+    application = db.relationship('Application',
+                                  uselist=False,
+                                  single_parent=True)
 
 
 class Feedback(db.Model):
