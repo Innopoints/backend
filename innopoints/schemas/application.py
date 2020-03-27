@@ -14,7 +14,6 @@ class ApplicationSchema(ma.ModelSchema):
         model = Application
         ordered = True
         sqla_session = db.session
-        exclude = ('report',)
 
     status = EnumField(ApplicationStatus)
     applicant = ma.Nested('AccountSchema', only=('full_name', 'email'))
