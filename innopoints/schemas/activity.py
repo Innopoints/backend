@@ -72,6 +72,7 @@ class ActivitySchema(ma.ModelSchema):
             fields.append('comment')
             fields.append('actual_hours')
             fields.append('feedback')
+            fields.append('reports')
 
         appl_schema = ApplicationSchema(only=fields, many=True)
         applications = Application.query.filter_by(**filtering)

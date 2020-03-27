@@ -36,9 +36,8 @@ class Application(db.Model):
                        nullable=False,
                        default=ApplicationStatus.pending)
     actual_hours = db.Column(db.Integer, nullable=False)
-    report = db.relationship('VolunteeringReport',
-                             uselist=False,
-                             cascade='all, delete-orphan')
+    reports = db.relationship('VolunteeringReport',
+                              cascade='all, delete-orphan')
     feedback = db.relationship('Feedback',
                                uselist=False,
                                cascade='all, delete-orphan')
