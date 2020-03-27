@@ -14,10 +14,11 @@ class ApplicationSchema(ma.ModelSchema):
         model = Application
         ordered = True
         sqla_session = db.session
-        exclude = ('report', 'feedback')
+        exclude = ('report',)
 
     status = EnumField(ApplicationStatus)
     applicant = ma.Nested('AccountSchema', only=('full_name', 'email'))
+    feedback = ma.Nested('FeedbackSchema', exclude=('time',))
     telegram_username = ma.Str(data_key='telegram')
 
 
