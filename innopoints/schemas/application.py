@@ -21,12 +21,36 @@ class ApplicationSchema(ma.ModelSchema):
     telegram_username = ma.Str(data_key='telegram')
 
 
+class ActivityProjectSchema(ma.ModelSchema):
+    '''An intermediate schema for VolunteeringReportSchema to get the project name.'''
+    class Meta:
+        model = Application
+        fields = ('project', 'name')
+        sqla_session = db.session
+
+    project = ma.Nested('ProjectSchema', only=('name', 'id'))
+
+
+class ApplicationActivitySchema(ma.ModelSchema):
+    '''An intermediate schema for VolunteeringReportSchema to get the activity name.'''
+    class Meta:
+        model = Application
+        fields = ('activity',)
+        sqla_session = db.session
+
+    activity = ma.Nested('ActivityProjectSchema')
+
+
 class VolunteeringReportSchema(ma.ModelSchema):
     class Meta:
         model = VolunteeringReport
         ordered = True
+        include_fk = True
         sqla_session = db.session
 
+    reporter_email = ma.Str(dump_only=True)
+    application_id = ma.Int(dump_only=True)
+    application = ma.Nested('ApplicationActivitySchema', data_key='application_on')
     rating = ma.Int(validate=validate.Range(min=1, max=5))
 
 

@@ -220,7 +220,7 @@ def get_report_info(project_id, activity_id, application_id):
         project_moderation.c.project_id == project_id,
     ).all()
 
-    out_schema = VolunteeringReportSchema(only=('content', 'rating', 'time'), many=True)
+    out_schema = VolunteeringReportSchema(only=('content', 'rating', 'time', 'application'), many=True)
     return jsonify(average_rating=int(avg_rating), reports=out_schema.dump(reports))
 
 
