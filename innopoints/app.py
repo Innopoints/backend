@@ -10,7 +10,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import psycopg2
 import sqlalchemy.exc
 
-from innopoints.extensions import db, ma, cors, oauth, login_manager
+from innopoints.extensions import db, ma, oauth, login_manager
 from innopoints.blueprints import all_blueprints
 
 log = logging.getLogger(__name__)
@@ -77,7 +77,6 @@ def create_app(config='config/prod.py'):
     })
 
     ma.init_app(app)
-    cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     oauth.init_app(app)
     login_manager.init_app(app)
 

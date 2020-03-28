@@ -21,7 +21,6 @@ marshmallow-sqlalchemy = "*"
 marshmallow-enum = "*"
 marshmallow = "*"
 flask-migrate = "*"
-flask-cors = "*"
 python-dotenv = "*"
 
 [requires]
