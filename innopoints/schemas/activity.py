@@ -59,7 +59,7 @@ class ActivitySchema(ma.ModelSchema):
     def get_applications(self, activity):
         """Retrieve the applications for a particular activity.
            For non-moderators will only return the approved applications."""
-        fields = ['id', 'applicant', 'status', 'actual_hours']
+        fields = ['id', 'applicant', 'status']
         filtering = {'activity_id': activity.id,
                      'status': ApplicationStatus.approved}
 
@@ -70,6 +70,9 @@ class ActivitySchema(ma.ModelSchema):
             filtering.pop('status')
             fields.append('telegram_username')
             fields.append('comment')
+            fields.append('actual_hours')
+            fields.append('feedback')
+            fields.append('reports')
 
         appl_schema = ApplicationSchema(only=fields, many=True)
         applications = Application.query.filter_by(**filtering)
@@ -79,7 +82,7 @@ class ActivitySchema(ma.ModelSchema):
         """Using the user information from the context, provide a shorthand
         for the existing application of a volunteer."""
         appl_schema = ApplicationSchema(only=('id', 'telegram_username', 'comment',
-                                              'actual_hours', 'status'))
+                                              'actual_hours', 'status', 'feedback'))
         if 'user' in self.context and self.context['user'].is_authenticated:
             application = Application.query.filter_by(applicant_email=self.context['user'].email,
                                                       activity_id=activity.id).one_or_none()

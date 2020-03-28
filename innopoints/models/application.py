@@ -36,12 +36,14 @@ class Application(db.Model):
                        nullable=False,
                        default=ApplicationStatus.pending)
     actual_hours = db.Column(db.Integer, nullable=False)
-    report = db.relationship('VolunteeringReport',
-                             uselist=False,
-                             cascade='all, delete-orphan')
+    reports = db.relationship('VolunteeringReport',
+                              cascade='all, delete-orphan')
     feedback = db.relationship('Feedback',
                                uselist=False,
                                cascade='all, delete-orphan')
+    activity = db.relationship('Activity',
+                               uselist=False,
+                               single_parent=True)
 
 
 class VolunteeringReport(db.Model):
@@ -62,6 +64,9 @@ class VolunteeringReport(db.Model):
                        db.CheckConstraint('rating <= 5 AND rating >= 1'),
                        nullable=False)
     content = db.Column(db.String(1024), nullable=True)
+    application = db.relationship('Application',
+                                  uselist=False,
+                                  single_parent=True)
 
 
 class Feedback(db.Model):
