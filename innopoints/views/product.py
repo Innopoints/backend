@@ -56,7 +56,7 @@ def list_products():
     default_limit = 24
     default_page = 1
     default_order_by = 'addition_time'
-    default_order = 'asc'
+    default_order = 'desc'
     ordering = {
         ('addition_time', 'asc'): Product.addition_time.asc(),
         ('addition_time', 'desc'): Product.addition_time.desc(),
