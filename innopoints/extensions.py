@@ -8,6 +8,7 @@ import os
 
 from authlib.integrations.flask_client import OAuth
 from flask_login import LoginManager
+from flask_mail import Mail
 from flask_marshmallow import Marshmallow
 from flask_sqlalchemy import SQLAlchemy
 
@@ -25,3 +26,5 @@ oauth.register(
 
 login_manager = LoginManager()
 login_manager.session_protection = 'basic'
+
+mail = Mail()
