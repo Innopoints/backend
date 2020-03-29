@@ -55,7 +55,7 @@ def list_ongoing_projects():
     first_activity = db.func.min(Activity.start_date)
     competence_array = db.func.ARRAY_AGG(activity_competence.c.competence_id)
     default_order_by = 'creation_time'
-    default_order = 'asc'
+    default_order = 'desc'
     ordering = {
         ('creation_time', 'asc'): Project.creation_time.asc(),
         ('creation_time', 'desc'): Project.creation_time.desc(),
