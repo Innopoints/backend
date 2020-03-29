@@ -1,12 +1,15 @@
 """Helper module for sending notifications, depending on the user preference"""
 
 import logging
+import threading
 from typing import List
 
+from flask import copy_current_request_context
 from sqlalchemy.exc import IntegrityError
 
-from innopoints.extensions import db
+from innopoints.extensions import db, mail
 from innopoints.models import Notification, NotificationType, Account, type_to_group
+from innopoints.core.email import get_email_message
 
 log = logging.getLogger(__name__)
 
@@ -20,8 +23,15 @@ def notify(recipient_email: str, notification_type: NotificationType, payload=No
     ).filter_by(email=recipient_email).scalar()
 
     if channel == 'email':
-        # TODO: send Email
-        pass
+        message = get_email_message(notification_type, payload, recipient_email)
+
+        @copy_current_request_context
+        def send_mail_async(message):
+            mail.send(message)
+
+        mail_thread = threading.Thread(name='mail_sender', target=send_mail_async, args=(message,))
+        mail_thread.start()
+        log.info(f'Sent an email to {recipient_email}')
     elif channel == 'push':
         # TODO: send Push
         pass
@@ -52,9 +62,12 @@ def notify_all(recipients: List[Account], notification_type: str, payload=None):
 def remove_notifications(payload: dict):
     """Deletes notifications whose payload has any of the entries in the given payload."""
     deleted = 0
-    for k, v in payload.items():
+    for key, value in payload.items():
         query = Notification.query.filter(Notification.payload.isnot(None))
-        query = query.filter(Notification.payload[k].astext == str(v))
+        query = query.filter(
+            # pylint: disable=unsubscriptable-object
+            Notification.payload[key].astext == str(value)
+        )
         deleted += query.delete(synchronize_session=False)
     try:
         db.session.commit()
