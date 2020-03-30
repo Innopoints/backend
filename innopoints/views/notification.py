@@ -9,11 +9,11 @@ import logging
 
 from flask import request
 from flask_login import login_required, current_user
-from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
+from innopoints.core.notifications.push import subscribe as subscribe_to_push
 from innopoints.extensions import db, push
 from innopoints.models import Notification
 from innopoints.schemas import NotificationSchema
@@ -54,15 +54,9 @@ def subscribe():
             or 'p256dh' not in new_subscription['keys']):
         abort(400, {'message': 'Encryption keys must be specified.'})
 
-    settings = current_user.notification_settings
-    settings.update({'subscriptions': settings.get('subscriptions', []) + [request.json]})
-    flag_modified(current_user, 'notification_settings')
-
     try:
-        db.session.commit()
-    except IntegrityError as exc:
-        db.session.rollback()
-        log.exception(exc)
+        subscribe_to_push(current_user, new_subscription)
+    except IntegrityError:
         abort(400, {'message': 'Data integrity violated.'})
 
     push.send(new_subscription, {
