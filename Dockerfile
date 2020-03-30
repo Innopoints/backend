@@ -16,6 +16,7 @@ RUN pip install pipenv && pipenv install --system
 # copy the project code
 COPY innopoints /app/innopoints
 COPY migrations /app/migrations
+COPY templates /app/templates
 COPY run.py /app/
 
 # expose the port
