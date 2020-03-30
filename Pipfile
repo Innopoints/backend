@@ -23,6 +23,7 @@ marshmallow = "*"
 flask-migrate = "*"
 python-dotenv = "*"
 flask-mail = "*"
+pywebpush = "*"
 
 [requires]
 python_version = "3.8"
