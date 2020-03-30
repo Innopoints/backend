@@ -27,6 +27,7 @@ from flask_login import login_required, current_user
 from marshmallow import ValidationError
 from sqlalchemy import or_
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
@@ -455,7 +456,8 @@ def change_notification_settings(email):
     except ValidationError as err:
         abort(400, {'message': err.messages})
 
-    user.notification_settings = new_notification_settings
+    user.notification_settings.update(new_notification_settings)
+    flag_modified(user, 'notification_settings')
 
     try:
         db.session.commit()
