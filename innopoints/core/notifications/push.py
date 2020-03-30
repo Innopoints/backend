@@ -6,7 +6,7 @@ from pywebpush import WebPushException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.attributes import flag_modified
 
-from innopoints.extensions import push as send, db
+from innopoints.extensions import push as webpush, db
 from innopoints.models import NotificationType, Account, StockChangeStatus, ApplicationStatus
 
 log = logging.getLogger(__name__)
@@ -116,7 +116,7 @@ def push(recipient_email: str, notification_type: NotificationType, payload=None
 
     for subscription in subscriptions:
         try:
-            send(subscription, data)
+            webpush.send(subscription, data)
         except WebPushException as ex:
             log.exception(ex)
 
