@@ -62,7 +62,7 @@ def get_content(notification_type: str, payload):
         link = f"/projects/{payload['project'].id}"
     elif notification_type == NotificationType.all_feedback_in:
         title = 'All feedback collected'
-        body = f'All volunteers of {payload['project'].name} have submitted feedback'
+        body = f'All volunteers of {payload["project"].name} have submitted feedback'
         link = f"/projects/{payload['project'].id}"
     elif notification_type == NotificationType.out_of_stock:
         title = 'Out of stock'
