@@ -1,12 +1,11 @@
 """Helper module for sending notifications, depending on the user preference"""
 
 import logging
-from json import dumps
 
-from flask import current_app
-from pywebpush import webpush, WebPushException
+from pywebpush import WebPushException
 
-from innopoints.models import NotificationType, Account
+from innopoints.extensions import push
+from innopoints.models import NotificationType, Account, StockChangeStatus, ApplicationStatus
 
 log = logging.getLogger(__name__)
 
@@ -103,20 +102,21 @@ def get_content(notification_type: str, payload):
 
 def push(recipient_email: str, notification_type: NotificationType, payload=None):
     '''Sends a notification to the specified user.'''
-    subscriptions = Account.query.get(recipient_email).notification_settings['subscriptions']
+    subscriptions = Account.query.get(recipient_email).notification_settings.get('subscriptions')
+    if subscriptions is None:
+        # TODO: report an error
+        return
+
     try:
         data = get_content(notification_type, payload)
     except KeyError:
-        data = str(payload)
-    try:
-        for subscription_info in subscriptions:
-            webpush(subscription_info,
-                    dumps(data),
-                    vapid_private_key=current_app.config["VAPID_PRIVATE_KEY"],
-                    vapid_claims={"sub": "mailto:innopoints@innopolis.university"}
-            )
-    except WebPushException as ex:
-        log.exception(ex)
+        data = payload
+
+    for subscription in subscriptions:
+        try:
+            push.send(subscription, data)
+        except WebPushException as ex:
+            log.exception(ex)
 
 # TODO: move subscribe method from views to here
 # TODO: create unsubscribe method to remove all (or some) push subscriptions
