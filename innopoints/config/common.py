@@ -13,3 +13,4 @@ MAIL_USERNAME = 'innopoints@innopolis.university'
 MAIL_PASSWORD = os.environ['MAIL_PASSWORD']
 MAIL_DEFAULT_SENDER = MAIL_USERNAME
 MAIL_USE_TLS = True
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY')
