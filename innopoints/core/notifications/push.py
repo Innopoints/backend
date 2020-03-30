@@ -50,6 +50,7 @@ def get_content(notification_type, payload):
             status = 'rejected'
         else:
             status = 'moved back to pending'
+        image = f'/file/{payload["project"]["image_id"]}'
         body = f'Your volunteering application for {payload["activity"]["name"]} was {status}'
         link = f"/projects/{payload['project']['id']}"
     elif notification_type == NotificationType.claim_innopoints:
@@ -57,18 +58,22 @@ def get_content(notification_type, payload):
         reward = payload['application']['actual_hours'] * payload['activity']['reward_rate']
         body = f'Leave feedback on your volunteering work to claim {reward} innopoints'
         link = f"/projects/{payload['project']['id']}"
+        image = f'/file/{payload["project"]["image_id"]}'
     elif notification_type == NotificationType.project_review_status_changed:
         title = 'An administrator has reviewed your project'
         body = f'The project {payload["project"]["name"]} was {payload["project"]["review_status"]} by the administrator'
         link = f"/projects/{payload['project']['id']}"
+        image = f'/file/{payload["project"]["image_id"]}'
     elif notification_type == NotificationType.added_as_moderator:
         title = 'Moderator rights'
         body = f'You have been promoted to moderate {payload["project"]["name"]}'
         link = f"/projects/{payload['project']['id']}"
+        image = f'/file/{payload["project"]["image_id"]}'
     elif notification_type == NotificationType.all_feedback_in:
         title = 'All feedback collected'
         body = f'All volunteers of {payload["project"]["name"]} have submitted feedback'
         link = f"/projects/{payload['project']['id']}"
+        image = f'/file/{payload["project"]["image_id"]}'
     elif notification_type == NotificationType.out_of_stock:
         title = 'Out of stock'
         if payload['product']['type'] is None:
@@ -93,6 +98,7 @@ def get_content(notification_type, payload):
         title = 'Project review requested'
         body = f'The project {payload["project"]["name"]} is ready for review'
         link = f"/projects/{payload['project']['id']}"
+        image = f'/file/{payload["project"]["image_id"]}'
     elif notification_type == NotificationType.service:
         title = 'Administrator\'s message'
         body = payload['message']
