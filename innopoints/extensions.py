@@ -34,8 +34,7 @@ class WebPush:
         webpush(subscription,
                 json.dumps(notification),
                 vapid_private_key=self.private_key,
-                vapid_claims={"sub": self.sender_info},
-                verbose=True)
+                vapid_claims={"sub": self.sender_info})
 
 
 db = SQLAlchemy()
