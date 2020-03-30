@@ -67,25 +67,6 @@ def subscribe():
     return NO_PAYLOAD
 
 
-# TODO: JUST FOR TESTING. SHOULD NOT PUSH
-@api.route('/notify', methods=['GET'])
-@login_required
-def notify():
-    subscriptions = current_user.notification_settings.get('subscriptions', [])
-    data = {
-        'title': 'Test Notification',
-        'body': 'Will you go out with me?'
-    }
-
-    for subscription in subscriptions:
-        try:
-            push.send(subscription, data)
-        except:
-            continue
-
-    return NO_PAYLOAD
-
-
 @api.route('/notifications/<int:notification_id>/read', methods=['PATCH'])
 @login_required
 def read_notification(notification_id):
