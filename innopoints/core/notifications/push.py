@@ -4,7 +4,7 @@ import logging
 
 from pywebpush import WebPushException
 
-from innopoints.extensions import push
+from innopoints.extensions import push as send
 from innopoints.models import NotificationType, Account, StockChangeStatus, ApplicationStatus
 
 log = logging.getLogger(__name__)
@@ -114,7 +114,7 @@ def push(recipient_email: str, notification_type: NotificationType, payload=None
 
     for subscription in subscriptions:
         try:
-            push.send(subscription, data)
+            send(subscription, data)
         except WebPushException as ex:
             log.exception(ex)
 
