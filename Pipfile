@@ -24,6 +24,7 @@ flask-migrate = "*"
 python-dotenv = "*"
 flask-mail = "*"
 pywebpush = "*"
+flask-pywebpush = "*"
 
 [requires]
 python_version = "3.8"
