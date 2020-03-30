@@ -55,6 +55,33 @@ def subscribe():
     return NO_PAYLOAD
 
 
+# TODO: JUST FOR TESTING. SHOULD NOT PUSH
+@api.route('/notify', methods=['POST'])
+def notify():
+    """Adds the user's subscription to push notifications."""
+    from pywebpush import webpush, WebPushException
+    from innopoints.models import Account
+    from innopoints.schemas import PayloadSchema
+    from flask import copy_current_request_context, current_app
+    from json import dumps
+    subscriptions = Account.query.get(current_user.email).notification_settings.get('subscriptions', [])
+    notification = Notification(
+        recipient_email=current_user.email,
+        type='service',
+        payload=request.json,
+    )
+    data = PayloadSchema().fill_data(request.json)
+    for subscription_info in subscriptions:
+        # print(current_app.config["VAPID_PRIVATE_KEY"])
+        webpush(subscription_info,
+                dumps(data),
+                vapid_private_key="53drlqseKG4Ma4lrNG8qo9ann8UnpzyZ7YZQRU52dFI",#current_app.config["VAPID_PRIVATE_KEY"],
+                vapid_claims={"sub": "mailto:innopoints@innopolis.university"},
+                # content_encoding='aes128gcm',
+        )
+    return NO_PAYLOAD
+
+
 @api.route('/notifications/<int:notification_id>/read', methods=['PATCH'])
 @login_required
 def read_notification(notification_id):
