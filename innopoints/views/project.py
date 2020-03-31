@@ -459,7 +459,7 @@ class ProjectDetailAPI(MethodView):
             exclude.remove('moderators')
             exclude.remove('activities.applications')
             exclude.remove('activities.existing_application')
-            if current_user.email in project.moderators or current_user.is_admin:
+            if current_user in project.moderators or current_user.is_admin:
                 exclude.remove('review_status')
                 exclude.remove('activities.applications.telegram')
                 exclude.remove('activities.applications.comment')
