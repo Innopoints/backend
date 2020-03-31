@@ -203,6 +203,7 @@ def get_timeline(email):
             .filter_by(applicant=user)
             .join(Activity).add_columns(Activity.name.label('activity_name'),
                                         Activity.id.label('activity_id'))
+            .filter(~Activity.internal)
             .join(Project).add_columns(Project.name.label('project_name'),
                                        Project.id.label('project_id'),
                                        Project.lifetime_stage.label('project_stage'))
@@ -230,6 +231,7 @@ def get_timeline(email):
             .filter_by(recipient_email=user.email, type=NotificationType.added_as_moderator)
             .join(Project,
                   Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
+            .filter(Project.creator != user)
             .add_column(Project.name.label('project_name'))
             .outerjoin(Activity, (Activity.project_id == Project.id)
                                & (Activity.internal)
