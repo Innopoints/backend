@@ -9,7 +9,8 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db, mail
 from innopoints.models import Notification, NotificationType, Account, type_to_group
-from innopoints.core.email import get_email_message
+from .email import get_email_message
+from .push import push
 
 log = logging.getLogger(__name__)
 
@@ -33,8 +34,7 @@ def notify(recipient_email: str, notification_type: NotificationType, payload=No
         mail_thread.start()
         log.info(f'Sent an email to {recipient_email}')
     elif channel == 'push':
-        # TODO: send Push
-        pass
+        push(recipient_email, notification_type, payload)
 
     notification = Notification(
         recipient_email=recipient_email,

@@ -11,6 +11,7 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_marshmallow import Marshmallow
 from flask_sqlalchemy import SQLAlchemy
+from flask_pywebpush import WebPush
 
 
 db = SQLAlchemy()
@@ -28,3 +29,5 @@ login_manager = LoginManager()
 login_manager.session_protection = 'basic'
 
 mail = Mail()
+
+push = WebPush()

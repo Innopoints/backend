@@ -10,7 +10,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import psycopg2
 import sqlalchemy.exc
 
-from innopoints.extensions import db, ma, mail, oauth, login_manager
+from innopoints.extensions import db, ma, mail, oauth, login_manager, push
 from innopoints.blueprints import all_blueprints
 
 log = logging.getLogger(__name__)
@@ -80,6 +80,7 @@ def create_app(config='config/prod.py'):
     oauth.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
+    push.init_app(app)
 
     for blueprint in all_blueprints:
         import_module(blueprint.import_name)
