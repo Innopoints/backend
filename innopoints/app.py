@@ -35,7 +35,7 @@ def create_app(config='config/prod.py'):
             break
         except (RuntimeError, psycopg2.OperationalError, sqlalchemy.exc.OperationalError) as err:
             log.exception(f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..')
-            time.sleep(2)
+            time.sleep(5)
 
     with app.app_context():
         upgrade()
