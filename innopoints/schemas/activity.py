@@ -66,7 +66,7 @@ class ActivitySchema(ma.ModelSchema):
         if 'user' not in self.context or not self.context['user'].is_authenticated:
             return None
 
-        if self.context['user'] in activity.project.moderators:
+        if self.context['user'] in activity.project.moderators or self.context['user'].is_admin:
             filtering.pop('status')
             fields.append('telegram_username')
             fields.append('comment')
