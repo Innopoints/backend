@@ -51,12 +51,16 @@ def get_email_message(notification_type, payload, recipient_email):
         else:
             body.append('moved back to pending')
     elif notification_type == NotificationType.claim_innopoints:
-        header = 'Claim your reward!'
+        header = 'Leave feedback'
         body = ['Leave feedback on ',
-                ('your volunteering work', f"/projects/{payload['project'].id}"),
+                ('your volunteering work', f"/projects/{payload['project'].id}")]
+        if payload['application'].actual_hours != 0:
+            header = 'Claim your reward!'
+            body += [
                 ' to claim ',
                 str(payload['application'].actual_hours * payload['activity'].reward_rate),
-                ' innopoints']
+                ' innopoints'
+            ]
     elif notification_type == NotificationType.project_review_status_changed:
         header = 'An administrator has reviewed your project'
         body = ['The project ',
