@@ -15,7 +15,7 @@ class FileManagerLocal(FileManagerBase):
 
     def _join_base(self, *paths: str) -> str:
         """Helper function to join path to base and normalize it according to OS."""
-        return os.path.normpath(os.path.join(self.BASE_PATH, *paths))
+        return os.path.normpath(os.path.join(self.base_path, *paths))
 
     def retrieve(self, handle: str) -> bytes:
         """Get the file with given handle."""

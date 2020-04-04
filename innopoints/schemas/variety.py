@@ -4,7 +4,15 @@ from marshmallow_enum import EnumField
 from marshmallow import ValidationError, pre_load, post_dump, pre_dump
 
 from innopoints.extensions import ma, db
-from innopoints.models import Variety, Color, Size, StockChange, StockChangeStatus, ProductImage, Product
+from innopoints.models import (
+    Color,
+    Product,
+    ProductImage,
+    Size,
+    StockChange,
+    StockChangeStatus,
+    Variety,
+)
 
 
 # pylint: disable=missing-docstring
@@ -147,7 +155,7 @@ class StockChangeSchema(ma.ModelSchema):
     product = ma.Nested('ProductSchema', only=('id', 'name', 'type'))
 
     @pre_dump
-    def get_product(self, stock_change, **kwargs):
+    def get_product(self, stock_change, **kwargs):  # pylint: disable=unused-argument
         stock_change.product = Product.query.get(stock_change.variety.product_id)
         return stock_change
 

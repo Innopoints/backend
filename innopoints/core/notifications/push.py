@@ -15,11 +15,12 @@ log = logging.getLogger(__name__)
 
 def get_content(notification_type, payload):
     '''Given notification type and payload, returns the data for the notification'''
-    # default values
+    # pylint: disable=too-many-branches
     title = 'Innopoints notification'
     body = 'Something happened.'
     link = '/'
     image = None
+
     if notification_type == NotificationType.purchase_status_changed:
         title = 'Purchase status changed'
         if payload['product']['type'] is None:
@@ -28,11 +29,11 @@ def get_content(notification_type, payload):
             purchase = f"'{payload['product']['name']}' {payload['product']['type']}"
         if len(payload['variety']['images']) > 0:
             image = payload['variety']['images'][0]
-        if payload['stock_change']['status'] == StockChangeStatus.ready_for_pickup._name_:
+        if payload['stock_change']['status'] == StockChangeStatus.ready_for_pickup.name:
             status_update = 'is ready to be picked up at 319 Office.'
-        elif payload['stock_change']['status'] == StockChangeStatus.rejected._name_:
+        elif payload['stock_change']['status'] == StockChangeStatus.rejected.name:
             status_update = 'was rejected.'
-        elif payload['stock_change']['status'] == StockChangeStatus.carried_out._name_:
+        elif payload['stock_change']['status'] == StockChangeStatus.carried_out.name:
             status_update = 'was delivered.'
         else:
             status_update = 'is being processed again.'
@@ -44,9 +45,9 @@ def get_content(notification_type, payload):
         link = '/store'
     elif notification_type == NotificationType.application_status_changed:
         title = 'Application status changed'
-        if payload['application']['status'] == ApplicationStatus.approved._name_:
+        if payload['application']['status'] == ApplicationStatus.approved.name:
             status = 'approved'
-        elif payload['application']['status'] == ApplicationStatus.rejected._name_:
+        elif payload['application']['status'] == ApplicationStatus.rejected.name:
             status = 'rejected'
         else:
             status = 'moved back to pending'
@@ -61,7 +62,8 @@ def get_content(notification_type, payload):
         image = f'/file/{payload["project"]["image_id"]}'
     elif notification_type == NotificationType.project_review_status_changed:
         title = 'An administrator has reviewed your project'
-        body = f'The project {payload["project"]["name"]} was {payload["project"]["review_status"]} by the administrator'
+        body = (f'The project {payload["project"]["name"]} was '
+                f'{payload["project"]["review_status"]} by the administrator')
         link = f"/projects/{payload['project']['id']}"
         image = f'/file/{payload["project"]["image_id"]}'
     elif notification_type == NotificationType.added_as_moderator:
@@ -139,6 +141,7 @@ def push(recipient_email: str, notification_type: NotificationType, payload=None
 
 
 def subscribe(user, subscription_information):
+    '''Add the subscription information to the list of the user's push subscriptions.'''
     settings = user.notification_settings
     settings.update({
         'subscriptions': settings.get('subscriptions', []) + [subscription_information]

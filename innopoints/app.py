@@ -2,7 +2,8 @@
 
 import time
 from importlib import import_module
-import logging, logging.config
+import logging
+import logging.config
 
 from flask import Flask
 from flask_migrate import Migrate, upgrade

@@ -9,7 +9,7 @@ class FileManagerBase(ABC):
     @abstractmethod
     def __init__(self, url=''):
         super().__init__()
-        self.BASE_PATH = url
+        self.base_path = url
 
     @abstractmethod
     def retrieve(self, handle: str, namespace: str) -> bytes:

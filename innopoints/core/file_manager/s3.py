@@ -12,7 +12,7 @@ class FileManagerS3(FileManagerBase):
 
     def retrieve(self, handle: str, namespace: str) -> bytes:
         """Get the file with a given URL from the AWS S3 bucket."""
-        response = requests.get(f'{self.BASE_PATH}/{namespace}/{handle}')
+        response = requests.get(f'{self.base_path}/{namespace}/{handle}')
         if response.status_code == 404:
             raise FileNotFoundError()
 
@@ -23,11 +23,11 @@ class FileManagerS3(FileManagerBase):
         of the AWS S3 bucket. Will raise a requests.exceptions.HTTPError on errors."""
         filename = f'{namespace}/{handle}'
         stream = file.stream
-        response = requests.post(self.BASE_PATH, data={'key': filename}, files={'file': stream})
+        response = requests.post(self.base_path, data={'key': filename}, files={'file': stream})
         response.raise_for_status()
 
     def delete(self, handle: str, namespace: str):
         """Delete the file with a given handle from the namespace of the AWS S3 bucket."""
-        response = requests.delete(f'{self.BASE_PATH}/{namespace}/{handle}')
+        response = requests.delete(f'{self.base_path}/{namespace}/{handle}')
         if response.status_code == 404:
             raise FileNotFoundError()
