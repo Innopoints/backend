@@ -328,7 +328,8 @@ def leave_feedback(project_id, activity_id, application_id):
 
     all_feedback_in = all(application.feedback is not None
                           for activity in project.activities
-                          for application in activity.applications)
+                          for application in activity.applications
+                          if not activity.internal)
     if all_feedback_in:
         mods = [*project.moderators, project.creator]
         notify_all(mods, NotificationType.all_feedback_in, {
