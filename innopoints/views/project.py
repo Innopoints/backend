@@ -306,7 +306,8 @@ def publish_project(project_id):
     project.lifetime_stage = LifetimeStage.ongoing
     db.session.commit()
 
-    notify_all(project.moderators, NotificationType.added_as_moderator, {
+    moderators = filter(lambda moderator: moderator != project.creator, project.moderators)
+    notify_all(moderators, NotificationType.added_as_moderator, {
         'project_id': project.id,
         'account_email': current_user.email,
     })
