@@ -26,6 +26,7 @@ from innopoints.core.notifications import notify, notify_all, remove_notificatio
 from innopoints.core.timezone import tz_aware_now
 from innopoints.extensions import db
 from innopoints.models import (
+    Account,
     Activity,
     Application,
     ApplicationStatus,
@@ -224,7 +225,8 @@ def get_report_info(project_id, activity_id, application_id):
         project_moderation.c.project_id == project_id,
     ).all()
 
-    out_schema = VolunteeringReportSchema(only=('content', 'rating', 'time', 'application'), many=True)
+    out_schema = VolunteeringReportSchema(only=('content', 'rating', 'time', 'application'),
+                                          many=True)
     return jsonify(average_rating=int(avg_rating), reports=out_schema.dump(reports))
 
 
@@ -331,7 +333,8 @@ def leave_feedback(project_id, activity_id, application_id):
                           for application in activity.applications
                           if not activity.internal)
     if all_feedback_in:
-        mods = [*project.moderators, project.creator]
+        admins = Account.query.filter_by(is_admin=True).all()
+        mods = [*project.moderators, project.creator, *admins]
         notify_all(mods, NotificationType.all_feedback_in, {
             'project_id': project.id,
         })
