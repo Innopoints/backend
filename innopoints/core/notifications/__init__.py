@@ -2,7 +2,7 @@
 
 import logging
 import threading
-from typing import List
+from typing import Sequence
 
 from flask import copy_current_request_context
 from sqlalchemy.exc import IntegrityError
@@ -53,7 +53,7 @@ def notify(recipient_email: str, notification_type: NotificationType, payload=No
         return None
 
 
-def notify_all(recipients: List[Account], notification_type: str, payload=None):
+def notify_all(recipients: Sequence[Account], notification_type: str, payload=None):
     """Sends the same notification to each of the emails in the given list."""
     for recipient in recipients:
         notify(recipient.email, notification_type, payload)
