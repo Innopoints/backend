@@ -55,9 +55,11 @@ def get_content(notification_type, payload):
         body = f'Your volunteering application for {payload["activity"]["name"]} was {status}'
         link = f"/projects/{payload['project']['id']}"
     elif notification_type == NotificationType.claim_innopoints:
-        title = 'Claim your reward!'
         reward = payload['application']['actual_hours'] * payload['activity']['reward_rate']
-        body = f'Leave feedback on your volunteering work to claim {reward} innopoints'
+        title = 'Claim your reward!' if reward != 0 else 'Leave feedback'
+        body = 'Leave feedback on your volunteering work'
+        if reward != 0:
+            body += f' to claim {reward} innopoints'
         link = f"/projects/{payload['project']['id']}"
         image = f'/file/{payload["project"]["image_id"]}'
     elif notification_type == NotificationType.project_review_status_changed:
