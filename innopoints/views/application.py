@@ -334,7 +334,7 @@ def leave_feedback(project_id, activity_id, application_id):
                           if not activity.internal)
     if all_feedback_in:
         admins = Account.query.filter_by(is_admin=True).all()
-        mods = [*project.moderators, project.creator, *admins]
+        mods = [*project.moderators, *admins]
         notify_all(mods, NotificationType.all_feedback_in, {
             'project_id': project.id,
         })
