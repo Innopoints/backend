@@ -44,6 +44,7 @@ from innopoints.models import (
     Competence,
     Feedback,
     feedback_competence,
+    LifetimeStage,
     Notification,
     NotificationType,
     Product,
@@ -193,7 +194,7 @@ def get_timeline(email):
     else:
         end_date = tz_aware_now()
 
-    # pylint: disable=bad-continuation
+    # pylint: disable=bad-continuation, invalid-unary-operand-type
 
     applications = (
         db.session
@@ -336,7 +337,8 @@ def get_statistics(email):
             .filter_by(applicant=user, status=ApplicationStatus.approved)
             .filter(Application.application_time >= start_date)
             .filter(Application.application_time <= end_date)
-            .join(Activity).filter(~Activity.fixed_reward)
+            .join(Activity).filter(~Activity.fixed_reward, ~Activity.internal)
+            .join(Project).filter(Project.lifetime_stage == LifetimeStage.finished)
     ).one()
 
     rating = (
