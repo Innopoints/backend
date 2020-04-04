@@ -17,7 +17,7 @@ class ActivitySchema(ma.ModelSchema):
         sqla_session = db.session
 
     @pre_load
-    def unwrap_dates(self, data, **kwargs):  # pylint: disable=unused-argument
+    def unwrap_dates(self, data, **_kwargs):
         """Expand the {"start": , "end": } dates object into two separate properties."""
         if 'timeframe' not in data:
             return data
@@ -32,7 +32,7 @@ class ActivitySchema(ma.ModelSchema):
         return data
 
     @post_dump
-    def wrap_dates(self, data, **kwargs):  # pylint: disable=unused-argument
+    def wrap_dates(self, data, **_kwargs):
         """Collapse the two date properties into the {"start": , "end": } dates object."""
         if 'start_date' not in data:
             return data
@@ -44,13 +44,13 @@ class ActivitySchema(ma.ModelSchema):
         return data
 
     @validates_schema
-    def work_hours_mutex(self, data, **kwargs):  # pylint: disable=unused-argument
+    def work_hours_mutex(self, data, **_kwargs):
         """Ensure that working hours aren't specified along with the reward_rate."""
         if 'work_hours' in data and 'reward_rate' in data:
             raise ValidationError('Working hours and reward rate are mutually exclusive.')
 
     @validates_schema
-    def valid_date_range(self, data, **kwargs):  # pylint: disable=unused-argument
+    def valid_date_range(self, data, **_kwargs):
         """Ensure that the start date is not beyond the end date."""
         if 'start_date' in data and 'end_date' in data:
             if data['start_date'] > data['end_date']:

@@ -25,7 +25,7 @@ class VarietySchema(ma.ModelSchema):
         sqla_session = db.session
 
     @pre_load
-    def create_stock_change(self, data, **kwargs):  # pylint: disable=unused-argument
+    def create_stock_change(self, data, **_kwargs):
         """Convert the integer `amount` property into a stock change."""
         if 'stock_changes' in data:
             raise ValidationError('The stock changes are not to be specified explicitly.')
@@ -45,7 +45,7 @@ class VarietySchema(ma.ModelSchema):
         return data
 
     @pre_load
-    def normalize_color(self, data, **kwargs):  # pylint: disable=unused-argument
+    def normalize_color(self, data, **_kwargs):
         """Normalize the color value."""
         if 'color' not in data:
             if self.context.get('update', False):
@@ -65,7 +65,7 @@ class VarietySchema(ma.ModelSchema):
         return data
 
     @pre_load
-    def enumerate_images(self, data, **kwargs):  # pylint: disable=unused-argument
+    def enumerate_images(self, data, **_kwargs):
         """Convert the array of URL strings to an array of image objects with order."""
         if self.context.get('update', False):
             if 'images' in data:
@@ -80,14 +80,14 @@ class VarietySchema(ma.ModelSchema):
         return data
 
     @post_dump
-    def format_color(self, data, **kwargs):  # pylint: disable=unused-argument
+    def format_color(self, data, **_kwargs):
         """Add a '#' to the color value."""
         if data['color'] is not None:
             data['color'] = '#' + data['color']
         return data
 
     @post_dump
-    def flatten_images(self, data, **kwargs):  # pylint: disable=unused-argument
+    def flatten_images(self, data, **_kwargs):
         """Convert an array of image objects with order into a flat array of URL strings."""
         if 'images' not in data:
             return data
@@ -111,7 +111,7 @@ class ColorSchema(ma.ModelSchema):
         exclude = ('varieties',)
 
     @pre_load
-    def normalize_value(self, data, **kwargs):  # pylint: disable=unused-argument
+    def normalize_value(self, data, **_kwargs):
         """Normalize the color value, stripping the '#' and transforming symbols to uppercase."""
         if data['value'].startswith('#'):
             data['value'] = data['value'][1:]
@@ -128,7 +128,7 @@ class ColorSchema(ma.ModelSchema):
         return data
 
     @post_dump
-    def precede_hash(self, data, **kwargs):  # pylint: disable=unused-argument
+    def precede_hash(self, data, **_kwargs):
         """Precede the value of the color with a '#' symbol."""
         data['value'] = '#' + data['value']
         return data
@@ -155,7 +155,7 @@ class StockChangeSchema(ma.ModelSchema):
     product = ma.Nested('ProductSchema', only=('id', 'name', 'type'))
 
     @pre_dump
-    def get_product(self, stock_change, **kwargs):  # pylint: disable=unused-argument
+    def get_product(self, stock_change, **_kwargs):
         stock_change.product = Product.query.get(stock_change.variety.product_id)
         return stock_change
 

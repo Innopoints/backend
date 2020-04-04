@@ -62,7 +62,7 @@ class FeedbackSchema(ma.ModelSchema):
         exclude = ('transaction',)
 
     @pre_load
-    def wrap_competences(self, data, **kwargs):  # pylint: disable=unused-argument
+    def wrap_competences(self, data, **_kwargs):
         """Turn a flat list of competence IDs into a list of objects."""
         data['competences'] = [{'id': comp_id} for comp_id in data['competences']]
         return data
