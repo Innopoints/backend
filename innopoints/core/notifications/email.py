@@ -59,7 +59,7 @@ def get_email_message(notification_type, payload, recipient_email):
             body += [
                 ' to claim ',
                 str(payload['application'].actual_hours * payload['activity'].reward_rate),
-                ' innopoints'
+                ' innopoints',
             ]
     elif notification_type == NotificationType.project_review_status_changed:
         header = 'An administrator has reviewed your project'
