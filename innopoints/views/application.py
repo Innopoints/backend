@@ -162,7 +162,11 @@ def edit_application(project_id, activity_id, application_id):
             abort(400, {'message': 'Actual hours must be a non-negative integer.'})
 
         if activity.fixed_reward:
-            abort(400, {'Working hours may only be changed on hourly-rate activity applications.'})
+            abort(400, {'message': 'Working hours may only be changed '
+                                   'on hourly-rate activity applications.'})
+
+        if application.status != ApplicationStatus.approved:
+            abort(400, {'message': 'Working hours may only be changed on approved applications.'})
         application.actual_hours = actual_hours
 
     try:
@@ -247,6 +251,9 @@ def create_report(project_id, activity_id, application_id):
     if project.lifetime_stage != LifetimeStage.finalizing:
         abort(400, {'message': 'The project must be in the finalizing stage.'})
 
+    if application.status != ApplicationStatus.approved:
+        abort(400, {'message': 'Reports may only be created on approved applictions.'})
+
     in_schema = VolunteeringReportSchema(exclude=('time',))
     try:
         new_report = in_schema.load(request.json)
@@ -290,6 +297,9 @@ def leave_feedback(project_id, activity_id, application_id):
 
     if application.feedback is not None:
         abort(400, {'message': 'Feedback already exists.'})
+
+    if application.status != ApplicationStatus.approved:
+        abort(400, {'message': 'Feedback may only be left on approved applications.'})
 
     in_schema = FeedbackSchema(exclude=('time',))
     try:
