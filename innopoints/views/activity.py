@@ -24,7 +24,14 @@ from innopoints.extensions import db
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
 from innopoints.core.notifications import remove_notifications
-from innopoints.models import Activity, Project, IPTS_PER_HOUR, Competence, LifetimeStage
+from innopoints.models import (
+    Activity,
+    ApplicationStatus,
+    Competence,
+    IPTS_PER_HOUR,
+    LifetimeStage,
+    Project,
+)
 from innopoints.schemas import ActivitySchema, CompetenceSchema
 
 NO_PAYLOAD = ('', 204)
@@ -96,6 +103,13 @@ class ActivityAPI(MethodView):
             updated_activity = in_schema.load(request.json, instance=activity, partial=True)
         except ValidationError as err:
             abort(400, {'message': err.messages})
+
+        for application in updated_activity.applications:
+            if application.status != ApplicationStatus.rejected:
+                application.actual_hours = updated_activity.working_hours
+
+        if activity.fixed_reward and activity.working_hours != 1:
+            abort(400, {'message': 'Cannot set working hours for fixed activities.'})
 
         if not activity.fixed_reward and activity.reward_rate != IPTS_PER_HOUR:
             abort(400, {'message': 'The reward rate for hourly activities may not be changed.'})
