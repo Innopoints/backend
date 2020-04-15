@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 
 from flask import current_app, url_for, redirect, session, request
 from flask_login import login_user, logout_user
+from authlib.common.errors import AuthlibBaseError
 from authlib.jose.errors import MissingClaimError, InvalidClaimError
 
 from innopoints.blueprints import auth
@@ -34,8 +35,12 @@ def login():
 @auth.route('/authorize')
 def authorize():
     """Catch the user after the back-redirect and fetch the essential info."""
-    token = oauth.innopolis_sso.authorize_access_token(
-        redirect_uri=url_for('auth.authorize', _external=True))
+    try:
+        token = oauth.innopolis_sso.authorize_access_token(
+            redirect_uri=url_for('auth.authorize', _external=True))
+    except AuthlibBaseError:
+        abort(401)
+
     try:
         userinfo = oauth.innopolis_sso.parse_id_token(token)
     except (MissingClaimError, InvalidClaimError):
