@@ -25,6 +25,7 @@ python-dotenv = "*"
 flask-mail = "*"
 pywebpush = "*"
 flask-pywebpush = "*"
+pillow = "*"
 
 [requires]
 python_version = "3.8"

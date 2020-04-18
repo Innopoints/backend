@@ -1,6 +1,9 @@
 """Manages static files. This particular module uses local file system to store files."""
 
 import os
+from typing import Union
+
+from PIL import Image
 from werkzeug.datastructures import FileStorage
 
 from .base import FileManagerBase
@@ -25,10 +28,13 @@ class FileManagerLocal(FileManagerBase):
         file = open(path, 'rb')
         return file.read()
 
-    def store(self, file: FileStorage, handle: str):
+    def store(self, file: Union[FileStorage, Image.Image], handle: str, format: str = None):
         """Upload the given file with the handle."""
         filename = self._join_base(handle)
-        file.save(filename)
+        if format is not None:
+            file.save(filename, format=format)
+        else:
+            file.save(filename)
 
     def delete(self, handle: str):
         """Delete the file with a given handle."""

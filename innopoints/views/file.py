@@ -13,6 +13,7 @@ import requests
 import werkzeug
 from flask import jsonify, request, current_app
 from flask_login import login_required, current_user
+from PIL import Image
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
@@ -49,13 +50,31 @@ def upload_file():
 
     mimetype = get_mimetype(file)
     if mimetype not in ALLOWED_MIMETYPES:
-        abort(400, {'message': f'Mimetype "{mimetype}" is not allowed'})
+        abort(400, {'message': f'Mimetype "{mimetype}" is not allowed.'})
+
+    format = None
+    if 'x' in request.form:
+        try:
+            # pylint: disable=invalid-name
+            x = int(request.form['x'])
+            y = int(request.form['y'])
+            width = int(request.form['width'])
+            height = int(request.form['height'])
+        except KeyError:
+            abort(400, {'message': 'Not enough data to perform the crop.'})
+        else:
+            image = Image.open(file.stream)
+            if x != 0 or y != 0 or width != image.width or height != image.height:
+                file = image.crop((x, y, x + width, y + height))
+                format = mimetype.split('/')[1]
+            else:
+                file.stream.seek(0)
 
     new_file = StaticFile(mimetype=mimetype, owner=current_user)
     db.session.add(new_file)
     db.session.commit()
     try:
-        file_manager.store(file, str(new_file.id))
+        file_manager.store(file, str(new_file.id), format=format)
     except (OSError, requests.exceptions.HTTPError) as err:
         log.exception(err)
         db.session.delete(new_file)
