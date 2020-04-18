@@ -6,13 +6,11 @@ from typing import Union
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 
-from .base import FileManagerBase
 
-
-class FileManagerLocal(FileManagerBase):
+class FileManagerLocal:
     """Implementation of the file manager using local file system."""
     def __init__(self, url='./static_files/'):
-        super().__init__(url)
+        self.base_path = url
         if not os.path.exists(url):
             os.makedirs(url)
 
