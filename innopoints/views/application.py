@@ -6,8 +6,11 @@ Application:
 - PATCH  /projects/{project_id}/activities/{activity_id}/applications/{application_id}
 
 VolunteeringReport:
-- GET  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report_info
-- POST /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
+- GET    /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report_info
+- GET    /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
+- POST   /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
+- PATCH  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
+- DELETE /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
 
 Feedback:
 - POST /projects/{project_id}/activities/{activity_id}/applications/{application_id}/feedback
@@ -16,6 +19,7 @@ Feedback:
 import logging
 
 from flask import request, jsonify
+from flask.views import MethodView
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -230,51 +234,141 @@ def get_report_info(project_id, activity_id, application_id):
     return jsonify(average_rating=int(avg_rating), reports=out_schema.dump(reports))
 
 
-@api.route('/projects/<int:project_id>/activities/<int:activity_id>'
-           '/applications/<int:application_id>/report', methods=['POST'])
-@login_required
-def create_report(project_id, activity_id, application_id):
-    """Create a volunteering report on an application."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
+class VolunteeringReportAPI(MethodView):
+    """The CUD for volunteering reports."""
 
-    application = Application.query.get_or_404(application_id)
-    activity = Activity.query.get_or_404(activity_id)
-    if activity.internal:
-        abort(404)
-    project = Project.query.get_or_404(project_id)
+    @login_required
+    def post(self, project_id, activity_id, application_id):
+        """Create a volunteering report on an application."""
+        if not request.is_json:
+            abort(400, {'message': 'The request should be in JSON.'})
 
-    if activity.project != project or application.activity_id != activity.id:
-        abort(400, {'message': 'The specified project, activity and application are unrelated.'})
+        application = Application.query.get_or_404(application_id)
+        activity = Activity.query.get_or_404(activity_id)
+        if activity.internal:
+            abort(404)
+        project = Project.query.get_or_404(project_id)
 
-    if current_user not in project.moderators and not current_user.is_admin:
-        abort(401)
+        if activity.project != project or application.activity_id != activity.id:
+            abort(400, {'message': 'The specified project, activity and application'
+                                   ' are unrelated.'})
 
-    if project.lifetime_stage != LifetimeStage.finalizing:
-        abort(400, {'message': 'The project must be in the finalizing stage.'})
+        if current_user not in project.moderators and not current_user.is_admin:
+            abort(403)
 
-    if application.status != ApplicationStatus.approved:
-        abort(400, {'message': 'Reports may only be created on approved applictions.'})
+        if project.lifetime_stage != LifetimeStage.finalizing:
+            abort(400, {'message': 'The project must be in the finalizing stage.'})
 
-    in_schema = VolunteeringReportSchema(exclude=('time',))
-    try:
-        new_report = in_schema.load(request.json)
-    except ValidationError as err:
-        abort(400, {'message': err.messages})
+        if application.status != ApplicationStatus.approved:
+            abort(400, {'message': 'Reports may only be created on approved applications.'})
 
-    new_report.application_id = application_id
-    new_report.reporter_email = current_user.email
+        in_schema = VolunteeringReportSchema(exclude=('time',))
+        try:
+            new_report = in_schema.load(request.json)
+        except ValidationError as err:
+            abort(400, {'message': err.messages})
 
-    try:
-        db.session.add(new_report)
-        db.session.commit()
-    except IntegrityError as err:
-        db.session.rollback()
-        log.exception(err)
-        abort(400, {'message': 'Data integrity violated.'})
+        new_report.application_id = application_id
+        new_report.reporter_email = current_user.email
 
-    out_schema = VolunteeringReportSchema()
-    return out_schema.jsonify(new_report)
+        try:
+            db.session.add(new_report)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            log.exception(err)
+            abort(400, {'message': 'Data integrity violated.'})
+
+        out_schema = VolunteeringReportSchema(exclude=('application_id',))
+        return out_schema.jsonify(new_report)
+
+    @login_required
+    def patch(self, project_id, activity_id, application_id):
+        """Edit a volunteering report on an application."""
+        if not request.is_json:
+            abort(400, {'message': 'The request should be in JSON.'})
+
+        application = Application.query.get_or_404(application_id)
+        activity = Activity.query.get_or_404(activity_id)
+        if activity.internal:
+            abort(404)
+        project = Project.query.get_or_404(project_id)
+
+        if activity.project != project or application.activity_id != activity.id:
+            abort(400, {'message': 'The specified project, activity and application'
+                                   ' are unrelated.'})
+
+        if current_user not in project.moderators and not current_user.is_admin:
+            abort(403)
+
+        if project.lifetime_stage != LifetimeStage.finalizing:
+            abort(400, {'message': 'The project must be in the finalizing stage.'})
+
+        if application.status != ApplicationStatus.approved:
+            abort(400, {'message': 'Reports may only be modified on approved applications.'})
+
+        report = VolunteeringReport.query.filter_by(
+            application_id=application_id,
+            reporter_email=current_user.email
+        ).first_or_404()
+        in_schema = VolunteeringReportSchema(exclude=('time',))
+        try:
+            updated_report = in_schema.load(request.json, instance=report)
+        except ValidationError as err:
+            abort(400, {'message': err.messages})
+
+        try:
+            db.session.add(updated_report)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            log.exception(err)
+            abort(400, {'message': 'Data integrity violated.'})
+
+        out_schema = VolunteeringReportSchema(exclude=('application_id',))
+        return out_schema.jsonify(updated_report)
+
+    @login_required
+    def delete(self, project_id, activity_id, application_id):
+        """Delete a volunteering report on an application."""
+        application = Application.query.get_or_404(application_id)
+        activity = Activity.query.get_or_404(activity_id)
+        if activity.internal:
+            abort(404)
+        project = Project.query.get_or_404(project_id)
+
+        if activity.project != project or application.activity_id != activity.id:
+            abort(400, {'message': 'The specified project, activity and application'
+                                   ' are unrelated.'})
+
+        if current_user not in project.moderators and not current_user.is_admin:
+            abort(403)
+
+        if project.lifetime_stage != LifetimeStage.finalizing:
+            abort(400, {'message': 'The project must be in the finalizing stage.'})
+
+        if application.status != ApplicationStatus.approved:
+            abort(400, {'message': 'Reports may only be modified on approved applications.'})
+
+        report = VolunteeringReport.query.filter_by(
+            application_id=application_id,
+            reporter_email=current_user.email
+        ).first_or_404()
+        try:
+            db.session.delete(report)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            log.exception(err)
+            abort(400, {'message': 'Data integrity violated.'})
+
+        return NO_PAYLOAD
+
+volunteering_report_api = VolunteeringReportAPI.as_view('volunteering_report_api')
+api.add_url_rule('/projects/<int:project_id>/activities/<int:activity_id>'
+                 '/applications/<int:application_id>/report',
+                 view_func=volunteering_report_api,
+                 methods=('POST', 'PATCH', 'DELETE'))
 
 
 # ----- Feedback -----

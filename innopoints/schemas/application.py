@@ -18,6 +18,7 @@ class ApplicationSchema(ma.ModelSchema):
     status = EnumField(ApplicationStatus)
     applicant = ma.Nested('AccountSchema', only=('full_name', 'email'))
     feedback = ma.Nested('FeedbackSchema', exclude=('time',))
+    reports = ma.Nested('VolunteeringReportSchema', many=True)
     telegram_username = ma.Str(data_key='telegram')
 
 
