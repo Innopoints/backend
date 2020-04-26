@@ -165,9 +165,9 @@ def edit_application(project_id, activity_id, application_id):
         if not isinstance(actual_hours, int) or actual_hours < 0:
             abort(400, {'message': 'Actual hours must be a non-negative integer.'})
 
-        if activity.fixed_reward:
-            abort(400, {'message': 'Working hours may only be changed '
-                                   'on hourly-rate activity applications.'})
+        if activity.fixed_reward and actual_hours not in [0, 1]:
+            abort(400, {'message': 'Working hours on hourly-rate activities'
+                                   'may only be set to 0 or 1.'})
 
         if application.status != ApplicationStatus.approved:
             abort(400, {'message': 'Working hours may only be changed on approved applications.'})
