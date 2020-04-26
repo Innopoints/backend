@@ -7,7 +7,6 @@ Application:
 
 VolunteeringReport:
 - GET    /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report_info
-- GET    /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
 - POST   /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
 - PATCH  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
 - DELETE /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report
