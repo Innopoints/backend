@@ -224,7 +224,7 @@ def list_projects_for_review():
         abort(401)
 
     db_query = Project.query.filter_by(review_status=ReviewStatus.pending)
-    schema = ProjectSchema(many=True, only=('id', 'name', 'organizer'))
+    schema = ProjectSchema(many=True, only=('id', 'name', 'creator'))
     return schema.jsonify(db_query.all())
 
 
@@ -291,9 +291,6 @@ def publish_project(project_id):
 
     if not current_user.is_admin and project.creator != current_user:
         abort(401)
-
-    if not project.organizer:
-        abort(400, {'message': 'The organizer field must not be empty.'})
 
     external_activity = Activity.query.filter_by(internal=False)
     if not db.session.query(external_activity.exists()).scalar():
@@ -448,7 +445,6 @@ class ProjectDetailAPI(MethodView):
         """Get full information about the project"""
         project = Project.query.get_or_404(project_id)
         exclude = ['files',
-                   'moderators',
                    'review_status',
                    'admin_feedback',
                    'activities.applications',
@@ -457,7 +453,6 @@ class ProjectDetailAPI(MethodView):
                    'activities.applications.comment']
 
         if current_user.is_authenticated:
-            exclude.remove('moderators')
             exclude.remove('activities.applications')
             exclude.remove('activities.existing_application')
             if current_user in project.moderators or current_user.is_admin:
@@ -483,7 +478,7 @@ class ProjectDetailAPI(MethodView):
         if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
             abort(400, {'The project may only be edited during its draft and ongoing stages.'})
 
-        in_schema = ProjectSchema(only=('name', 'image_id', 'organizer', 'moderators'))
+        in_schema = ProjectSchema(only=('name', 'image_id', 'moderators'))
 
         try:
             updated_project = in_schema.load(request.json, instance=project, partial=True)
@@ -501,7 +496,7 @@ class ProjectDetailAPI(MethodView):
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
-        out_schema = ProjectSchema(only=('id', 'name', 'image_id', 'organizer', 'moderators'))
+        out_schema = ProjectSchema(only=('id', 'name', 'image_id', 'moderators'))
         return out_schema.jsonify(updated_project)
 
     @login_required

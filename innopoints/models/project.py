@@ -41,7 +41,6 @@ class Project(db.Model):
     name = db.Column(db.String(128), nullable=False, unique=True)
     image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=True)
     creation_time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
-    organizer = db.Column(db.String(128), nullable=True)
     activities = db.relationship('Activity',
                                  cascade='all, delete-orphan',
                                  passive_deletes=True,
