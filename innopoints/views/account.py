@@ -16,10 +16,14 @@ Account:
 - PATCH  /accounts/{email}/telegram
 - PATCH  /account/notification_settings
 - PATCH  /accounts/{email}/notification_settings
+
+Innopoints:
+- POST   /reclaim-innopoints
 """
 
 from datetime import datetime
 import logging
+import sqlite3
 import math
 
 from flask import request, jsonify
@@ -29,6 +33,7 @@ from sqlalchemy import or_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.exc import IntegrityError
+from werkzeug.security import check_password_hash
 
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort
@@ -471,3 +476,42 @@ def change_notification_settings(email):
         abort(400, {'message': 'Data integrity violated.'})
 
     return NO_PAYLOAD
+
+@api.route('/reclaim-innopoints', methods=['POST'])
+@login_required
+def reclaim_innopoints():
+    """Get the innopoints the user had on the old system."""
+    if not request.is_json:
+        abort(400, {'message': 'The request should be in JSON.'})
+    if 'email' not in request.json or 'password' not in request.json:
+        abort(400, {'message': 'Email and password should be specified.'})
+
+    conn = sqlite3.connect('db.sqlite3')
+    conn.row_factory = lambda c, r: dict(sqlite3.Row(c, r))
+    cur = conn.cursor()
+    cur.execute('SELECT password, points FROM User WHERE email=?', (request.json['email'],))
+    user = cur.fetchone()
+
+    if user is None:
+        abort(403, {'message': 'This email is not associated with any account.'})
+
+    if not check_password_hash(user['password'], request.json['password']):
+        abort(403, {'message': 'Incorrect password.'})
+
+    if user['points'] != 0:
+        new_transaction = Transaction(account=current_user,
+                                      change=user['points'])
+        db.session.add(new_transaction)
+        try:
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            log.exception(err)
+            abort(400, {'message': 'Data integrity violated.'})
+
+    cur.execute('DELETE FROM User WHERE email=?', (request.json['email'],))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify(user['points'])

@@ -18,6 +18,8 @@ COPY innopoints /app/innopoints
 COPY migrations /app/migrations
 COPY templates /app/templates
 COPY run.py /app/
+# Wildcard to make it optional
+COPY db.sqlite* /app
 
 # expose the port
 EXPOSE 7507
