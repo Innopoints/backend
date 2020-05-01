@@ -14,7 +14,11 @@ class AccountSchema(ma.ModelSchema):
         ordered = True
         sqla_session = db.session
 
+    def get_csrf_token(self, _account):
+        return self.context.get('csrf_token')
+
     balance = ma.Int()
+    csrf_token = ma.Method(serialize='get_csrf_token', dump_only=True)
 
 
 class TransactionSchema(ma.ModelSchema):

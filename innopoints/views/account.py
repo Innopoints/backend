@@ -26,7 +26,7 @@ import logging
 import sqlite3
 import math
 
-from flask import request, jsonify
+from flask import request, jsonify, session
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
 from sqlalchemy import or_
@@ -82,8 +82,10 @@ def subquery_to_events(subquery, event_type):
 def get_info(email):
     """Get information about an account.
     If the e-mail is not passed, return information about self."""
+    csrf_token = None
     if email is None:
         user = current_user
+        csrf_token = session['csrf_token']
     else:
         if not current_user.is_admin and email != current_user.email:
             abort(401)
@@ -91,7 +93,8 @@ def get_info(email):
 
     out_schema = AccountSchema(exclude=('moderated_projects', 'created_projects', 'stock_changes',
                                         'transactions', 'applications', 'reports',
-                                        'notification_settings', 'static_files'))
+                                        'notification_settings', 'static_files'),
+                               context={'csrf_token': csrf_token})
     return out_schema.jsonify(user)
 
 
