@@ -5,6 +5,7 @@
 - GET /logout
 """
 
+import secrets
 from urllib.parse import urljoin
 
 from flask import current_app, url_for, redirect, session, request
@@ -67,6 +68,7 @@ def authorize():
     db.session.commit()
 
     login_user(user, remember=True)
+    session['csrf_token'] = secrets.token_urlsafe()
 
     final_redirect_uri = session.pop('final_redirect_location', '/')
     frontend_base = session.pop('frontend_base', current_app.config['FRONTEND_BASE'])
@@ -88,6 +90,7 @@ def login_cheat(email):
         abort(400, {'message': 'This endpoint is unavailable.'})
     user = Account.query.get_or_404(email)
     login_user(user, remember=True)
+    session['csrf_token'] = secrets.token_urlsafe()
 
     if 'no_redirect' not in request.args:
         final_redirect_uri = request.args.get('final_redirect_location', '/')
