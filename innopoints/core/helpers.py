@@ -21,7 +21,5 @@ def csrf_protect():
     if request.method not in MODIFYING_METHODS:
         return
 
-    print(session['csrf_token'])
-    print(request.headers.get('X-CSRF-Token'))
     if request.headers.get('X-CSRF-Token') != session['csrf_token']:
         abort(403)
