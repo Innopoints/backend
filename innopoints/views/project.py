@@ -262,7 +262,7 @@ def create_project():
     for new_activity in new_project.activities:
         new_activity.project = new_project
 
-    moderation = Activity(name='Moderation', internal=True, working_hours=0)
+    moderation = Activity(name='[[Moderation]]', internal=True, working_hours=0)
     moderation.project = new_project
 
     db.session.add(new_project)
@@ -361,7 +361,7 @@ def finalize_project(project_id):
 
     moderation = Activity.query.filter_by(project=project,
                                           internal=True,
-                                          name='Moderation').one_or_none()
+                                          name='[[Moderation]]').one_or_none()
     if moderation is None:
         log.error('The moderation activity couldn\'t be found.')
         abort(500)
