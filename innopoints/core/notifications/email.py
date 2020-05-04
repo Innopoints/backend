@@ -12,12 +12,13 @@ def convert_links(fragment):
         return fragment
     return f'<a href="{current_app.config["FRONTEND_BASE"]}{fragment[1]}">{fragment[0]}</a>'
 
+
 # pylint: disable=too-many-branches
 def get_email_message(notification_type, payload, recipient_email):
     '''Convert the payload to a email Message object based on the notification type.'''
     header = None
     body = None
-    payload = PayloadSchema().fill_data(payload.copy())
+    payload = payload and PayloadSchema().fill_data(payload.copy())
 
     if notification_type == NotificationType.purchase_status_changed:
         header = 'Purchase status changed'
