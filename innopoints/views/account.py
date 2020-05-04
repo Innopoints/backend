@@ -244,7 +244,7 @@ def get_timeline(email):
             .add_column(Project.name.label('project_name'))
             .outerjoin(Activity, (Activity.project_id == Project.id)
                                & (Activity.internal)
-                               & (Activity.name == 'Moderation'))
+                               & (Activity.name == '[[Moderation]]'))
             .outerjoin(Application, (Application.activity_id == Activity.id)
                                   & (Application.applicant == user))
             .add_column(Application.id.label('application_id'))
