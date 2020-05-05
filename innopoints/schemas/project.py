@@ -12,6 +12,7 @@ from innopoints.models import Project, ReviewStatus, LifetimeStage
 class ProjectSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Project
+        load_instance = True
         ordered = True
         include_relationships = True
 

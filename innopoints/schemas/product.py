@@ -11,6 +11,7 @@ from innopoints.models import Product
 class ProductSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Product
+        load_instance = True
         ordered = True
         include_relationships = True
 

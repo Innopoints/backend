@@ -20,6 +20,7 @@ from innopoints.models import (
 class VarietySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Variety
+        load_instance = True
         ordered = True
         include_fk = True
         include_relationships = True
@@ -106,6 +107,7 @@ class VarietySchema(ma.SQLAlchemyAutoSchema):
 class ColorSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Color
+        load_instance = True
         ordered = True
         include_relationships = True
         exclude = ('varieties',)
@@ -137,6 +139,7 @@ class ColorSchema(ma.SQLAlchemyAutoSchema):
 class SizeSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Size
+        load_instance = True
         ordered = True
         include_relationships = True
         exclude = ('varieties',)
@@ -145,6 +148,7 @@ class SizeSchema(ma.SQLAlchemyAutoSchema):
 class StockChangeSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = StockChange
+        load_instance = True
         ordered = True
         include_fk = True
         include_relationships = True
@@ -163,6 +167,7 @@ class StockChangeSchema(ma.SQLAlchemyAutoSchema):
 class ProductImageSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = ProductImage
+        load_instance = True
         ordered = True
         include_fk = True
         include_relationships = True
