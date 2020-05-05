@@ -3,7 +3,7 @@
 from marshmallow_enum import EnumField
 from marshmallow import ValidationError, pre_load, post_dump, pre_dump
 
-from innopoints.extensions import ma, db
+from innopoints.extensions import ma
 from innopoints.models import (
     Color,
     Product,
@@ -17,12 +17,12 @@ from innopoints.models import (
 
 # pylint: disable=missing-docstring
 
-class VarietySchema(ma.ModelSchema):
+class VarietySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Variety
         ordered = True
         include_fk = True
-        sqla_session = db.session
+        include_relationships = True
 
     @pre_load
     def create_stock_change(self, data, **_kwargs):
@@ -103,11 +103,11 @@ class VarietySchema(ma.ModelSchema):
     purchases = ma.Int(dump_only=True)
 
 
-class ColorSchema(ma.ModelSchema):
+class ColorSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Color
         ordered = True
-        sqla_session = db.session
+        include_relationships = True
         exclude = ('varieties',)
 
     @pre_load
@@ -134,20 +134,20 @@ class ColorSchema(ma.ModelSchema):
         return data
 
 
-class SizeSchema(ma.ModelSchema):
+class SizeSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Size
         ordered = True
-        sqla_session = db.session
+        include_relationships = True
         exclude = ('varieties',)
 
 
-class StockChangeSchema(ma.ModelSchema):
+class StockChangeSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = StockChange
         ordered = True
         include_fk = True
-        sqla_session = db.session
+        include_relationships = True
 
     status = EnumField(StockChangeStatus)
     variety = ma.Nested(VarietySchema, exclude=('stock_changes',))
@@ -160,9 +160,9 @@ class StockChangeSchema(ma.ModelSchema):
         return stock_change
 
 
-class ProductImageSchema(ma.ModelSchema):
+class ProductImageSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = ProductImage
         ordered = True
         include_fk = True
-        sqla_session = db.session
+        include_relationships = True

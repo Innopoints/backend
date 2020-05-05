@@ -3,17 +3,17 @@
 from marshmallow import validate, pre_load, ValidationError, validates
 from marshmallow_enum import EnumField
 
-from innopoints.extensions import ma, db
+from innopoints.extensions import ma
 from innopoints.models import Application, ApplicationStatus, VolunteeringReport, Feedback
 
 
 # pylint: disable=missing-docstring
 
-class ApplicationSchema(ma.ModelSchema):
+class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Application
         ordered = True
-        sqla_session = db.session
+        include_relationships = True
 
     status = EnumField(ApplicationStatus)
     applicant = ma.Nested('AccountSchema', only=('full_name', 'email'))
@@ -22,32 +22,32 @@ class ApplicationSchema(ma.ModelSchema):
     telegram_username = ma.Str(data_key='telegram')
 
 
-class ActivityProjectSchema(ma.ModelSchema):
+class ActivityProjectSchema(ma.SQLAlchemyAutoSchema):
     '''An intermediate schema for VolunteeringReportSchema to get the project name.'''
     class Meta:
         model = Application
         fields = ('project', 'name')
-        sqla_session = db.session
+        include_relationships = True
 
     project = ma.Nested('ProjectSchema', only=('name', 'id'))
 
 
-class ApplicationActivitySchema(ma.ModelSchema):
+class ApplicationActivitySchema(ma.SQLAlchemyAutoSchema):
     '''An intermediate schema for VolunteeringReportSchema to get the activity name.'''
     class Meta:
         model = Application
         fields = ('activity',)
-        sqla_session = db.session
+        include_relationships = True
 
     activity = ma.Nested('ActivityProjectSchema')
 
 
-class VolunteeringReportSchema(ma.ModelSchema):
+class VolunteeringReportSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = VolunteeringReport
         ordered = True
         include_fk = True
-        sqla_session = db.session
+        include_relationships = True
 
     reporter_email = ma.Str(dump_only=True)
     application_id = ma.Int(dump_only=True)
@@ -55,11 +55,11 @@ class VolunteeringReportSchema(ma.ModelSchema):
     rating = ma.Int(validate=validate.Range(min=1, max=5))
 
 
-class FeedbackSchema(ma.ModelSchema):
+class FeedbackSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Feedback
         ordered = True
-        sqla_session = db.session
+        include_relationships = True
         exclude = ('transaction',)
 
     @pre_load
