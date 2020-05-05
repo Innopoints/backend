@@ -3,17 +3,17 @@
 from marshmallow_enum import EnumField
 from marshmallow import validate
 
-from innopoints.extensions import ma, db
+from innopoints.extensions import ma
 from innopoints.models import Project, ReviewStatus, LifetimeStage
 
 
 # pylint: disable=missing-docstring
 
-class ProjectSchema(ma.ModelSchema):
+class ProjectSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Project
         ordered = True
-        sqla_session = db.session
+        include_relationships = True
 
     name = ma.Str(required=True,
                   validate=validate.Length(min=1, max=128),

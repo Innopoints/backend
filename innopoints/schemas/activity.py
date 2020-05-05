@@ -2,19 +2,18 @@
 
 from marshmallow import validate, validates_schema, ValidationError, pre_load, post_dump
 
-from innopoints.extensions import ma, db
+from innopoints.extensions import ma
 from innopoints.models import Activity, Application, ApplicationStatus, Competence
 from .application import ApplicationSchema
 
 
 # pylint: disable=missing-docstring
 
-class ActivitySchema(ma.ModelSchema):
+class ActivitySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Activity
         ordered = True
-        exclude = ('project_id',)
-        sqla_session = db.session
+        include_relationships = True
 
     @pre_load
     def unwrap_dates(self, data, **_kwargs):
@@ -104,9 +103,9 @@ class ActivitySchema(ma.ModelSchema):
                                      dump_only=True)
 
 
-class CompetenceSchema(ma.ModelSchema):
+class CompetenceSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Competence
         ordered = True
-        sqla_session = db.session
+        include_relationships = True
         exclude = ('activities', 'feedback')

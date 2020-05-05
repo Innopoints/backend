@@ -2,17 +2,17 @@
 
 from marshmallow import validate
 
-from innopoints.extensions import ma, db
+from innopoints.extensions import ma
 from innopoints.models import Account, Transaction
 
 
 # pylint: disable=missing-docstring
 
-class AccountSchema(ma.ModelSchema):
+class AccountSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Account
         ordered = True
-        sqla_session = db.session
+        include_relationships = True
 
     def get_csrf_token(self, _account):
         return self.context.get('csrf_token')
@@ -21,17 +21,16 @@ class AccountSchema(ma.ModelSchema):
     csrf_token = ma.Method(serialize='get_csrf_token', dump_only=True)
 
 
-class TransactionSchema(ma.ModelSchema):
+class TransactionSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Transaction
         ordered = True
-        sqla_session = db.session
+        include_relationships = True
 
 
 class TimelineSchema(ma.Schema):
     class Meta:
         ordered = True
-        sqla_session = db.session
 
     entry_time = ma.DateTime(timezone=True)
     type = ma.Str()
@@ -41,7 +40,6 @@ class TimelineSchema(ma.Schema):
 class NotificationSettingsSchema(ma.Schema):
     class Meta:
         ordered = True
-        sqla_session = db.session
         notification_modes = ['off', 'email', 'push']
 
     innostore = ma.Str(validate=validate.OneOf(Meta.notification_modes))
