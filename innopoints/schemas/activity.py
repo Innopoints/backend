@@ -12,6 +12,7 @@ from .application import ApplicationSchema
 class ActivitySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Activity
+        load_instance = True
         ordered = True
         include_relationships = True
 
@@ -106,6 +107,7 @@ class ActivitySchema(ma.SQLAlchemyAutoSchema):
 class CompetenceSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Competence
+        load_instance = True
         ordered = True
         include_relationships = True
         exclude = ('activities', 'feedback')

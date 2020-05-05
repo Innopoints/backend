@@ -12,6 +12,7 @@ from innopoints.models import Application, ApplicationStatus, VolunteeringReport
 class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Application
+        load_instance = True
         ordered = True
         include_relationships = True
 
@@ -26,6 +27,7 @@ class ActivityProjectSchema(ma.SQLAlchemyAutoSchema):
     '''An intermediate schema for VolunteeringReportSchema to get the project name.'''
     class Meta:
         model = Application
+        load_instance = True
         fields = ('project', 'name')
         include_relationships = True
 
@@ -36,6 +38,7 @@ class ApplicationActivitySchema(ma.SQLAlchemyAutoSchema):
     '''An intermediate schema for VolunteeringReportSchema to get the activity name.'''
     class Meta:
         model = Application
+        load_instance = True
         fields = ('activity',)
         include_relationships = True
 
@@ -45,6 +48,7 @@ class ApplicationActivitySchema(ma.SQLAlchemyAutoSchema):
 class VolunteeringReportSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = VolunteeringReport
+        load_instance = True
         ordered = True
         include_fk = True
         include_relationships = True
@@ -58,6 +62,7 @@ class VolunteeringReportSchema(ma.SQLAlchemyAutoSchema):
 class FeedbackSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Feedback
+        load_instance = True
         ordered = True
         include_relationships = True
         exclude = ('transaction',)

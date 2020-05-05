@@ -55,6 +55,7 @@ class PayloadSchema(ma.Schema):
 class NotificationSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Notification
+        load_instance = True
         include_relationships = True
     type = EnumField(NotificationType)
     payload = ma.Nested(PayloadSchema)

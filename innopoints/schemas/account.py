@@ -11,6 +11,7 @@ from innopoints.models import Account, Transaction
 class AccountSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Account
+        load_instance = True
         ordered = True
         include_relationships = True
 
@@ -24,6 +25,7 @@ class AccountSchema(ma.SQLAlchemyAutoSchema):
 class TransactionSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Transaction
+        load_instance = True
         ordered = True
         include_relationships = True
 
