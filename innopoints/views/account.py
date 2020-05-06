@@ -487,16 +487,17 @@ def reclaim_innopoints():
     if not request.is_json:
         abort(400, {'message': 'The request should be in JSON.'})
     if 'email' not in request.json or 'password' not in request.json:
-        abort(400, {'message': 'Email and password should be specified.'})
+        abort(400, {'message': 'Email/username and password should be specified.'})
 
     conn = sqlite3.connect('db.sqlite3')
     conn.row_factory = lambda c, r: dict(sqlite3.Row(c, r))
     cur = conn.cursor()
-    cur.execute('SELECT password, points FROM User WHERE email=?', (request.json['email'],))
+    cur.execute('SELECT email, password, points FROM User WHERE email=? OR username=?;',
+                (request.json['email'],)*2)
     user = cur.fetchone()
 
     if user is None:
-        abort(403, {'message': 'This email is not associated with any account.'})
+        abort(403, {'message': 'This email/username is not associated with any account.'})
 
     if not check_password_hash(user['password'], request.json['password']):
         abort(403, {'message': 'Incorrect password.'})
@@ -512,7 +513,7 @@ def reclaim_innopoints():
             log.exception(err)
             abort(400, {'message': 'Data integrity violated.'})
 
-    cur.execute('DELETE FROM User WHERE email=?', (request.json['email'],))
+    cur.execute('DELETE FROM User WHERE email=?;', (user['email'],))
     conn.commit()
     cur.close()
     conn.close()
