@@ -46,13 +46,11 @@ from innopoints.schemas import ApplicationSchema, VolunteeringReportSchema, Feed
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
 
+
 @api.route('/projects/<int:project_id>/activities/<int:activity_id>/applications', methods=['POST'])
 @login_required
 def apply_for_activity(project_id, activity_id):
     """Apply for volunteering on a particular activity."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     project = Project.query.get_or_404(project_id)
     activity = Activity.query.get_or_404(activity_id)
     if activity.internal:
@@ -131,9 +129,6 @@ def take_back_application(project_id, activity_id):
 @login_required
 def edit_application(project_id, activity_id, application_id):
     """Change the status or the actual hours of an application."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     application = Application.query.get_or_404(application_id)
     activity = Activity.query.get_or_404(activity_id)
     project = Project.query.get_or_404(project_id)
@@ -239,9 +234,6 @@ class VolunteeringReportAPI(MethodView):
     @login_required
     def post(self, project_id, activity_id, application_id):
         """Create a volunteering report on an application."""
-        if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
-
         application = Application.query.get_or_404(application_id)
         activity = Activity.query.get_or_404(activity_id)
         if activity.internal:
@@ -284,9 +276,6 @@ class VolunteeringReportAPI(MethodView):
     @login_required
     def patch(self, project_id, activity_id, application_id):
         """Edit a volunteering report on an application."""
-        if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
-
         application = Application.query.get_or_404(application_id)
         activity = Activity.query.get_or_404(activity_id)
         if activity.internal:
@@ -377,9 +366,6 @@ api.add_url_rule('/projects/<int:project_id>/activities/<int:activity_id>'
 @login_required
 def leave_feedback(project_id, activity_id, application_id):
     """Leave feedback on a particular volunteering experience."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     application = Application.query.get_or_404(application_id)
     activity = Activity.query.get_or_404(activity_id)
     project = Project.query.get_or_404(project_id)

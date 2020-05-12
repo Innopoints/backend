@@ -41,9 +41,6 @@ def get_notifications():
 @login_required
 def subscribe():
     """Adds the user's subscription to push notifications."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     new_subscription = request.json
 
     if 'endpoint' not in new_subscription:

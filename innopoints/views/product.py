@@ -139,9 +139,6 @@ def list_products():
 @login_required
 def create_product():
     """Create a new product."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if not current_user.is_admin:
         abort(401)
 
@@ -207,11 +204,9 @@ class ProductDetailAPI(MethodView):
     @login_required
     def patch(self, product_id):
         """Edit the product."""
-        if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
-
         if not current_user.is_admin:
             abort(401)
+            
         product = Product.query.get_or_404(product_id)
 
         in_out_schema = ProductSchema(exclude=('id', 'varieties', 'addition_time'))

@@ -139,9 +139,6 @@ def list_users():
 @login_required
 def change_balance(email):
     """Change a user's balance."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if not current_user.is_admin:
         abort(401)
 
@@ -395,13 +392,10 @@ def get_notification_settings(email):
 @api.route('/accounts/<email>/notify', methods=['POST'])
 def service_notification(email):
     """Sends a custom service notification by the admin to any user."""
-    user = Account.query.get_or_404(email)
-
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if not current_user.is_admin:
         abort(401)
+
+    user = Account.query.get_or_404(email)
 
     if not request.json.get('message'):
         abort(400, {'message': 'Specify a valid message.'})
@@ -422,9 +416,6 @@ def service_notification(email):
 def change_telegram(email):
     """Change a user's Telegram username.
     If the email is not passed, change own username."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if email is None:
         user = current_user
     else:
@@ -452,9 +443,6 @@ def change_telegram(email):
 def change_notification_settings(email):
     """Get the notification settings of the account.
     If the e-mail is not passed, return own settings."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if email is None:
         user = current_user
     else:
@@ -484,8 +472,6 @@ def change_notification_settings(email):
 @login_required
 def reclaim_innopoints():
     """Get the innopoints the user had on the old system."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
     if 'email' not in request.json or 'password' not in request.json:
         abort(400, {'message': 'Email/username and password should be specified.'})
 

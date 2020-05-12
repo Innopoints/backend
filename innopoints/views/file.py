@@ -18,7 +18,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
 from innopoints.core.file_manager import file_manager
-from innopoints.core.helpers import abort
+from innopoints.core.helpers import abort, allow_no_json
 from innopoints.extensions import db
 from innopoints.models import StaticFile
 
@@ -36,6 +36,7 @@ def get_mimetype(file: werkzeug.datastructures.FileStorage) -> str:
     return mimetypes.guess_type(file.filename)[0]
 
 
+@allow_no_json
 @api.route('/file', methods=['POST'])
 @login_required
 def upload_file():
