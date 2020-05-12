@@ -29,7 +29,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-from innopoints.core.helpers import abort
+from innopoints.core.helpers import abort, admin_required
 from innopoints.core.notifications import notify_all, notify, remove_notifications
 from innopoints.models import (
     Account,
@@ -54,12 +54,9 @@ log = logging.getLogger(__name__)
 
 
 @api.route('/products/<int:product_id>/varieties', methods=['POST'])
-@login_required
+@admin_required
 def create_variety(product_id):
     """Create a new variety."""
-    if not current_user.is_admin:
-        abort(401)
-
     product = Product.query.get_or_404(product_id)
 
     in_schema = VarietySchema(exclude=('id', 'product_id', 'product',
@@ -91,12 +88,9 @@ def create_variety(product_id):
 class VarietyAPI(MethodView):
     """REST views for a particular instance of the Variety model."""
 
-    @login_required
+    @admin_required
     def patch(self, product_id, variety_id):
         """Update the given variety."""
-        if not current_user.is_admin:
-            abort(401)
-
         product = Product.query.get_or_404(product_id)
         variety = Variety.query.get_or_404(variety_id)
         if variety.product != product:
@@ -132,12 +126,9 @@ class VarietyAPI(MethodView):
         out_schema = VarietySchema(exclude=('product_id', 'stock_changes', 'product', 'purchases'))
         return out_schema.jsonify(updated_variety)
 
-    @login_required
+    @admin_required
     def delete(self, product_id, variety_id):
         """Delete the variety."""
-        if not current_user.is_admin:
-            abort(401)
-
         product = Product.query.get_or_404(product_id)
         variety = Variety.query.get_or_404(variety_id)
         if variety.product != product:
@@ -229,12 +220,9 @@ def purchase_variety(product_id, variety_id):
 # ----- StockChange -----
 
 @api.route('/stock_changes/for_review')
-@login_required
+@admin_required
 def get_purchases_for_review():
     """Get a list of purchases that require admin's attention."""
-    if not current_user.is_admin:
-        abort(401)
-
     db_query = StockChange.query.filter(
         StockChange.status.in_((StockChangeStatus.pending, StockChangeStatus.ready_for_pickup))
     )
@@ -243,12 +231,9 @@ def get_purchases_for_review():
 
 
 @api.route('/stock_changes/<int:stock_change_id>/status', methods=['PATCH'])
-@login_required
+@admin_required
 def edit_purchase_status(stock_change_id):
     """Edit the status of a particular purchase."""
-    if not current_user.is_admin:
-        abort(401)
-
     try:
         status = getattr(StockChangeStatus, request.json['status'])
     except (KeyError, AttributeError):
@@ -297,12 +282,9 @@ def list_sizes():
 
 
 @api.route('/sizes', methods=['POST'])
-@login_required
+@admin_required
 def create_size():
     """Create a new size."""
-    if not current_user.is_admin:
-        abort(401)
-
     in_out_schema = SizeSchema()
 
     try:
@@ -331,12 +313,9 @@ def list_colors():
 
 
 @api.route('/colors', methods=['POST'])
-@login_required
+@admin_required
 def create_color():
     """Create a new color."""
-    if not current_user.is_admin:
-        abort(401)
-
     in_out_schema = ColorSchema()
 
     try:

@@ -29,7 +29,7 @@ from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
-from innopoints.core.helpers import abort, allow_no_json
+from innopoints.core.helpers import abort, allow_no_json, admin_required
 from innopoints.core.notifications import notify, notify_all, remove_notifications
 from innopoints.extensions import db
 from innopoints.models import (
@@ -217,12 +217,9 @@ def list_drafts():
 
 
 @api.route('/projects/for_review')
-@login_required
+@admin_required
 def list_projects_for_review():
     """Return a list of projects pending the administrator's review."""
-    if not current_user.is_admin:
-        abort(401)
-
     db_query = Project.query.filter_by(review_status=ReviewStatus.pending)
     schema = ProjectSchema(many=True, only=('id', 'name', 'creator'))
     return schema.jsonify(db_query.all())
@@ -382,16 +379,13 @@ def finalize_project(project_id):
 
 
 @api.route('/projects/<int:project_id>/review_status', methods=['PATCH'])
-@login_required
+@admin_required
 def review_project(project_id):
     """Review a project in its finalizing stage."""
     project = Project.query.get_or_404(project_id)
 
     if project.lifetime_stage != LifetimeStage.finalizing:
         abort(400, {'message': 'Only projects being finalized can be reviewed.'})
-
-    if not current_user.is_admin:
-        abort(401)
 
     if project.review_status != ReviewStatus.pending:
         abort(400, {'message': 'Can only review projects pending review.'})
