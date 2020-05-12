@@ -57,9 +57,6 @@ log = logging.getLogger(__name__)
 @login_required
 def create_variety(product_id):
     """Create a new variety."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if not current_user.is_admin:
         abort(401)
 
@@ -97,9 +94,6 @@ class VarietyAPI(MethodView):
     @login_required
     def patch(self, product_id, variety_id):
         """Update the given variety."""
-        if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
-
         if not current_user.is_admin:
             abort(401)
 
@@ -172,9 +166,6 @@ api.add_url_rule('/products/<int:product_id>/varieties/<int:variety_id>',
 @login_required
 def purchase_variety(product_id, variety_id):
     """Purchase a particular variety of a product."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     purchased_amount = request.json.get('amount')
     if not isinstance(purchased_amount, int):
         abort(400, {'message': 'The purchase amount must be specified as an integer.'})
@@ -255,9 +246,6 @@ def get_purchases_for_review():
 @login_required
 def edit_purchase_status(stock_change_id):
     """Edit the status of a particular purchase."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if not current_user.is_admin:
         abort(401)
 
@@ -312,9 +300,6 @@ def list_sizes():
 @login_required
 def create_size():
     """Create a new size."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if not current_user.is_admin:
         abort(401)
 
@@ -349,9 +334,6 @@ def list_colors():
 @login_required
 def create_color():
     """Create a new color."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if not current_user.is_admin:
         abort(401)
 

@@ -29,7 +29,7 @@ from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
-from innopoints.core.helpers import abort
+from innopoints.core.helpers import abort, allow_no_json
 from innopoints.core.notifications import notify, notify_all, remove_notifications
 from innopoints.extensions import db
 from innopoints.models import (
@@ -242,9 +242,6 @@ def check_name_availability():
 @login_required
 def create_project():
     """Create a new draft project."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     in_schema = ProjectSchema(exclude=('id', 'creation_time', 'creator', 'admin_feedback',
                                        'review_status', 'lifetime_stage', 'files',
                                        'activities.internal', 'activities.id',
@@ -279,11 +276,11 @@ def create_project():
     return out_schema.jsonify(new_project)
 
 
+@allow_no_json
 @api.route('/projects/<int:project_id>/publish', methods=['PATCH'])
 @login_required
 def publish_project(project_id):
     """Publish an existing draft project."""
-
     project = Project.query.get_or_404(project_id)
 
     if project.lifetime_stage != LifetimeStage.draft:
@@ -312,11 +309,11 @@ def publish_project(project_id):
     return NO_PAYLOAD
 
 
+@allow_no_json
 @api.route('/projects/<int:project_id>/request_review', methods=['PATCH'])
 @login_required
 def request_review(project_id):
     """Request an admin's review for my project."""
-
     project = Project.query.get_or_404(project_id)
 
     if project.lifetime_stage != LifetimeStage.finalizing:
@@ -345,6 +342,7 @@ def request_review(project_id):
     return NO_PAYLOAD
 
 
+@allow_no_json
 @api.route('/projects/<int:project_id>/finalize', methods=['PATCH'])
 @login_required
 def finalize_project(project_id):
@@ -387,9 +385,6 @@ def finalize_project(project_id):
 @login_required
 def review_project(project_id):
     """Review a project in its finalizing stage."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     project = Project.query.get_or_404(project_id)
 
     if project.lifetime_stage != LifetimeStage.finalizing:
@@ -468,9 +463,6 @@ class ProjectDetailAPI(MethodView):
     @login_required
     def patch(self, project_id):
         """Edit the information of the project."""
-        if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
-
         project = Project.query.get_or_404(project_id)
         if not current_user.is_admin and current_user != project.creator:
             abort(401)

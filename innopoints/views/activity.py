@@ -42,9 +42,6 @@ log = logging.getLogger(__name__)
 @login_required
 def create_activity(project_id):
     """Create a new activity to an existing project."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     project = Project.query.get_or_404(project_id)
     if not current_user.is_admin and current_user not in project.moderators:
         abort(401)
@@ -80,9 +77,6 @@ class ActivityAPI(MethodView):
     @login_required
     def patch(self, project_id, activity_id):
         """Edit the activity."""
-        if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
-
         project = Project.query.get_or_404(project_id)
         if not current_user.is_admin and current_user not in project.moderators:
             abort(401)
@@ -176,9 +170,6 @@ def list_competences():
 @login_required
 def create_competence():
     """Create a new competence."""
-    if not request.is_json:
-        abort(400, {'message': 'The request should be in JSON.'})
-
     if not current_user.is_admin:
         abort(401)
 
@@ -207,9 +198,6 @@ class CompetenceAPI(MethodView):
     @login_required
     def patch(self, compt_id):
         """Edit the competence."""
-        if not request.is_json:
-            abort(400, {'message': 'The request should be in JSON.'})
-
         competence = Competence.query.get_or_404(compt_id)
         if not current_user.is_admin:
             abort(401)
