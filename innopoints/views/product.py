@@ -15,13 +15,13 @@ from datetime import date
 
 from flask import request, jsonify
 from flask.views import MethodView
-from flask_login import login_required, current_user
+from flask_login import current_user
 from marshmallow import ValidationError
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
-from innopoints.core.helpers import abort
+from innopoints.core.helpers import abort, admin_required
 from innopoints.core.notifications import notify_all, remove_notifications
 from innopoints.extensions import db
 from innopoints.models import (
@@ -136,12 +136,9 @@ def list_products():
 
 
 @api.route('/products', methods=['POST'])
-@login_required
+@admin_required
 def create_product():
     """Create a new product."""
-    if not current_user.is_admin:
-        abort(401)
-
     in_schema = ProductSchema(exclude=('id', 'addition_time',
                                        'varieties.stock_changes.variety_id',
                                        'varieties.product_id',
@@ -201,12 +198,9 @@ class ProductDetailAPI(MethodView):
                                         'varieties.product_id'))
         return schema.jsonify(product)
 
-    @login_required
+    @admin_required
     def patch(self, product_id):
         """Edit the product."""
-        if not current_user.is_admin:
-            abort(401)
-            
         product = Product.query.get_or_404(product_id)
 
         in_out_schema = ProductSchema(exclude=('id', 'varieties', 'addition_time'))
@@ -226,11 +220,9 @@ class ProductDetailAPI(MethodView):
 
         return in_out_schema.jsonify(updated_product)
 
-    @login_required
+    @admin_required
     def delete(self, product_id):
         """Delete the product."""
-        if not current_user.is_admin:
-            abort(401)
         product = Product.query.get_or_404(product_id)
 
         try:

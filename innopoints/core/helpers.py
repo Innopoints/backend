@@ -2,8 +2,10 @@
 
 import hmac
 import json
+from functools import wraps
 
 from flask import abort as flask_abort, Response, session, request, current_app
+from flask_login import login_required, current_user
 from werkzeug.routing import NotFound
 
 
@@ -47,3 +49,13 @@ def require_json():
             abort(400, {'message': 'The request should be in JSON.'})
     except NotFound:
         pass
+
+
+def admin_required(view):
+    """Ensure only admins can access the decorated view."""
+    @wraps(view)
+    def permission_checked(*args, **kwargs):
+        if not current_user.is_admin:
+            abort(403)
+        return view(*args, **kwargs)
+    return login_required(permission_checked)

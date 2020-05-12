@@ -22,7 +22,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-from innopoints.core.helpers import abort
+from innopoints.core.helpers import abort, admin_required
 from innopoints.core.notifications import remove_notifications
 from innopoints.models import (
     Activity,
@@ -167,12 +167,9 @@ def list_competences():
 
 
 @api.route('/competences', methods=['POST'])
-@login_required
+@admin_required
 def create_competence():
     """Create a new competence."""
-    if not current_user.is_admin:
-        abort(401)
-
     in_schema = CompetenceSchema(exclude=('id',))
 
     try:
@@ -195,12 +192,10 @@ def create_competence():
 class CompetenceAPI(MethodView):
     """REST views for a particular instance of a Competence model."""
 
-    @login_required
+    @admin_required
     def patch(self, compt_id):
         """Edit the competence."""
         competence = Competence.query.get_or_404(compt_id)
-        if not current_user.is_admin:
-            abort(401)
 
         in_schema = CompetenceSchema(exclude=('id',))
 

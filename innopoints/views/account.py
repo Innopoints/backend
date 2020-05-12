@@ -36,7 +36,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash
 
 from innopoints.blueprints import api
-from innopoints.core.helpers import abort
+from innopoints.core.helpers import abort, admin_required
 from innopoints.core.timezone import tz_aware_now, unix_epoch
 from innopoints.core.sql_hacks import as_row
 from innopoints.core.notifications import notify
@@ -136,12 +136,9 @@ def list_users():
 
 
 @api.route('/accounts/<string:email>/balance', methods=['PATCH'])
-@login_required
+@admin_required
 def change_balance(email):
     """Change a user's balance."""
-    if not current_user.is_admin:
-        abort(401)
-
     if not isinstance(request.json.get('change'), int):
         abort(400, {'message': 'The change in innopoints must be specified as an integer.'})
 
@@ -390,11 +387,9 @@ def get_notification_settings(email):
 
 
 @api.route('/accounts/<email>/notify', methods=['POST'])
+@admin_required
 def service_notification(email):
     """Sends a custom service notification by the admin to any user."""
-    if not current_user.is_admin:
-        abort(401)
-
     user = Account.query.get_or_404(email)
 
     if not request.json.get('message'):
