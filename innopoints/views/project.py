@@ -428,7 +428,7 @@ def review_project(project_id):
 
 
 class ProjectDetailAPI(MethodView):
-    """REST views for a particular instance of a Project model."""
+    """CUD views for a particular instance of a Project model."""
 
     def get(self, project_id):
         """Get full information about the project"""
@@ -462,7 +462,8 @@ class ProjectDetailAPI(MethodView):
             abort(401)
 
         if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
-            abort(400, {'The project may only be edited during its draft and ongoing stages.'})
+            abort(400, {'message': 'The project may only be edited '
+                                   'during its draft and ongoing stages.'})
 
         in_schema = ProjectSchema(only=('name', 'image_id', 'moderators'))
 
@@ -471,8 +472,9 @@ class ProjectDetailAPI(MethodView):
         except ValidationError as err:
             abort(400, {'message': err.messages})
 
-        if current_user not in updated_project.moderators:
-            updated_project.moderators.append(current_user)
+        with db.session.no_autoflush:
+            if current_user not in updated_project.moderators:
+                updated_project.moderators.append(current_user)
 
         try:
             db.session.add(updated_project)
