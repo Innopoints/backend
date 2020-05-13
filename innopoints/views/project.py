@@ -14,6 +14,11 @@ Project:
 - PATCH  /projects/{project_id}/request_review
 - PATCH  /projects/{project_id}/finalize
 - PATCH  /projects/{project_id}/review_status
+- PATCH  /projects/{project_id}/tags
+- GET    /tags
+- POST   /tags
+- PATCH  /tags/{tag_id}
+- DELETE /tags/{tag_id}
 """
 
 from datetime import datetime
@@ -42,8 +47,9 @@ from innopoints.models import (
     NotificationType,
     Project,
     ReviewStatus,
+    Tag,
 )
-from innopoints.schemas import ProjectSchema
+from innopoints.schemas import ProjectSchema, TagSchema
 
 NO_PAYLOAD = ('', 204)
 log = logging.getLogger(__name__)
@@ -427,6 +433,35 @@ def review_project(project_id):
     return NO_PAYLOAD
 
 
+@api.route('/projects/<int:project_id>/tags', methods=['PATCH'])
+@login_required
+def change_tags(project_id):
+    """Change the list of tags on a project."""
+    project = Project.query.get_or_404(project_id)
+
+    if project.lifetime_stage not in (LifetimeStage.ongoing, LifetimeStage.finalizing):
+        abort(400, {'message': 'Tags can only be modified in ongoing and finalizing stages.'})
+
+    if current_user != project.creator and not current_user.is_admin:
+        abort(403)
+
+    in_schema = ProjectSchema(only=('tags',))
+    try:
+        updated_project = in_schema.load({'tags': request.json}, instance=project)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    try:
+        db.session.add(updated_project)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    return NO_PAYLOAD
+
+
 class ProjectDetailAPI(MethodView):
     """CUD views for a particular instance of a Project model."""
 
@@ -513,3 +548,78 @@ project_api = ProjectDetailAPI.as_view('project_detail_api')
 api.add_url_rule('/projects/<int:project_id>',
                  view_func=project_api,
                  methods=('GET', 'PATCH', 'DELETE'))
+
+
+@api.route('/tags')
+def list_tags():
+    """List all available tags."""
+    out_schema = TagSchema(many=True)
+    return out_schema.jsonify(Tag.query.all())
+
+
+@api.route('/tags', methods=['POST'])
+@admin_required
+def create_tag():
+    """Create a new tag."""
+    in_schema = TagSchema(only=('name',))
+
+    try:
+        new_tag = in_schema.load(request.json)
+    except ValidationError as err:
+        abort(400, {'message': err.messages})
+
+    try:
+        db.session.add(new_tag)
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    out_schema = TagSchema()
+    return out_schema.jsonify(new_tag)
+
+
+class TagDetailAPI(MethodView):
+    """UD views for a particular Tag instance."""
+    @admin_required
+    def patch(self, tag_id):
+        """Rename the tag with the given ID."""
+        tag = Tag.query.get_or_404(tag_id)
+        in_schema = ProjectSchema(only=('name',))
+
+        try:
+            updated_tag = in_schema.load(request.json, instance=tag, partial=True)
+        except ValidationError as err:
+            abort(400, {'message': err.messages})
+
+        try:
+            db.session.add(updated_tag)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            log.exception(err)
+            abort(400, {'message': 'Data integrity violated.'})
+
+        out_schema = TagSchema()
+        return out_schema.jsonify(updated_tag)
+
+    @admin_required
+    def delete(self, tag_id):
+        """Delete the tag entirely."""
+        tag = Tag.query.get_or_404(tag_id)
+
+        try:
+            db.session.delete(tag)
+            db.session.commit()
+        except IntegrityError as err:
+            db.session.rollback()
+            log.exception(err)
+            abort(400, {'message': 'Data integrity violated.'})
+
+        return NO_PAYLOAD
+
+tag_api = TagDetailAPI.as_view('tag_detail_api')
+api.add_url_rule('/tags/<int:tag_id>',
+                 view_func=tag_api,
+                 methods=('PATCH', 'DELETE'))
