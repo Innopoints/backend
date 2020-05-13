@@ -1,4 +1,4 @@
-"""The Project and ProjectFile models."""
+"""The Project, ProjectFile and Tag models."""
 
 from enum import Enum, auto
 
@@ -14,6 +14,17 @@ project_moderation = db.Table(
               primary_key=True),
     db.Column('account_email', db.String(128),
               db.ForeignKey('accounts.email', ondelete='CASCADE', onupdate='CASCADE'),
+              primary_key=True)
+)
+
+
+project_tags = db.Table(
+    'project_tags',
+    db.Column('project_id', db.Integer,
+              db.ForeignKey('projects.id', ondelete='CASCADE'),
+              primary_key=True),
+    db.Column('tag_id', db.Integer,
+              db.ForeignKey('tags.id', ondelete='CASCADE'),
               primary_key=True)
 )
 
@@ -47,13 +58,16 @@ class Project(db.Model):
                                  backref='project')
     moderators = db.relationship('Account',
                                  secondary=project_moderation,
-                                 backref=db.backref('moderated_projects',
-                                                    lazy=True))
+                                 backref=db.backref('moderated_projects', lazy=True))
     creator_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
     # property `creator` created with a backref
     admin_feedback = db.Column(db.String(1024), nullable=True)
     review_status = db.Column(db.Enum(ReviewStatus), nullable=True)
     lifetime_stage = db.Column(db.Enum(LifetimeStage), nullable=False, default=LifetimeStage.draft)
+
+    tags = db.relationship('Tag',
+                           secondary=project_tags,
+                           backref=db.backref('projects', lazy=True))
 
     files = db.relationship('ProjectFile',
                             cascade='all, delete-orphan',
@@ -92,3 +106,11 @@ class ProjectFile(db.Model):
 
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
     file_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), primary_key=True)
+
+
+class Tag(db.Model):
+    """Represents tags for grouping projects in the statistics."""
+    __tablename__ = 'tags'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False, unique=True)

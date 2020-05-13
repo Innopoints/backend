@@ -1,10 +1,10 @@
-"""Schema for the Project model."""
+"""Schema for the Project and Tag models."""
 
 from marshmallow_enum import EnumField
 from marshmallow import validate
 
 from innopoints.extensions import ma
-from innopoints.models import Project, ReviewStatus, LifetimeStage
+from innopoints.models import Project, ReviewStatus, LifetimeStage, Tag
 
 
 # pylint: disable=missing-docstring
@@ -28,3 +28,10 @@ class ProjectSchema(ma.SQLAlchemyAutoSchema):
     moderators = ma.Nested('AccountSchema', only=('full_name', 'email'), many=True)
     start_date = ma.DateTime()
     end_date = ma.DateTime()
+
+
+class TagSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Tag
+        load_instance = True
+        ordered = True
