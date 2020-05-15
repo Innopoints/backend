@@ -5,10 +5,12 @@ import threading
 from typing import Sequence
 
 from flask import copy_current_request_context
+from flask_mail import Message
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db, mail
 from innopoints.models import Notification, NotificationType, Account, type_to_group
+from .content import get_content, Link
 from .email import get_email_message
 from .push import push
 
@@ -24,7 +26,14 @@ def notify(recipient_email: str, notification_type: NotificationType, payload=No
     ).filter_by(email=recipient_email).scalar()
 
     if channel == 'email':
-        message = get_email_message(notification_type, payload, recipient_email)
+        message_content = get_content(notification_type, payload)
+        body = ''.join(map(str, message_content['body']))
+
+        with open('templates/email.html') as email_template:
+            message = Message(message_content['title'],
+                              recipients=[recipient_email],
+                              html=email_template.read().format(header=message_content['title'],
+                                                                body=body))
 
         @copy_current_request_context
         def send_mail_async(message):
