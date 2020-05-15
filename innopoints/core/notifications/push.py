@@ -31,7 +31,6 @@ def push(recipient_email: str, notification_type: NotificationType, payload=None
         return
 
     try:
-        payload = PayloadSchema().dump(payload.copy())
         data = get_content(notification_type, payload)
         data['body'] = ''.join(map(remove_links, data['body']))
     except KeyError:
