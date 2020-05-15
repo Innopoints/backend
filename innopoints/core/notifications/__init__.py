@@ -11,7 +11,6 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.extensions import db, mail
 from innopoints.models import Notification, NotificationType, Account, type_to_group
 from .content import get_content, Link
-from .email import get_email_message
 from .push import push
 
 log = logging.getLogger(__name__)
