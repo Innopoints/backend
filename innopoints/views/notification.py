@@ -12,7 +12,7 @@ from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 
 from innopoints.blueprints import api
-from innopoints.core.helpers import abort
+from innopoints.core.helpers import abort, allow_no_json
 from innopoints.core.notifications.push import subscribe as subscribe_to_push
 from innopoints.extensions import db, push
 from innopoints.models import Notification
@@ -64,6 +64,7 @@ def subscribe():
     return NO_PAYLOAD
 
 
+@allow_no_json
 @api.route('/notifications/<int:notification_id>/read', methods=['PATCH'])
 @login_required
 def read_notification(notification_id):
