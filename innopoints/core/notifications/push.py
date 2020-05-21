@@ -8,7 +8,6 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from innopoints.extensions import push as webpush, db
 from innopoints.models import NotificationType, Account
-from innopoints.schemas import PayloadSchema
 from .content import get_content, Link
 
 

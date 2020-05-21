@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 
 from flask import current_app
 
-from innopoints.models import Product, NotificationType, StockChangeStatus, ApplicationStatus
+from innopoints.models import NotificationType, StockChangeStatus, ApplicationStatus
 from innopoints.schemas import PayloadSchema
 
 
