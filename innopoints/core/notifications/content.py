@@ -1,6 +1,7 @@
 """Functionality for assembling notification content."""
 
 from dataclasses import dataclass
+from urllib.parse import urljoin
 
 from flask import current_app
 
@@ -16,20 +17,14 @@ class Link:
 
     def __str__(self):
         """Return the <a> tag for the link."""
-        return f'<a href="{current_app.config["FRONTEND_BASE"]}{self.href}">{self.title}</a>'
+        return '<a href="{}">{}</a>'.format(urljoin(current_app.config["FRONTEND_BASE"], self.href),
+                                            self.title)
 
 
 # pylint: disable=invalid-name
 def s(amount):
     """Return the correct pluralization of the amount of items."""
     return 's' if amount != 1 else ''
-
-
-def product_repr(product: Product):
-    """A pretty string representation of a Product model instance."""
-    if product.type is None:
-        return product.name
-    return f"'{product.name}' {product.type}"
 
 
 # pylint: disable=too-many-branches
@@ -48,7 +43,7 @@ def get_content(type: NotificationType, payload: dict):
         if payload['variety'].images:
             image_src = payload['variety'].images[0]
 
-        body = ['Your ', product_repr(payload['product']), ' purchase ']
+        body = ['Your ', str(payload['product']), ' purchase ']
 
         if payload['stock_change'].status == StockChangeStatus.ready_for_pickup.name:
             body.append('is ready to be picked up at 319 Office.')
@@ -114,7 +109,7 @@ def get_content(type: NotificationType, payload: dict):
         if payload['variety'].images:
             image_src = payload['variety'].images[0]
         body = ['The ',
-                Link(title=product_repr(payload['product']),
+                Link(title=str(payload['product']),
                      href=f"/products/{payload['product'].id}"),
                 ' was sold out.']
     elif type == NotificationType.new_purchase:
@@ -125,7 +120,7 @@ def get_content(type: NotificationType, payload: dict):
         body = [Link(title=payload['account'].full_name,
                      href='/profile?user=' + payload['account'].email),
                 ' has purchased the ',
-                Link(title=product_repr(payload['product']),
+                Link(title=str(payload['product']),
                      href=f"/products/{payload['product'].id}"),
                 '.']
     elif type == NotificationType.project_review_requested:

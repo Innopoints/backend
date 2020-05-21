@@ -24,3 +24,9 @@ class Product(db.Model):
                       db.CheckConstraint('price >= 0', name='non-negative price'),
                       nullable=False)
     addition_time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
+
+    def __str__(self):
+        """Human-readable representation of a product."""
+        if self.type is None:
+            return self.name
+        return f"'{self.name}' {self.type}"
