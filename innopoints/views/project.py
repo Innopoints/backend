@@ -280,11 +280,14 @@ def publish_project(project_id):
         abort(400, {'message': 'Only draft projects can be published.'})
 
     if not current_user.is_admin and project.creator != current_user:
-        abort(401)
+        abort(403)
 
-    external_activity = Activity.query.filter_by(internal=False)
+    if not project.name:
+        abort(400, {'message': 'The project must have a valid name.'})
+
+    external_activity = Activity.query.filter_by(internal=False, draft=False)
     if not db.session.query(external_activity.exists()).scalar():
-        abort(400, {'message': 'The project must have at least one activity.'})
+        abort(400, {'message': 'The project must have at least one non-draft activity.'})
 
     if not all(len(activity.competences) in range(1, 4) for activity in project.activities
                if not activity.internal):
