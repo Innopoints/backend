@@ -62,6 +62,9 @@ def apply_for_activity(project_id, activity_id):
     if project.lifetime_stage != LifetimeStage.ongoing:
         abort(400, {'message': 'Applications may only be placed on ongoing projects.'})
 
+    if activity.draft:
+        abort(400, {'message': 'Cannot apply to draft activities.'})
+
     if activity.has_application_from(current_user):
         abort(400, {'message': 'An application already exists.'})
 

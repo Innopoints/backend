@@ -1,14 +1,15 @@
 """Views related to the Activity model.
 
 Activity:
-- POST /projects/{project_id}/activities
-- PATCH /projects/{project_id}/activities/{activity_id}
+- POST   /projects/{project_id}/activities
+- PATCH  /projects/{project_id}/activities/{activity_id}
 - DELETE /projects/{project_id}/activities/{activity_id}
+- PATCH  /projects/{project_id}/activities/{activity_id}/publish
 
 Competence:
-- GET /competences
-- POST /competences
-- PATCH /competences/{competence_id}
+- GET    /competences
+- POST   /competences
+- PATCH  /competences/{competence_id}
 - DELETE /competences/{competence_id}
 """
 
@@ -22,7 +23,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db
 from innopoints.blueprints import api
-from innopoints.core.helpers import abort, admin_required
+from innopoints.core.helpers import abort, allow_no_json, admin_required
 from innopoints.core.notifications import remove_notifications
 from innopoints.models import (
     Activity,
@@ -44,12 +45,12 @@ def create_activity(project_id):
     """Create a new activity to an existing project."""
     project = Project.query.get_or_404(project_id)
     if not current_user.is_admin and current_user not in project.moderators:
-        abort(401)
+        abort(403)
 
     if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
         abort(400, {'message': 'Activities may only be created on draft and ongoing projects.'})
 
-    in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
+    in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal', 'draft'))
 
     try:
         new_activity = in_schema.load(request.json)
@@ -79,7 +80,7 @@ class ActivityAPI(MethodView):
         """Edit the activity."""
         project = Project.query.get_or_404(project_id)
         if not current_user.is_admin and current_user not in project.moderators:
-            abort(401)
+            abort(403)
 
         if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
             abort(400, {'message': 'Activities may only be edited on draft and ongoing projects.'})
@@ -91,7 +92,7 @@ class ActivityAPI(MethodView):
         if activity.project != project:
             abort(400, {'message': 'The specified project and activity are unrelated.'})
 
-        in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
+        in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal', 'draft'))
 
         try:
             updated_activity = in_schema.load(request.json, instance=activity, partial=True)
@@ -125,7 +126,7 @@ class ActivityAPI(MethodView):
         """Delete the activity."""
         project = Project.query.get_or_404(project_id)
         if not current_user.is_admin and current_user not in project.moderators:
-            abort(401)
+            abort(403)
 
         if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
             abort(400, {'message': 'Activities may only be deleted on draft and ongoing projects.'})
@@ -155,6 +156,40 @@ activity_api = ActivityAPI.as_view('activity_api')
 api.add_url_rule('/projects/<int:project_id>/activities/<int:activity_id>',
                  view_func=activity_api,
                  methods=('PATCH', 'DELETE'))
+
+
+@allow_no_json
+@api.route('/projects/<int:project_id>/activities/<int:activity_id>/publish', methods=['PATCH'])
+@login_required
+def publish_activity(project_id, activity_id):
+    """Publish the activity."""
+    project = Project.query.get_or_404(project_id)
+    if not current_user.is_admin and current_user not in project.moderators:
+        abort(403)
+
+    activity = Activity.query.get_or_404(activity_id)
+    if activity.internal:
+        abort(404)
+
+    if activity.project != project:
+        abort(400, {'message': 'The specified project and activity are unrelated.'})
+
+    if (activity.name is None
+            or activity.start_date is None
+            or activity.end_date is None
+            or activity.start_date > activity.end_date):
+        abort(400, {'message': 'The name or dates of the activity are invalid.'})
+
+    activity.draft = False
+
+    try:
+        db.session.commit()
+    except IntegrityError as err:
+        db.session.rollback()
+        log.exception(err)
+        abort(400, {'message': 'Data integrity violated.'})
+
+    return NO_PAYLOAD
 
 
 # ----- Competence -----
