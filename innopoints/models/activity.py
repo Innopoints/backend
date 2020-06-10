@@ -39,8 +39,6 @@ class Activity(db.Model):
         db.CheckConstraint(f'(fixed_reward AND working_hours = 1) '
                            f'OR (NOT fixed_reward AND reward_rate = {IPTS_PER_HOUR})',
                            name='reward policy'),
-        db.UniqueConstraint('name', 'project_id',
-                            name='name is unique inside a project')
     )
 
     id = db.Column(db.Integer, primary_key=True)
@@ -63,6 +61,7 @@ class Activity(db.Model):
                                    nullable=False,
                                    default=DEFAULT_QUESTIONS)
     internal = db.Column(db.Boolean, nullable=False, default=False)
+    draft = db.Column(db.Boolean, nullable=False, default=True)
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan')
 

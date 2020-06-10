@@ -49,7 +49,7 @@ class Project(db.Model):
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False, unique=True)
+    name = db.Column(db.String(128), nullable=True)
     image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=True)
     creation_time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     activities = db.relationship('Activity',

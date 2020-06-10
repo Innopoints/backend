@@ -231,16 +231,6 @@ def list_projects_for_review():
     return schema.jsonify(db_query.all())
 
 
-@api.route('/projects/name_available')
-@login_required
-def check_name_availability():
-    """Check if a project with this name can be created."""
-    name = request.args.get('name')
-    if not name:
-        abort(400, {'message': 'A non-empty name must be passed.'})
-    return jsonify(not db.session.query(Project.query.filter_by(name=name).exists()).scalar())
-
-
 @api.route('/projects', methods=['POST'])
 @login_required
 def create_project():
@@ -262,7 +252,7 @@ def create_project():
     for new_activity in new_project.activities:
         new_activity.project = new_project
 
-    moderation = Activity(name='[[Moderation]]', internal=True, working_hours=0)
+    moderation = Activity(name='[[Moderation]]', internal=True, working_hours=0, draft=False)
     moderation.project = new_project
 
     db.session.add(new_project)
