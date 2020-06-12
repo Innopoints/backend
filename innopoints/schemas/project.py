@@ -16,10 +16,9 @@ class ProjectSchema(ma.SQLAlchemyAutoSchema):
         ordered = True
         include_relationships = True
 
-    name = ma.Str(required=True,
-                  validate=validate.Length(min=1, max=128),
-                  error_messages={'required': 'A project name is required.',
-                                  'validator_failed': 'The name must be between 1 and 128 chars.'})
+    name = ma.Str(allow_none=True,
+                  validate=validate.Length(max=128),
+                  error_messages={'validator_failed': 'The name must be below 128 characters.'})
     creator = ma.Nested('AccountSchema', only=('full_name', 'email'))
     image_id = ma.Int(allow_none=True)
     review_status = EnumField(ReviewStatus)
