@@ -5,6 +5,9 @@ or fed to servers like gunicorn using `run:app`."""
 
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from innopoints.app import create_app
 
 
@@ -14,8 +17,6 @@ if __name__ == '__main__':
 else:
     if os.environ.get('FLASK_ENV') == 'development':
         config = 'config/dev.py'
-    elif os.environ.get('FLASK_ENV') == 'heroku':
-        config = 'config/heroku.py'
     else:
         config = 'config/prod.py'
     app = create_app(config)
