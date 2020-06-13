@@ -285,7 +285,7 @@ def publish_project(project_id):
     if not project.name:
         abort(400, {'message': 'The project must have a valid name.'})
 
-    external_activity = Activity.query.filter_by(internal=False, draft=False)
+    external_activity = Activity.query.filter_by(internal=False, draft=False, project_id=project_id)
     if not db.session.query(external_activity.exists()).scalar():
         abort(400, {'message': 'The project must have at least one non-draft activity.'})
 

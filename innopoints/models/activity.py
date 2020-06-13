@@ -36,7 +36,13 @@ class Activity(db.Model):
     """Represents a volunteering activity in the project."""
     __tablename__ = 'activities'
     __table_args__ = (
-        db.CheckConstraint(f'(fixed_reward AND working_hours = 1) '
+        db.CheckConstraint('working_hours == NULL OR working_hours >= 0',
+                           name='working hours are non-negative'),
+        db.CheckConstraint('people_required == NULL OR people_required > 0',
+                           name='people required are unset or positive'),
+        db.CheckConstraint('NOT draft AND working_hours != NULL',
+                           name='working hours are not nullable for non-drafts'),
+        db.CheckConstraint(f'NOT draft AND (fixed_reward AND working_hours = 1) '
                            f'OR (NOT fixed_reward AND reward_rate = {IPTS_PER_HOUR})',
                            name='reward policy'),
     )
@@ -50,10 +56,10 @@ class Activity(db.Model):
                            db.ForeignKey('projects.id', ondelete='CASCADE'),
                            nullable=False)
     # property `project` created with a backref
-    working_hours = db.Column(db.Integer, nullable=False, default=1)
+    working_hours = db.Column(db.Integer, nullable=True, default=1)
     reward_rate = db.Column(db.Integer, nullable=False, default=IPTS_PER_HOUR)
     fixed_reward = db.Column(db.Boolean, nullable=False, default=False)
-    people_required = db.Column(db.Integer, nullable=False, default=0)
+    people_required = db.Column(db.Integer, nullable=True)
     telegram_required = db.Column(db.Boolean, nullable=False, default=False)
     # property `competences` created with a backref
     application_deadline = db.Column(db.DateTime(timezone=True), nullable=True)
@@ -74,6 +80,9 @@ class Activity(db.Model):
     @property
     def vacant_spots(self):
         """Return the amount of vacant spots for the activity"""
+        if self.people_required is None:
+            return -1
+
         accepted = Application.query.filter_by(activity_id=self.id,
                                                status=ApplicationStatus.approved).count()
         return max(self.people_required - accepted, -1)
@@ -82,6 +91,18 @@ class Activity(db.Model):
         """Return whether the given user has applied for this activity."""
         application = Application.query.filter_by(applicant=user, activity_id=self.id)
         return db.session.query(application.exists()).scalar()
+
+    @property
+    def is_complete(self):
+        """Return whether the all the required fields for an activity have been filled out."""
+        return (
+            self.name is not None
+            and not self.name.isspace()
+            and self.start_date is not None
+            and self.end_date is not None
+            and self.start_date <= self.end_date
+            and self.working_hours is not None
+        )
 
 
 class Competence(db.Model):

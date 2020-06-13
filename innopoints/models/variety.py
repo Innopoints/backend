@@ -21,18 +21,18 @@ class Variety(db.Model):
     __table_args__ = (
         # Warning: this index requires a manually written migration.
         # In upgrade() use:
-        #   op.create_index('unique_varieties', 'varieties',
+        #   op.create_index('unique varieties', 'varieties',
         #                   ['product_id',
-        #                    sa.text("coalesce(color_value, '')"),
-        #                    sa.text("coalesce(size_id, '')")],
+        #                    sa.text("coalesce(color, '')"),
+        #                    sa.text("coalesce(size, '')")],
         #                   unique=True)
         #
         # In downgrade() use:
-        #   op.drop_index('unique_varieties', 'varieties')
-        db.Index('unique_varieties',
+        #   op.drop_index('unique varieties', 'varieties')
+        db.Index('unique varieties',
                  'product_id',
-                 db.text("coalesce(color_value, '')"),
-                 db.text("coalesce(size_id, '')"),
+                 db.text("coalesce(color, '')"),
+                 db.text("coalesce(size, '')"),
                  unique=True),
     )
 
