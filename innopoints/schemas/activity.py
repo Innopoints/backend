@@ -52,7 +52,7 @@ class ActivitySchema(ma.SQLAlchemyAutoSchema):
     @validates_schema
     def valid_date_range(self, data, **_kwargs):
         """Ensure that the start date is not beyond the end date."""
-        if 'start_date' in data and 'end_date' in data:
+        if data.get('start_date') is not None and data.get('end_date') is not None:
             if data['start_date'] > data['end_date']:
                 raise ValidationError('The start date is beyond the end date.')
 
@@ -91,9 +91,9 @@ class ActivitySchema(ma.SQLAlchemyAutoSchema):
             return appl_schema.dump(application)
         return None
 
-    working_hours = ma.Int(validate=validate.Range(min=1))
+    working_hours = ma.Int(allow_none=True, validate=validate.Range(min=1))
     reward_rate = ma.Int(validate=validate.Range(min=1))
-    people_required = ma.Int(validate=validate.Range(min=0))
+    people_required = ma.Int(allow_none=True, validate=validate.Range(min=0))
     application_deadline = ma.DateTime(format='iso',
                                        data_key='application_deadline',
                                        allow_none=True)

@@ -50,12 +50,18 @@ def create_activity(project_id):
     if project.lifetime_stage not in (LifetimeStage.draft, LifetimeStage.ongoing):
         abort(400, {'message': 'Activities may only be created on draft and ongoing projects.'})
 
-    in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal', 'draft'))
+    in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
 
     try:
         new_activity = in_schema.load(request.json)
     except ValidationError as err:
         abort(400, {'message': err.messages})
+
+    if new_activity.draft is None:
+        new_activity.draft = True
+
+    if not new_activity.draft and not new_activity.is_complete:
+        abort(400, {'message': 'Incomplete activities cannot be marked as non-draft.'})
 
     new_activity.project = project
 
@@ -92,12 +98,15 @@ class ActivityAPI(MethodView):
         if activity.project != project:
             abort(400, {'message': 'The specified project and activity are unrelated.'})
 
-        in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal', 'draft'))
+        in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
 
         try:
             updated_activity = in_schema.load(request.json, instance=activity, partial=True)
         except ValidationError as err:
             abort(400, {'message': err.messages})
+
+        if not updated_activity.draft and not updated_activity.is_complete:
+            abort(400, {'message': 'Incomplete activities cannot be marked as non-draft.'})
 
         for application in updated_activity.applications:
             if application.status != ApplicationStatus.rejected:
