@@ -16,7 +16,7 @@ This project was built for Python 3.8.
 You need to have [Pipenv](https://github.com/pypa/pipenv) installed to set up the project environment.  
 Ensure that the PostgreSQL server is up and running. Create a database and substitute its name in place of `{database_name}` in the following commands.  
 
-Create a `.env` file and supply values for the necessary environment variables:
+Create a `.env` file in the project root and supply values for the necessary environment variables:
 
 ```bash
 DATABASE_URL=postgresql://localhost/{database_name}
