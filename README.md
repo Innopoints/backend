@@ -1,31 +1,77 @@
-# Innopoints Backend
+# Innopoints
 
-## Prerequisites
+This is the backend for the Innopoints portal of Innopolis University.
 
-You need to have [Pipenv](https://github.com/pypa/pipenv) installed to set up the project environment.
+Built using:
+ - [Flask](https://flask.palletsprojects.com/en/1.1.x/)
+ - [Flask-Migrate](https://flask-migrate.readthedocs.io/en/latest/)
+ - [SQLAlchemy](https://www.sqlalchemy.org/)
+ - [PostgreSQL](https://www.postgresql.org/)
+ - [Marshmallow](https://marshmallow.readthedocs.io/en/stable/)
 
-**Arch Linux**:
+## Running locally
+
+This project was built for Python 3.8.
+
+You need to have [Pipenv](https://github.com/pypa/pipenv) installed to set up the project environment.  
+Ensure that the PostgreSQL server is up and running. Create a database and substitute its name in place of `{database_name}` in the following commands.  
+
+Create a `.env` file and supply values for the necessary environment variables:
+
 ```bash
-$ pacman -S python-pipenv
+DATABASE_URL=postgresql://localhost/{database_name}
+MAIL_PASSWORD={service-account-mail-password}
+FLASK_APP=run.py
+
+# If you will use the Innopolis SSO
+INNOPOLIS_SSO_BASE=https://sso.university.innopolis.ru/adfs
+INNOPOLIS_SSO_CLIENT_ID={sso-client-id}
+INNOPOLIS_SSO_CLIENT_SECRET={sso-client-secret}
+
+# If you will use push notifications
+WEBPUSH_VAPID_PRIVATE_KEY={vapid-private-key}
+WEBPUSH_SENDER_INFO={push-sender-info}
+
+# If you want to run the server with the development configuration
+FLASK_ENV=development
 ```
 
-## Install the dependencies
+To install the dependencies and run the development server, run the following commands:
 
 ```bash
-$ pipenv install --dev
+pipenv install
+pipenv run python run.py
 ```
 
-## Run the server
-Ensure that PostgreSQL is installed and functioning. Create a database and substitute `{database_name}` in the following commands.
+## Project structure
+
+The main components of the project are:
+ - SQLAlchemy models ([`innopoints/models`](./innopoints/models))
+ - Marshmallow schemas ([`innopoints/schemas`](./innopoints/schemas))
+ - Flask views ([`innopoints/views`](./innopoints/views))
+
+Those three folders contain files under the same names to make it easy to follow.
+
+Models define the database entities.
+
+Schemas define the way the models are serialized into JSON to be served by the API.
+
+Views define the API endpoints themselves.
+
+Flask [extensions](./innopoints/extensions.py) and [blueprints](./innopoints/blueprints.py) have been moved to separate files to prevent circular imports.
+
+## Modifying the database entities
+
+The database migration history is powered by Flask-Migrate. All the migrations are stored in the `migrations/versions` folder. If you make any changes to the models, make sure to persist your changes to the database with the following commands:
 
 ```bash
-$ export DATABASE_URL='postgresql://localhost/{database_name}'
-$ export INNOPOLIS_SSO_BASE='https://sso.university.innopolis.ru/adfs'
-$ export INNOPOLIS_SSO_CLIENT_ID='{application-client-id}'
-$ export INNOPOLIS_SSO_CLIENT_SECRET='{application-secret}'
-$ export FLASK_ENV='development'  # to use the development config
-# for fish:
-#  set -x VAR_NAME 'value'
-
-$ pipenv run python run.py
+# To snapshot the changes into a migration
+pipenv run flask db migrate -m "Make some changes"
+# To apply the migration to the database
+pipenv run flask db upgrade
 ```
+
+**Warning**: Flask-Migrate uses Alembic to analyze the models and autogenerate migrations. There are [some things Alebmic cannot detect](https://alembic.sqlalchemy.org/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect). Make sure you compare the migration created by Alembic with your changes and manually change the migration if necessary.
+
+## License
+This project is [MIT licensed](./LICENSE).
