@@ -21,7 +21,7 @@ ma = Marshmallow()
 oauth = OAuth()
 oauth.register(
     'innopolis_sso',
-    server_metadata_url=f'{os.environ["INNOPOLIS_SSO_BASE"]}/.well-known/openid-configuration',
+    server_metadata_url=f'{os.getenv("INNOPOLIS_SSO_BASE")}/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid'},
 )
 
