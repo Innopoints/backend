@@ -40,9 +40,9 @@ class Activity(db.Model):
                            name='working hours are non-negative'),
         db.CheckConstraint('people_required == NULL OR people_required > 0',
                            name='people required are unset or positive'),
-        db.CheckConstraint('NOT draft AND working_hours != NULL',
+        db.CheckConstraint('draft OR working_hours != NULL',
                            name='working hours are not nullable for non-drafts'),
-        db.CheckConstraint(f'NOT draft AND (fixed_reward AND working_hours = 1) '
+        db.CheckConstraint(f'draft OR (fixed_reward AND working_hours = 1) '
                            f'OR (NOT fixed_reward AND reward_rate = {IPTS_PER_HOUR})',
                            name='reward policy'),
     )
@@ -85,7 +85,7 @@ class Activity(db.Model):
 
         accepted = Application.query.filter_by(activity_id=self.id,
                                                status=ApplicationStatus.approved).count()
-        return max(self.people_required - accepted, -1)
+        return self.people_required - accepted
 
     def has_application_from(self, user):
         """Return whether the given user has applied for this activity."""
