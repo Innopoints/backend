@@ -108,15 +108,16 @@ class ActivityAPI(MethodView):
         if not updated_activity.draft and not updated_activity.is_complete:
             abort(400, {'message': 'Incomplete activities cannot be marked as non-draft.'})
 
-        for application in updated_activity.applications:
-            if application.status != ApplicationStatus.rejected:
-                application.actual_hours = updated_activity.working_hours
-
         if activity.fixed_reward and activity.working_hours != 1:
             abort(400, {'message': 'Cannot set working hours for fixed activities.'})
 
         if not activity.fixed_reward and activity.reward_rate != IPTS_PER_HOUR:
             abort(400, {'message': 'The reward rate for hourly activities may not be changed.'})
+
+        with db.session.no_autoflush:
+            for application in updated_activity.applications:
+                if application.status != ApplicationStatus.rejected:
+                    application.actual_hours = updated_activity.working_hours
 
         try:
             db.session.add(updated_activity)
