@@ -101,7 +101,8 @@ class ActivityAPI(MethodView):
         in_schema = ActivitySchema(exclude=('id', 'project', 'applications', 'internal'))
 
         try:
-            updated_activity = in_schema.load(request.json, instance=activity, partial=True)
+            with db.session.no_autoflush:
+                updated_activity = in_schema.load(request.json, instance=activity, partial=True)
         except ValidationError as err:
             abort(400, {'message': err.messages})
 
