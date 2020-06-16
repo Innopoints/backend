@@ -38,8 +38,8 @@ class Activity(db.Model):
     __table_args__ = (
         db.CheckConstraint('working_hours == NULL OR working_hours >= 0',
                            name='working hours are non-negative'),
-        db.CheckConstraint('people_required == NULL OR people_required > 0',
-                           name='people required are unset or positive'),
+        db.CheckConstraint('people_required == NULL OR people_required >= 0',
+                           name='people required are unset or non-negative'),
         db.CheckConstraint('draft OR working_hours != NULL',
                            name='working hours are not nullable for non-drafts'),
         db.CheckConstraint(f'draft OR (fixed_reward AND working_hours = 1) '
