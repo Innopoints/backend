@@ -9,6 +9,15 @@ from .application import ApplicationSchema
 
 # pylint: disable=missing-docstring
 
+class CompetenceSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Competence
+        load_instance = True
+        ordered = True
+        include_relationships = True
+        exclude = ('activities', 'feedback')
+
+
 class ActivitySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Activity
@@ -97,17 +106,9 @@ class ActivitySchema(ma.SQLAlchemyAutoSchema):
     application_deadline = ma.DateTime(format='iso',
                                        data_key='application_deadline',
                                        allow_none=True)
+    competences = ma.Pluck(CompetenceSchema, 'id', many=True, validate=validate.Length(0, 3))
     vacant_spots = ma.Int(dump_only=True)
     applications = ma.Method(serialize='get_applications',
                              dump_only=True)
     existing_application = ma.Method(serialize='get_existing_application',
                                      dump_only=True)
-
-
-class CompetenceSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Competence
-        load_instance = True
-        ordered = True
-        include_relationships = True
-        exclude = ('activities', 'feedback')
