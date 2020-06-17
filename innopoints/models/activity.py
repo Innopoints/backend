@@ -102,6 +102,7 @@ class Activity(db.Model):
             and self.end_date is not None
             and self.start_date <= self.end_date
             and self.working_hours is not None
+            and len(self.competences) in range(1, 4)
         )
 
 
