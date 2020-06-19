@@ -116,7 +116,19 @@ class ActivityAPI(MethodView):
             abort(400, {'message': 'The reward rate for hourly activities may not be changed.'})
 
         with db.session.no_autoflush:
+            if updated_activity.people_required is not None:
+                if updated_activity.accepted_applications > updated_activity.people_required:
+                    abort(400, {'message': 'Cannot reduce the required people '
+                                           'beyond the amount of existing applications.'})
+
+                if updated_activity.draft and updated_activity.applications:
+                    abort(400, {'message': 'Cannot mark as draft, applications exist.'})
+
             for application in updated_activity.applications:
+                if (updated_activity.application_deadline is not None
+                        and updated_activity.application_deadline < application.application_time):
+                    abort(400, {'message': 'Cannot set the deadline earlier '
+                                           'than the existing application'})
                 if application.status != ApplicationStatus.rejected:
                     application.actual_hours = updated_activity.working_hours
 
