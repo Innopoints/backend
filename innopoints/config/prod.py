@@ -27,5 +27,3 @@ def is_admin(userinfo):
     return userinfo['email'] in admins
 
 IS_ADMIN = is_admin
-
-SKIP_CSRF_CHECK = False

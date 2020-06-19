@@ -14,5 +14,3 @@ JSON_SORT_KEYS = False
 FRONTEND_BASE = 'http://0.0.0.0:3000'
 
 IS_ADMIN = lambda userinfo: True
-
-SKIP_CSRF_CHECK = True
