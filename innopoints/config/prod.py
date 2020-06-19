@@ -22,8 +22,10 @@ admins = [
     'innopoints@innopolis.university',
 ]
 
-def is_admin(userinfo):  # pylint: disable=unused-argument
+def is_admin(userinfo):
     """Determine if the user is an administrator by a dictionary of claims."""
     return userinfo['email'] in admins
 
 IS_ADMIN = is_admin
+
+SKIP_CSRF_CHECK = False

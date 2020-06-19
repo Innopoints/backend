@@ -23,6 +23,9 @@ def abort(http_code: int, message=None):
 
 def csrf_protect():
     """Validates the CSRF token for modifying requests (POST, PATCH, DELETE)."""
+    if current_app.config['SKIP_CSRF_CHECK']:
+        return
+
     if request.method not in MODIFYING_METHODS:
         return
 
