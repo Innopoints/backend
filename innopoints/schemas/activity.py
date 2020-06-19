@@ -68,7 +68,7 @@ class ActivitySchema(ma.SQLAlchemyAutoSchema):
     def get_applications(self, activity):
         """Retrieve the applications for a particular activity.
            For non-moderators will only return the approved applications."""
-        fields = ['id', 'applicant', 'status']
+        fields = ['id', 'applicant', 'status', 'application_time']
         filtering = {'activity_id': activity.id,
                      'status': ApplicationStatus.approved}
 
