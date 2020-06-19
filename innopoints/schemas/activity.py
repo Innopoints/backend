@@ -103,9 +103,9 @@ class ActivitySchema(ma.SQLAlchemyAutoSchema):
     working_hours = ma.Int(allow_none=True, validate=validate.Range(min=1))
     reward_rate = ma.Int(allow_none=True, validate=validate.Range(min=1))
     people_required = ma.Int(allow_none=True, validate=validate.Range(min=0))
-    application_deadline = ma.DateTime(format='iso',
-                                       data_key='application_deadline',
-                                       allow_none=True)
+    start_date = ma.AwareDateTime(format='iso')
+    end_date = ma.AwareDateTime(format='iso')
+    application_deadline = ma.AwareDateTime(format='iso', allow_none=True)
     competences = ma.Pluck(CompetenceSchema, 'id', many=True, validate=validate.Length(0, 3))
     vacant_spots = ma.Int(dump_only=True)
     applications = ma.Method(serialize='get_applications',
