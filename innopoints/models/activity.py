@@ -73,19 +73,23 @@ class Activity(db.Model):
 
     @property
     def dates(self):
-        """Return the activity dates as a single JSON object"""
+        """Return the activity dates as a single JSON object."""
         return {'start': self.start_date.isoformat(),
                 'end': self.end_date.isoformat()}
 
     @property
+    def accepted_applications(self):
+        """Return the amount of accepted applications."""
+        return Application.query.filter_by(activity_id=self.id,
+                                           status=ApplicationStatus.approved).count()
+
+    @property
     def vacant_spots(self):
-        """Return the amount of vacant spots for the activity"""
+        """Return the amount of vacant spots for the activity."""
         if self.people_required is None:
             return -1
 
-        accepted = Application.query.filter_by(activity_id=self.id,
-                                               status=ApplicationStatus.approved).count()
-        return self.people_required - accepted
+        return self.people_required - self.accepted_applications
 
     def has_application_from(self, user):
         """Return whether the given user has applied for this activity."""
