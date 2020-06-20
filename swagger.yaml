@@ -499,7 +499,7 @@ paths:
           schema:
             type: string
             enum: [creation_time, proximity]
-            default: creation
+            default: creation_time
         - name: order
           in: query
           schema:
@@ -1454,7 +1454,7 @@ paths:
       security:
       - innopolis_sso: []
   /account:
-    $ref: '#/paths/~1accounts~1{email}'
+    $ref: '#/paths/~1accounts~1%7Bemail%7D'
   /accounts/{email}/balance:
     parameters:
     - name: email
@@ -1532,8 +1532,16 @@ paths:
       security:
         - innopolis_sso: []
   /account/timeline:
-    $ref: '#/paths/~1accounts~1{email}~1timeline'  
+    $ref: '#/paths/~1accounts~1%7Bemail%7D~1timeline'  
   /accounts/{email}/statistics:
+    parameters:
+      - name: email
+        in: path
+        required: true
+        schema:
+          type: string
+          format: email
+          nullable: false 
     get:
       tags:
         - account
@@ -1584,8 +1592,16 @@ paths:
       security:
         - innopolis_sso: []
   /account/statistics:
-    $ref: '#/paths/~1accounts~1{email}~1statistics'
+    $ref: '#/paths/~1accounts~1%7Bemail%7D~1statistics'
   /accounts/{email}/notification_settings:
+    parameters:
+      - name: email
+        in: path
+        required: true
+        schema:
+          type: string
+          format: email
+          nullable: false
     get:
       tags:
         - account
@@ -1622,8 +1638,16 @@ paths:
       security:
         - innopolis_sso: []
   /account/notification_settings:
-    $ref: '#/paths/~1accounts~1{email}~1notification_settings'
+    $ref: '#/paths/~1accounts~1%7Bemail%7D~1notification_settings'
   /accounts/{email}/telegram:
+    parameters:
+      - name: email
+        in: path
+        required: true
+        schema:
+          type: string
+          format: email
+          nullable: false
     patch:
       tags:
       - account
@@ -1647,8 +1671,16 @@ paths:
       security:
         - innopolis_sso: []
   /account/telegram:
-    $ref: '#/paths/~1accounts~1{email}~1telegram'
+    $ref: '#/paths/~1accounts~1%7Bemail%7D~1telegram'
   /accounts/{email}/notify:
+    parameters:
+      - name: email
+        in: path
+        required: true
+        schema:
+          type: string
+          format: email
+          nullable: false
     post:
       tags:
         - account
