@@ -1827,6 +1827,7 @@ components:
         id:
           type: integer
           minimum: 1
+          readOnly: true
         account_email:
           type: string
           format: email
@@ -1847,6 +1848,7 @@ components:
         id:
           type: integer
           minimum: 1
+          readOnly: true
         name:
           type: string
           example: ASCII Whale
@@ -1867,12 +1869,14 @@ components:
         addition_time:
           type: string
           format: date-time
+          readOnly: true
     Variety:
       type: object
       properties:
         id:
           type: integer
           minimum: 1
+          readOnly: true
         product_id:
           type: integer
           minimum: 1
@@ -1903,6 +1907,7 @@ components:
         id:
           type: integer
           minimum: 1
+          readOnly: true
         amount:
           type: integer
         time:
@@ -1928,6 +1933,10 @@ components:
     Project:
       type: object
       properties:
+        id:
+          type: integer
+          minimum: 1
+          readOnly: true
         name:
           type: string
           example: Olympiad
@@ -1959,6 +1968,10 @@ components:
     Activity:
       type: object
       properties:
+        id:
+          type: integer
+          minimum: 1
+          readOnly: true
         name:
           type: string
           maxLength: 128
@@ -2011,6 +2024,7 @@ components:
         id:
           type: integer
           minimum: 1
+          readOnly: true
         name:
           type: string
           example: Teamwork
@@ -2030,6 +2044,7 @@ components:
         id:
           type: integer
           minimum: 1
+          readOnly: true
         applicant_email:
           type: string
           format: email
@@ -2077,6 +2092,7 @@ components:
         id:
           type: integer
           minimum: 1
+          readOnly: true
         recipient_email:
           type: integer
           format: email
