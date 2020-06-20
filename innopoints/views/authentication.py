@@ -48,11 +48,12 @@ def authorize():
         abort(401)
 
     user = Account.query.get(userinfo['email'])
+    should_be_admin = 'Innopoints_Admins' in userinfo.get('group', [])
     if user is None:
         user = Account(email=userinfo['email'],
                        full_name=userinfo['commonname'],
                        group=userinfo.get('role'),
-                       is_admin=current_app.config['IS_ADMIN'](userinfo))
+                       is_admin=should_be_admin)
         db.session.add(user)
         db.session.commit()
 
@@ -62,8 +63,8 @@ def authorize():
     if user.group != userinfo.get('role'):
         user.group = userinfo.get('role')
 
-    if user.is_admin != current_app.config['IS_ADMIN'](userinfo):
-        user.is_admin = current_app.config['IS_ADMIN'](userinfo)
+    if user.is_admin != should_be_admin:
+        user.is_admin = should_be_admin
 
     db.session.commit()
 
