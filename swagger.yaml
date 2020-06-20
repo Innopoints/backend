@@ -202,7 +202,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        401:
+        403:
           description: unauthorized
         404:
           description: product not found
@@ -214,7 +214,9 @@ paths:
       responses:
         204:
           description: success. no payload
-        401:
+        400:
+          description: Data integrity violated
+        403:
           description: unauthorized
         404:
           description: product not found
@@ -245,7 +247,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Variety'
-        401:
+        400:
+          description: Data integrity violated
+        403:
           description: unauthorized
         404:
           description: product not found
@@ -285,11 +289,10 @@ paths:
                 $ref: '#/components/schemas/Variety'
         400:
           description: invalid data
-        401:
+        403:
           description: unauthorized
         404:
           description: product/variety not found
-
       security:
         - innopolis_sso: []
     delete:
@@ -300,7 +303,7 @@ paths:
           description: success. no payload
         400:
           description: invalid data
-        401:
+        403:
           description: unauthorized
         404:
           description: product/variety not found
@@ -365,7 +368,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/StockChange'
-        401:
+        403:
           description: unauthorized. admins only
       security:
         - innopolis_sso: []
@@ -391,6 +394,12 @@ paths:
       responses:
         204:
           description: success
+        400:
+          description: Invalid data
+        403:
+          description: unauthorized. admins only
+        404:
+          description: Stock Change not found
       security:
         - innopolis_sso: []
   /sizes:
@@ -432,7 +441,7 @@ paths:
                     $ref: '#/components/schemas/Variety/properties/size'
         400:
           description: invalid request data
-        401:
+        403:
           description: unauthorized. admins only
       security:
         - innopolis_sso: []
@@ -451,7 +460,6 @@ paths:
                   type: object
                   properties:
                     value:
-                      # TODO: prefix with '#'
                       $ref: '#/components/schemas/Variety/properties/color'
     post:
       tags:
@@ -476,7 +484,7 @@ paths:
                     $ref: '#/components/schemas/Variety/properties/color'
         400:
           description: invalid request
-        401:
+        403:
           description: unauthorized. admins only
       security:
         - innopolis_sso: []
@@ -490,7 +498,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [creation, proximity]
+            enum: [creation_time, proximity]
             default: creation
         - name: order
           in: query
@@ -503,6 +511,36 @@ paths:
           description: search query
           schema:
             type: string
+            nullable: true
+        - name: spots
+          in: query
+          description: Number of remaining spots
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: excluded_competences
+          description: Which competences (IDs) to filter from the available activities.
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+            default: []
+          example: [1, 5]
+        - name: start_date
+          description: Latest possible starting date of an activity in the project.
+          in: query
+          schema:
+            type: string
+            format: date-time
+            nullable: true
+        - name: end_date
+          description: Earliest possible starting date of an activity in the project.
+          in: query
+          schema:
+            type: string
+            format: date-time
             nullable: true
       responses:
         200:
@@ -610,7 +648,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Project'
-        401:
+        403:
           description: unauthorized. admins only
       security:
       - innopolis_sso: []
@@ -678,6 +716,8 @@ paths:
           description: unauthorized
         404:
           description: project not found
+        500:
+          description: Moderation activity not found
       security:
         - innopolis_sso: []
   /projects/{project_id}/review_status:
@@ -709,7 +749,7 @@ paths:
           description: success. no payload
         400:
           description: invalid request data
-        401:
+        403:
           description: unauthorized
         404:
           description: project not found
@@ -770,6 +810,116 @@ paths:
           description: project not found
       security:
         - innopolis_sso: []
+  /projects/{project_id}/tags:
+    patch:
+      tags:
+      - project
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+                minimum: 1
+              description: Array of tag IDs
+      responses:
+        204:
+          description: success. no payload
+        400:
+          description: invalid request data
+        401:
+          description: unauthorized
+        404:
+          description: project not found
+      security:
+        - innopolis_sso: []
+  /tags:
+    get:
+      tags:
+      - project
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+    post:
+      tags:
+        - project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tag'
+      responses:
+        200:
+          description: Added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        400:
+          description: Data integrity violated
+        403:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+  /tags/{tag_id}:
+    parameters:
+      - name: tag_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    patch:
+      tags:
+        - project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tag'
+      responses:
+        200:
+          description: Updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        400:
+          description: Data integrity violated
+        403:
+          description: unauthorized
+        404:
+          description: Tag not found
+      security:
+        - innopolis_sso: []
+    delete:
+      tags:
+        - project
+      responses:
+        204:
+          description: Deleted successfully
+        400:
+          description: Data integrity violated
+        403:
+          description: unauthorized
+        404:
+          description: Tag not found
+      security:
+        - innopolis_sso: []
 
   /projects/{project_id}/activities:
     parameters:
@@ -796,7 +946,7 @@ paths:
                 $ref: '#/components/schemas/Activity'
         400:
           description: invalid data
-        401:
+        403:
           description: unauthorized
         404:
           description: project not found
@@ -833,7 +983,7 @@ paths:
                 $ref: '#/components/schemas/Activity'
         400:
           description: invalid data
-        401:
+        403:
           description: unauthorized
         404:
           description: project/activity not found
@@ -843,11 +993,39 @@ paths:
       tags:
       - activity
       responses:
-        200:
+        204:
           description: success
         400:
           description: invalid data
         401:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}/activities/{activity_id}/publish:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: activity_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    patch:
+      tags:
+      - activity
+      responses:
+        204:
+          description: success
+        400:
+          description: data integrity violated
+        403:
           description: unauthorized
         404:
           description: project/activity not found
@@ -883,7 +1061,7 @@ paths:
                 $ref: '#/components/schemas/Competence'
         400:
           description: invalid data
-        401:
+        403:
           description: unauthorized
       security:
         - innopolis_sso: []
@@ -912,7 +1090,7 @@ paths:
                 $ref: '#/components/schemas/Competence'
         400:
           description: invalide data
-        401:
+        403:
           description: unauthorized
         404:
           description: competence not found
@@ -930,6 +1108,280 @@ paths:
           description: unauthorized
       security:
         - innopolis_sso: []
+
+  /projects/{project_id}/activities/{activity_id}/applications:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: activity_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    post:
+      tags:
+        - application
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Application'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+    delete:
+      tags:
+        - application
+      responses:
+        204:
+          description: success
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}/activities/{activity_id}/applications/{application_id}:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: activity_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    patch:
+      tags:
+        - application
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Application'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report_info:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: activity_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      tags:
+        - application
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  average_rating:
+                    type: integer
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VolunteeringReport'
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/report:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: activity_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    post:
+      tags:
+        - application
+      requestBody:
+        content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolunteeringReport'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolunteeringReport'
+        400:
+          description: invalid data
+        403:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+    patch:
+      tags:
+        - application
+      requestBody:
+        content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolunteeringReport'
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolunteeringReport'
+        400:
+          description: invalid data
+        403:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+    delete:
+      tags:
+        - application
+      responses:
+        204:
+          description: success
+        400:
+          description: invalid data
+        403:
+          description: unauthorized
+        404:
+          description: project/activity not found
+      security:
+        - innopolis_sso: []
+  /projects/{project_id}/activities/{activity_id}/applications/{application_id}/feedback:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: activity_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: application_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    post:
+      tags:
+        - application
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answers:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answers:
+                    type: array
+                    items:
+                      type: string
+                  time:
+                    type: string
+                    format: date-time
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+        404:
+          description: project/activity/application not found
 
   /accounts:
     get:
@@ -958,14 +1410,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    pages:
-                      type: integer
-                      example: 17
-                    data:
+                type: object
+                properties:
+                  pages:
+                    type: integer
+                    example: 17
+                  data:
+                    type: array
+                    items:
                       $ref: '#/components/schemas/Account'
         400:
           description: invalid request data
@@ -997,6 +1449,8 @@ paths:
                 $ref: '#/components/schemas/Account'
         401:
           description: unauthorized.
+        404:
+          description: Account not found
       security:
       - innopolis_sso: []
   /account:
@@ -1027,6 +1481,8 @@ paths:
       responses:
         204:
           description: success. no payload
+        403:
+          description: unauthorized
       security:
       - innopolis_sso: []
   /accounts/{email}/timeline:
@@ -1047,23 +1503,28 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    entry_time:
-                      type: string
-                      format: date-time
-                    type:
-                      type: string
-                      enum: [application, purchase, promotion, project]
-                    payload:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
                       type: object
-                      oneOf:
-                      - $ref: '#/components/schemas/Application'
-                      - $ref: '#/components/schemas/StockChange'
-                      - $ref: '#/components/schemas/Notification'
-                      - $ref: '#/components/schemas/Project'
+                      properties:
+                        entry_time:
+                          type: string
+                          format: date-time
+                        type:
+                          type: string
+                          enum: [application, purchase, promotion, project]
+                        payload:
+                          type: object
+                          oneOf:
+                          - $ref: '#/components/schemas/Application'
+                          - $ref: '#/components/schemas/StockChange'
+                          - $ref: '#/components/schemas/Notification'
+                          - $ref: '#/components/schemas/Project'
+                  more:
+                    type: boolean
         401:
           description: unauthorized
         404:
@@ -1137,6 +1598,8 @@ paths:
                 $ref: '#/components/schemas/NotificationSettings'
         401:
           description: unauthorized
+        404:
+          description: account not found
       security:
         - innopolis_sso: []
     patch:
@@ -1154,6 +1617,8 @@ paths:
           description: invalid request data
         401:
           description: unauthorized.
+        404:
+          description: account not found
       security:
         - innopolis_sso: []
   /account/notification_settings:
@@ -1177,6 +1642,8 @@ paths:
           description: invalid request data
         401:
           description: unauthorized
+        404:
+          description: account not found
       security:
         - innopolis_sso: []
   /account/telegram:
@@ -1198,10 +1665,37 @@ paths:
           description: success. no payload
         400:
           description: invalid request data
-        401:
+        403:
           description: unauthorized
       security:
         - innopolis_sso: []
+  /reclaim-innopoints:
+    description: Get the innopoints the user had on the old system
+    post:
+      tags:
+        - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: integer
+        400:
+          description: data integrity violated
+        403:
+          description: Incorrect email/password
 
 
 components:
@@ -1422,6 +1916,15 @@ components:
         name:
           type: string
           example: Teamwork
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          readOnly: true
+        name:
+          type: string
 
     Application:
       type: object
@@ -1450,7 +1953,26 @@ components:
           enum: [approved, pending, rejected]
         actual_hours:
           type: integer
-    
+    VolunteeringReport:
+      type: object
+      properties:
+        reporter_email:
+          type: string
+          readOnly: true
+        time:
+          type: string
+          format: date-time
+        content:
+          type: string
+          nullable: true
+        application_id:
+          type: integer
+          readOnly: true
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+
     Notification:
       type: object
       properties:  
