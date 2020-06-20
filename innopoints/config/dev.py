@@ -12,5 +12,3 @@ INNOPOLIS_SSO_CLIENT_SECRET = os.getenv('INNOPOLIS_SSO_CLIENT_SECRET')
 JSON_SORT_KEYS = False
 
 FRONTEND_BASE = 'http://0.0.0.0:3000'
-
-IS_ADMIN = lambda userinfo: True
