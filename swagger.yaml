@@ -1729,6 +1729,72 @@ paths:
         403:
           description: Incorrect email/password
 
+  /notifications:
+    get:
+      tags:
+        - notification
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+  /notifications/subscribe:
+    post:
+      tags:
+        - notification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                keys:
+                  type: object
+                  properties:
+                    auth:
+                      type: string
+                    p256dh:
+                      type: string
+                endpoint:
+                  type: string
+      responses:
+        204:
+          description: success
+        400:
+          description: invalid data
+        401:
+          description: unauthorized
+      security:
+        - innopolis_sso: []
+  /notifications/{notification_id}/read:
+    parameters:
+      - name: notification_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    patch:
+      tags:
+        - notification
+      responses:
+        204:
+          description: success
+        401:
+          description: unauthorized
+        404:
+          description: notification not found
+      security:
+        - innopolis_sso: []
+
 
 components:
   schemas:
