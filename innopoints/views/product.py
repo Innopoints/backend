@@ -71,7 +71,7 @@ def list_products():
         page = int(request.args.get('page', default_page))
         order_by = request.args.get('order_by', default_order_by)
         order = request.args.get('order', default_order)
-        excluded_colors = json.loads(request.args.get('excluded_colors', '[]'))
+        excluded_colors = request.args.getlist('excluded_colors', type=str)
         min_price = request.args.get('min_price', 0, int)
         max_price = request.args.get('max_price', type=int)
     except ValueError:
@@ -100,9 +100,9 @@ def list_products():
 
     if excluded_colors:
         db_query = db_query.join(Variety)
-        if None in excluded_colors:
+        if '\x00' in excluded_colors:
             db_query = db_query.filter(Variety.color.isnot(None))
-            excluded_colors.remove(None)
+            excluded_colors.remove('\x00')
         excluded_colors = [color.lstrip('#') for color in excluded_colors]
         db_query = (
             db_query.group_by(Product)
