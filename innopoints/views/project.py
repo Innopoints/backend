@@ -71,7 +71,7 @@ def list_ongoing_projects():
 
     try:
         spots = request.args.get('spots', 0, type=int)
-        excluded_competences = json.loads(request.args.get('excluded_compentences', '[]'))
+        excluded_competences = request.args.getlist('excluded_compentences')
         start_date = request.args.get('start_date', type=datetime.fromisoformat)
         end_date = request.args.get('end_date', type=datetime.fromisoformat)
     except ValueError:

@@ -15,9 +15,9 @@ externalDocs:
   url: https://www.notion.so/innopoints/
 
 servers:
+- url: https://ipts.innopolis.university/api/v1/
 - url: https://innopoints-backend.herokuapp.com/api/v1/
 - url: http://localhost:7507/api/v1/
-- url: Something on innopolis servers
 
 tags:
 - name: product
@@ -51,7 +51,7 @@ paths:
             default: 1
             minimum: 1
         - name: limit
-          description: Maximum number of elemenets
+          description: Maximum number of products
           in: query
           schema:
             type: integer
@@ -63,7 +63,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [addition_time, price]
+            enum: [addition_time, price, purchases]
             default: addition_time
         - name: order
           description: Which way to order
@@ -71,13 +71,40 @@ paths:
           schema:
             type: string
             enum: [asc, desc]
-            default: asc
+            default: desc
         - name: q
           description: Search query
           in: query
           schema:
             type: string
           required: false
+        - name: min_price
+          description: Minimum price of products
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          example: 1337
+        - name: max_price
+          description: Maximum price of products
+          in: query
+          schema:
+            type: integer
+            default: null
+            nullable: true
+            minimum: 0
+          example: 1337
+        - name: excluded_colors
+          description: Which colors (in hex form) to filter from the returned products. `null` represents colorless
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              nullable: true
+            default: []
+          example: ["FF0000", "\0"]
       responses:
         200:
           description: Success
