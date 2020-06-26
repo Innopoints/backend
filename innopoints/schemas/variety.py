@@ -70,12 +70,12 @@ class VarietySchema(ma.SQLAlchemyAutoSchema):
         """Convert the array of URL strings to an array of image objects with order."""
         if self.context.get('update', False):
             if 'images' in data:
-                data['images'] = [{'order': idx, 'image_id': int(url.split('/')[2])}
-                                  for (idx, url) in enumerate(data['images'], start=1)]
+                data['images'] = [{'order': idx, 'image_id': id}
+                                  for (idx, id) in enumerate(data['images'], start=1)]
         else:
             try:
-                data['images'] = [{'order': idx, 'image_id': int(url.split('/')[2])}
-                                  for (idx, url) in enumerate(data['images'], start=1)]
+                data['images'] = [{'order': idx, 'image_id': id}
+                                  for (idx, id) in enumerate(data['images'], start=1)]
             except KeyError:
                 raise ValidationError('Images must be specified.')
         return data
@@ -93,7 +93,7 @@ class VarietySchema(ma.SQLAlchemyAutoSchema):
         if 'images' not in data:
             return data
 
-        data['images'] = [f'/file/{image["image_id"]}'
+        data['images'] = [image["image_id"]
                           for image in sorted(data['images'],
                                               key=lambda x: x['order'])]
         return data
@@ -115,6 +115,9 @@ class ColorSchema(ma.SQLAlchemyAutoSchema):
     @pre_load
     def normalize_value(self, data, **_kwargs):
         """Normalize the color value, stripping the '#' and transforming symbols to uppercase."""
+        if not isinstance(data.get('value'), str):
+            raise ValidationError('The value must be a string.')
+
         if data['value'].startswith('#'):
             data['value'] = data['value'][1:]
 
