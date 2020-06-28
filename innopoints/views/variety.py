@@ -133,6 +133,8 @@ class VarietyAPI(MethodView):
         variety = Variety.query.get_or_404(variety_id)
         if variety.product != product:
             abort(400, {'message': 'The specified product and variety are unrelated.'})
+        if len(product.varieties) <= 1:
+            abort(400, {'message': 'Cannot leave the product without varieties.'})
 
         try:
             db.session.delete(variety)
