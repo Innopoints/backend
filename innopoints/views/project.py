@@ -501,8 +501,8 @@ class ProjectDetailAPI(MethodView):
             abort(400, {'message': err.messages})
 
         with db.session.no_autoflush:
-            if current_user not in updated_project.moderators:
-                updated_project.moderators.append(current_user)
+            if project.creator not in updated_project.moderators:
+                updated_project.moderators.append(project.creator)
 
         try:
             db.session.add(updated_project)
