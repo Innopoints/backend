@@ -130,7 +130,7 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: Bad query parameters
+                    example: Bad query parameters.
     post:
       tags:
       - product
