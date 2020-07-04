@@ -9,3 +9,4 @@ from .product import *
 from .project import *
 from .variety import *
 from .notification import *
+from .random import *
