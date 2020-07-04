@@ -7,6 +7,7 @@ Variety:
 - POST   /products/{product_id}/varieties/{variety_id}/purchase
 
 StockChange:
+- GET   /stock_changes
 - GET   /stock_changes/for_review
 - PATCH /stock_changes/{stock_change_id}/status
 
@@ -19,9 +20,10 @@ Color:
 - POST /colors
 """
 
+import math
 import logging
 
-from flask import request
+from flask import request, jsonify
 from flask.views import MethodView
 from flask_login import login_required, current_user
 from marshmallow import ValidationError
@@ -220,6 +222,30 @@ def purchase_variety(product_id, variety_id):
 
 
 # ----- StockChange -----
+
+@api.route('/stock_changes')
+@admin_required
+def list_purchases():
+    """List all of the purchases."""
+    default_limit = 24
+    default_page = 1
+
+    try:
+        limit = int(request.args.get('limit', default_limit))
+        page = int(request.args.get('page', default_page))
+    except ValueError:
+        abort(400, {'message': 'Bad query parameters.'})
+
+    if limit < 1 or page < 1:
+        abort(400, {'message': 'Limit and page number must be positive.'})
+
+    count = db.session.query(StockChange.query.subquery()).count()
+    purchases = StockChange.query.offset(limit * (page - 1)).limit(limit).all()
+
+    schema = StockChangeSchema(many=True)
+    return jsonify(pages=math.ceil(count / limit),
+                   data=schema.dump(purchases))
+
 
 @api.route('/stock_changes/for_review')
 @admin_required
