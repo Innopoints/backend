@@ -51,7 +51,7 @@ paths:
             default: 1
             minimum: 1
         - name: limit
-          description: Maximum number of products
+          description: Maximum number of products per page
           in: query
           schema:
             type: integer
