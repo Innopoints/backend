@@ -239,12 +239,13 @@ def list_purchases():
     if limit < 1 or page < 1:
         abort(400, {'message': 'Limit and page number must be positive.'})
 
-    count = db.session.query(StockChange.query.subquery()).count()
-    purchases = StockChange.query.offset(limit * (page - 1)).limit(limit).all()
+    purchases = StockChange.query.filter(StockChange.amount < 0)
+    count = db.session.query(purchases.subquery()).count()
+    purchases = purchases.offset(limit * (page - 1)).limit(limit)
 
     schema = StockChangeSchema(many=True)
     return jsonify(pages=math.ceil(count / limit),
-                   data=schema.dump(purchases))
+                   data=schema.dump(purchases.all()))
 
 
 @api.route('/stock_changes/for_review')
