@@ -35,6 +35,8 @@ tags:
   description: Telling someone that something happened
 - name: random
   description: Random
+- name: statistics
+  description: General statistics
 
 paths:
   /products:
@@ -1425,6 +1427,23 @@ paths:
           description: unauthorized
       security:
         - innopolis_sso: []
+  /accounts/groups:
+    get:
+      tags:
+        - account
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        403:
+          description: unauthorized. admins only
+      security:
+        - innopolis_sso: []
   /accounts/{email}:
     parameters:
     - name: email
@@ -1809,6 +1828,112 @@ paths:
                 properties:
                   url:
                     type: string
+
+  /statistics/competences:
+    get:
+      tags:
+        - statistics
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time 
+        - name: group
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: tag
+          in: query
+          schema:
+            type: number
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  amount:
+                    type: number
+        403:
+          description: unauthorized. admins only
+  /statistics/hours:
+    get:
+      tags:
+        - statistics
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time 
+        - name: group
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: tag
+          in: query
+          schema:
+            type: number
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: number
+                default: 0
+        403:
+          description: unauthorized. admins only
+  /statistics/innopoints:
+    get:
+      tags:
+        - statistics
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time 
+        - name: group
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        200:
+          description: success
+          content:
+            application/json:
+              schema:
+                type: number
+                default: 0
+        403:
+          description: unauthorized. admins only
 
 components:
   schemas:
