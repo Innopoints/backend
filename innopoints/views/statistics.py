@@ -1,4 +1,9 @@
-"""Views delivering statistics."""
+"""Views delivering statistics.
+
+- GET /statistics/competences
+- GET /statistics/hours
+- GET /statistics/innopoints
+"""
 
 from datetime import datetime
 
