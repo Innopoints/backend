@@ -16,7 +16,6 @@ externalDocs:
 
 servers:
 - url: https://ipts.innopolis.university/api/v1/
-- url: https://innopoints-backend.herokuapp.com/api/v1/
 - url: http://localhost:7507/api/v1/
 
 tags:
