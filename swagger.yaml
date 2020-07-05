@@ -33,6 +33,8 @@ tags:
   description: Someone
 - name: notification
   description: Telling someone that something happened
+- name: random
+  description: Random
 
 paths:
   /products:
@@ -1793,6 +1795,20 @@ paths:
       security:
         - innopolis_sso: []
 
+  /random_page:
+    get:
+      tags:
+        - random
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
 
 components:
   schemas:
