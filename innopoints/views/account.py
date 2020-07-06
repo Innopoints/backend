@@ -2,8 +2,9 @@
 
 Account:
 - GET    /account
-- GET    /accounts
 - GET    /accounts/{email}
+- GET    /accounts
+- GET    /accounts/groups
 - PATCH  /accounts/{email}/balance
 - GET    /account/timeline
 - GET    /accounts/{email}/timeline
@@ -96,6 +97,14 @@ def get_info(email):
                                         'notification_settings', 'static_files'),
                                context={'csrf_token': csrf_token})
     return out_schema.jsonify(user)
+
+
+@api.route('/accounts/groups')
+@admin_required
+def list_groups():
+    """Return a list of all existing groups of users."""
+    groups = db.session.query(Account.group).group_by(Account.group)
+    return jsonify([row[0] for row in groups.all()])
 
 
 @api.route('/accounts')

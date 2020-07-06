@@ -41,7 +41,7 @@ def get_content(type: NotificationType, payload: dict):
         title = 'Purchase status changed'
         link = f"/products/{payload['product'].id}"
         if payload['variety'].images:
-            image_src = payload['variety'].images[0]
+            image_src = f'/file/{payload["variety"].images[0].image_id}'
 
         body = ['Your ', str(payload['product']), ' purchase ']
 
@@ -107,7 +107,7 @@ def get_content(type: NotificationType, payload: dict):
         title = 'Out of stock'
         link = f"/products/{payload['product'].id}"
         if payload['variety'].images:
-            image_src = payload['variety'].images[0]
+            image_src = f'/file/{payload["variety"].images[0].image_id}'
         body = ['The ',
                 Link(title=str(payload['product']),
                      href=f"/products/{payload['product'].id}"),
@@ -116,7 +116,7 @@ def get_content(type: NotificationType, payload: dict):
         title = 'New purchase'
         link = '/dashboard'
         if payload['variety'].images:
-            image_src = payload['variety'].images[0]
+            image_src = f'/file/{payload["variety"].images[0].image_id}'
         body = [Link(title=payload['account'].full_name,
                      href='/profile?user=' + payload['account'].email),
                 ' has purchased the ',

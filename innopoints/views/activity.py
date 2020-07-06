@@ -273,7 +273,7 @@ class CompetenceAPI(MethodView):
         out_schema = CompetenceSchema()
         return out_schema.jsonify(updated_competence)
 
-    @login_required
+    @admin_required
     def delete(self, compt_id):
         """Delete the competence."""
         competence = Competence.query.get_or_404(compt_id)

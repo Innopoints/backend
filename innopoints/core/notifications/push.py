@@ -21,7 +21,6 @@ def remove_links(fragment):
     return fragment
 
 
-
 def push(recipient_email: str, notification_type: NotificationType, payload=None):
     '''Sends a notification to the specified user.'''
     subscriptions = Account.query.get(recipient_email).notification_settings.get('subscriptions')
