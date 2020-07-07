@@ -15,34 +15,34 @@ externalDocs:
   url: https://www.notion.so/innopoints/
 
 servers:
-- url: https://ipts.innopolis.university/api/v1/
-- url: http://localhost:7507/api/v1/
+  - url: https://ipts.innopolis.university/api/v1/
+  - url: http://localhost:7507/api/v1/
 
 tags:
-- name: product
-  description: Items you can buy from the store
-- name: variety
-  description: Variations of products
-- name: project
-  description: An event you can volunteer on
-- name: activity
-  description: They make up a project
-- name: application
-  description: Volunteer wants to work on an activity
-- name: account
-  description: Someone
-- name: notification
-  description: Telling someone that something happened
-- name: random
-  description: Random
-- name: statistics
-  description: General statistics
+  - name: product
+    description: Items you can buy from the store
+  - name: variety
+    description: Variations of products (same price, but different colors or sizes)
+  - name: project
+    description: An event you can volunteer on
+  - name: activity
+    description: They make up a project
+  - name: application
+    description: Volunteer wants to work on an activity
+  - name: account
+    description: Someone
+  - name: notification
+    description: Telling someone that something happened
+  - name: random
+    description: Random
+  - name: statistics
+    description: General statistics
 
 paths:
   /products:
     get:
       tags:
-      - product
+        - product
       summary: List all existing products
       operationId: listProducts
       parameters:
@@ -69,7 +69,7 @@ paths:
             enum: [addition_time, price, purchases]
             default: addition_time
         - name: order
-          description: Which way to order
+          description: Which way to order (ascending or descending)
           in: query
           schema:
             type: string
@@ -117,26 +117,23 @@ paths:
                 properties:
                   pages:
                     type: integer
-                    description: total number of pages with the given limit
+                    description: Total number of pages with the given limit
                     minimum: 1
                     example: 6
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Product'
+                      # TODO: description should be excluded
         400:
           description: Invalid query
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Bad query parameters.
+                $ref: '#/components/schemas/Error'
     post:
       tags:
-      - product
+        - product
       summary: Add a new item to the store
       operationId: addProduct
       requestBody:
@@ -159,20 +156,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
+        403:
+          description: Insufficient permissions (admin required)
       security:
       - innopolis_sso: []
   /products/{product_id}:
     parameters:
-    - name: product_id
-      in: path
-      description: ID of the product in the database
-      required: true
-      schema:
-        type: integer
-        minimum: 1
+      - name: product_id
+        in: path
+        description: ID of the product in the database
+        required: true
+        schema:
+          type: integer
+          minimum: 1
     get:
       tags:
-      - product
+        - product
       responses:
         200:
           description: success
@@ -181,59 +182,71 @@ paths:
               schema:
                 $ref: '#/components/schemas/Product'
         404:
-          description: not found
+          description: Product not found
     patch:
       tags:
-      - product
+        - product
       requestBody:
-        description: What to edit
+        description: Any field can be omitted
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Product'
+              # TODO: varieties should be excluded here
       responses:
         200:
-          description: success. no payload
+          description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Product'
+                # TODO: varieties should be excluded here
+                # TODO: id should be excluded here
+                # TODO: addition_time should be excluded here
         400:
-          description: invalid data
+          description: Invalid data
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
         403:
-          description: unauthorized
+          description: Insufficient permissions (admin required)
         404:
-          description: product not found
+          description: Product not found
       security:
         - innopolis_sso: []
     delete:
       tags:
-      - product
+        - product
       responses:
         204:
-          description: success. no payload
+          description: Success
         400:
           description: Data integrity violated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
         403:
-          description: unauthorized
+          description: Insufficient permissions (admin required)
         404:
-          description: product not found
+          description: Product not found
       security:
         - innopolis_sso: []
 
   /products/{product_id}/varieties/:
     parameters:
-    - name: product_id
-      in: path
-      description: ID of the product in the database
-      required: true
-      schema:
-        type: integer
-        minimum: 1
+      - name: product_id
+        in: path
+        description: ID of the product in the database
+        required: true
+        schema:
+          type: integer
+          minimum: 1
     post:
       tags:
         - variety
@@ -244,57 +257,71 @@ paths:
               $ref: '#/components/schemas/Variety'
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Variety'
         400:
           description: Data integrity violated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
         403:
-          description: unauthorized
+          description: Insufficient permissions (admin required)
         404:
-          description: product not found
+          description: Product not found
 
       security:
         - innopolis_sso: []
   /products/{product_id}/varieties/{variety_id}:
     parameters:
-    - name: product_id
-      in: path
-      description: ID of the product in the database
-      required: true
-      schema:
-        type: integer
-        minimum: 1
-    - name: variety_id
-      in: path
-      description: ID of the variety in the database
-      required: true
-      schema:
-        type: integer
-        minimum: 1
+      - name: product_id
+        in: path
+        description: ID of the product in the database
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: variety_id
+        in: path
+        description: ID of the variety in the database
+        required: true
+        schema:
+          type: integer
+          minimum: 1
     patch:
       tags:
         - variety
       requestBody:
+        description: Any field can be omitted
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Variety'
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Variety'
+                # TODO: purchases should be excluded
         400:
-          description: invalid data
+          description: Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
         403:
-          description: unauthorized
+          description: Insufficient permissions (admin required)
         404:
-          description: product/variety not found
+          description: Product/variety not found
       security:
         - innopolis_sso: []
     delete:
@@ -302,32 +329,38 @@ paths:
         - variety
       responses:
         204:
-          description: success. no payload
+          description: Success
         400:
-          description: invalid data
+          description: Data integrity violated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
         403:
-          description: unauthorized
+          description: Insufficient permissions (admin requried)
         404:
-          description: product/variety not found
+          description: Product/variety not found
 
       security:
         - innopolis_sso: []
   /products/{product_id}/varieties/{variety_id}/purchase:
     parameters:
-    - name: product_id
-      in: path
-      description: ID of the product in the database
-      required: true
-      schema:
-        type: integer
-        minimum: 1
-    - name: variety_id
-      in: path
-      description: ID of the variety in the database
-      required: true
-      schema:
-        type: integer
-        minimum: 1
+      - name: product_id
+        in: path
+        description: ID of the product in the database
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+      - name: variety_id
+        in: path
+        description: ID of the variety in the database
+        required: true
+        schema:
+          type: integer
+          minimum: 1
     post:
       tags:
         - variety
@@ -343,35 +376,47 @@ paths:
                   example: 1
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StockChange'
+                # account_email should be excluded
         400:
-          description: invalid data
+          description: Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         401:
-          description: unauthorized
+          description: Unauthorized
         404:
-          description: product/variety not found
+          description: Product/variety not found
 
       security:
         - innopolis_sso: []
+  # TODO: /stock_changes
   /stock_changes/for_review:
     get:
       tags:
         - variety
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/StockChange'
+                  # TODO: status should be included
+                  # TODO: account should be included (partially)
+                  # TODO: variety should be included (partially)
+                  # TODO: product should be included (partially)
+        401:
+          description: Unauthorized
         403:
-          description: unauthorized. admins only
+          description: Insufficient permissions (admin required)
       security:
         - innopolis_sso: []
   /stock_changes/{stock_change_id}/status:
@@ -395,13 +440,19 @@ paths:
                   $ref: '#/components/schemas/StockChangeStatus'
       responses:
         204:
-          description: success
+          description: Success
         400:
           description: Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
         403:
-          description: unauthorized. admins only
+          description: Insufficient permissions (admin required)
         404:
-          description: Stock Change not found
+          description: Stock change not found
       security:
         - innopolis_sso: []
   /sizes:
@@ -410,7 +461,7 @@ paths:
         - variety
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
@@ -422,7 +473,7 @@ paths:
                       $ref: '#/components/schemas/Variety/properties/size'
     post:
       tags:
-      - variety
+        - variety
       requestBody:
         content:
           application/json:
@@ -433,7 +484,7 @@ paths:
                   $ref: '#/components/schemas/Variety/properties/size'
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
@@ -442,9 +493,15 @@ paths:
                   value:
                     $ref: '#/components/schemas/Variety/properties/size'
         400:
-          description: invalid request data
+          description: Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
         403:
-          description: unauthorized. admins only
+          description: Insufficient permissions (admin required)
       security:
         - innopolis_sso: []
   /colors:
@@ -453,7 +510,7 @@ paths:
         - variety
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
@@ -465,7 +522,7 @@ paths:
                       $ref: '#/components/schemas/Variety/properties/color'
     post:
       tags:
-      - variety
+        - variety
       requestBody:
         content:
           application/json:
@@ -476,7 +533,7 @@ paths:
                   $ref: '#/components/schemas/Variety/properties/color'
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
@@ -485,44 +542,53 @@ paths:
                   value:
                     $ref: '#/components/schemas/Variety/properties/color'
         400:
-          description: invalid request
+          description: Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Unauthorized
         403:
-          description: unauthorized. admins only
+          description: Insufficient permissions (admin required)
       security:
         - innopolis_sso: []
 
   /projects:
     get:
       tags:
-      - project
+        - project
       parameters:
         - name: order_by
+          description: Parameter to sort projects by
           in: query
           schema:
             type: string
             enum: [creation_time, proximity]
             default: creation_time
         - name: order
+          description: Which way to order (ascending or descending)
           in: query
           schema:
             type: string
             enum: [asc, desc]
-            default: asc
+            default: desc
         - name: q
+          description: Search query
           in: query
-          description: search query
           schema:
             type: string
-            nullable: true
+          required: false
         - name: spots
+          description: Minimum number of vacant spots
           in: query
-          description: Number of remaining spots
           schema:
             type: integer
             default: 0
             minimum: 0
+          required: false
         - name: excluded_competences
-          description: Which competences (IDs) to filter from the available activities.
+          description: Which competences (IDs) to filter out from the available activities
           in: query
           schema:
             type: array
@@ -531,44 +597,59 @@ paths:
             default: []
           example: [1, 5]
         - name: start_date
-          description: Latest possible starting date of an activity in the project.
+          description: Filter only projects that have an activity that starts after this date
           in: query
           schema:
             type: string
             format: date-time
-            nullable: true
+          required: false
         - name: end_date
-          description: Earliest possible starting date of an activity in the project.
+          description: Filter only projects that have an activity that ends before this date
           in: query
           schema:
             type: string
             format: date-time
-            nullable: true
+          required: false
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
                 type: array
                 items:
                   allOf:
-                  - type: object
-                    properties:
-                      id:
-                        type: integer
-                  - $ref: '#/components/schemas/Project'
-                  - type: object
-                    properties:
-                      varieties:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Activity'
+                    - type: object
+                      properties:
+                        id:
+                          type: integer
+                    - $ref: '#/components/schemas/Project'
+                      # TODO: creator_email should be replaced with creator: { full_name, email }
+                      # TODO: tags should be included
+                      # TODO: admin_feedback should be excluded
+                      # TODO: lifetime_stage should be excluded
+                      # TODO: moderators should only be available to authenticated users
+                      # TODO: review_status should only be available to admins
+
+                    - type: object
+                      properties:
+                        activities:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/Activity'
+                            # TODO: description should be excluded
+                            # TODO: telegram_required should be excluded
+                            # TODO: project_id should be excluded
+                            # TODO: fixed_reward should be excluded
+                            # TODO: reward_rate should be excluded
+                            # TODO: working_hours should be excluded
+                            # TODO: people_required should be excluded
+                            # TODO: feedback_questions should be excluded
         400:
-          description: invalid query parameters
+          description: Invalid query parameters
     post:
       tags:
-      - project
+        - project
       requestBody:
         content:
           application/json:
@@ -576,21 +657,21 @@ paths:
               $ref: '#/components/schemas/Project'
       responses:
         200:
-          description: success
+          description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Project'
         400:
-          description: invalid request data
+          description: Invalid request data
         401:
-          description: unauthorized
+          description: Unauthorized
       security:
         - innopolis_sso: []
   /projects/drafts:
     get:
       tags:
-      - project
+        - project
       responses:
         200:
           description: success
@@ -607,7 +688,7 @@ paths:
   /projects/past:
     get:
       tags:
-      - project
+        - project
       parameters:
         - name: page
           in: query
@@ -640,7 +721,7 @@ paths:
   /projects/for_review:
     get:
       tags:
-      - project
+        - project
       responses:
         200:
           description: success
@@ -653,11 +734,11 @@ paths:
         403:
           description: unauthorized. admins only
       security:
-      - innopolis_sso: []
+        - innopolis_sso: []
   /projects/{project_id}/publish:
     patch:
       tags:
-      - project
+        - project
       parameters:
         - name: project_id
           in: path
@@ -679,7 +760,7 @@ paths:
   /projects/{project_id}/request_review:
     patch:
       tags:
-      - project
+        - project
       parameters:
         - name: project_id
           in: path
@@ -701,7 +782,7 @@ paths:
   /projects/{project_id}/finalize:
     patch:
       tags:
-      - project
+        - project
       parameters:
         - name: project_id
           in: path
@@ -725,7 +806,7 @@ paths:
   /projects/{project_id}/review_status:
     patch:
       tags:
-      - project
+        - project
       parameters:
         - name: project_id
           in: path
@@ -745,7 +826,7 @@ paths:
                 admin_feedback:
                   type: string
                   nullable: true
-                  example: Great work everyone!       
+                  example: Great work everyone!
       responses:
         204:
           description: success. no payload
@@ -759,12 +840,12 @@ paths:
         - innopolis_sso: []
   /projects/{project_id}:
     parameters:
-    - name: project_id
-      in: path
-      required: true
-      schema:
-        type: integer
-        minimum: 1
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
     get:
       tags:
         - project
@@ -779,7 +860,7 @@ paths:
           description: project not found
     patch:
       tags:
-      - project
+        - project
       requestBody:
         content:
           application/json:
@@ -800,7 +881,7 @@ paths:
           description: project not found
     delete:
       tags:
-      - project
+        - project
       responses:
         204:
           description: success. no payload
@@ -815,7 +896,7 @@ paths:
   /projects/{project_id}/tags:
     patch:
       tags:
-      - project
+        - project
       parameters:
         - name: project_id
           in: path
@@ -846,7 +927,7 @@ paths:
   /tags:
     get:
       tags:
-      - project
+        - project
       responses:
         200:
           description: success
@@ -1551,7 +1632,7 @@ paths:
       security:
         - innopolis_sso: []
   /account/timeline:
-    $ref: '#/paths/~1accounts~1%7Bemail%7D~1timeline'  
+    $ref: '#/paths/~1accounts~1%7Bemail%7D~1timeline'
   /accounts/{email}/statistics:
     parameters:
       - name: email
@@ -1560,7 +1641,7 @@ paths:
         schema:
           type: string
           format: email
-          nullable: false 
+          nullable: false
     get:
       tags:
         - account
@@ -1843,7 +1924,7 @@ paths:
           in: query
           schema:
             type: string
-            format: date-time 
+            format: date-time
         - name: group
           in: query
           schema:
@@ -1882,7 +1963,7 @@ paths:
           in: query
           schema:
             type: string
-            format: date-time 
+            format: date-time
         - name: group
           in: query
           schema:
@@ -1917,7 +1998,7 @@ paths:
           in: query
           schema:
             type: string
-            format: date-time 
+            format: date-time
         - name: group
           in: query
           schema:
@@ -1994,7 +2075,7 @@ components:
         type:
           type: string
           nullable: true
-          example: T-Shirt
+          example: T-shirt
         description:
           type: string
           example: Just a shirt
@@ -2016,9 +2097,9 @@ components:
           type: integer
           minimum: 1
           readOnly: true
-        product_id:
+        amount:
           type: integer
-          minimum: 1
+          minimum: 0
         size:
           type: string
           maxLength: 3
@@ -2029,17 +2110,16 @@ components:
           minLength: 6
           maxLength: 6
           nullable: true
-          example: c0ff32
+          example: '#C0FF32'
         images:
           type: array
           items:
-            type: object
-            properties:
-              image_id:
-                type: integer
-                minimum: 1
-              order:
-                type: integer
+            type: integer
+            minimum: 1
+        purchases:
+          type: integer
+          minimum: 0
+          readOnly: true
     StockChange:
       type: object
       properties:
@@ -2085,10 +2165,14 @@ components:
         creation_time:
           type: string
           format: date-time
-        organizer:
+        start_date:
           type: string
-          example: Events department
-          nullable: true
+          format: date-time
+          readOnly: true
+        end_date:
+          type: string
+          format: date-time
+          readOnly: true
         creator_email:
           type: string
           format: email
@@ -2227,7 +2311,7 @@ components:
 
     Notification:
       type: object
-      properties:  
+      properties:
         id:
           type: integer
           minimum: 1
@@ -2282,7 +2366,7 @@ components:
       properties:
         message:
           type: string
-          example: invalid input
+          example: Error message.
 
   securitySchemes:
     innopolis_sso:
