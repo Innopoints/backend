@@ -87,7 +87,7 @@ def logout():
 @auth.route('/login_cheat/<email>')
 def login_cheat(email):
     """Bypass OAuth."""
-    if current_app.config['ENV'] not in ('development', 'heroku'):
+    if current_app.config['ENV'] != 'development':
         abort(400, {'message': 'This endpoint is unavailable.'})
     user = Account.query.get_or_404(email)
     login_user(user, remember=True)

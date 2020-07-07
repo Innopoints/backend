@@ -71,7 +71,7 @@ def list_ongoing_projects():
 
     try:
         spots = request.args.get('spots', 0, type=int)
-        excluded_competences = request.args.getlist('excluded_compentences')
+        excluded_competences = request.args.getlist('excluded_compentences', type=int)
         start_date = request.args.get('start_date', type=datetime.fromisoformat)
         end_date = request.args.get('end_date', type=datetime.fromisoformat)
     except ValueError:
@@ -151,10 +151,9 @@ def list_ongoing_projects():
     conditional_exclude = ['review_status', 'moderators']
     if current_user.is_authenticated:
         conditional_exclude.remove('moderators')
-        if not current_user.is_admin:
+        if current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'files',
-               'lifetime_stage', 'admin_feedback']
+    exclude = ['admin_feedback', 'files', 'lifetime_stage']
     activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
                                                             'fixed_reward', 'working_hours',
                                                             'reward_rate', 'people_required',
@@ -197,10 +196,9 @@ def list_past_projects():
     conditional_exclude = ['review_status', 'moderators']
     if current_user.is_authenticated:
         conditional_exclude.remove('moderators')
-        if not current_user.is_admin:
+        if current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'files',
-               'lifetime_stage', 'admin_feedback']
+    exclude = ['admin_feedback', 'files', 'lifetime_stage']
     activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
                                                             'fixed_reward', 'working_hours',
                                                             'reward_rate', 'people_required',
@@ -264,7 +262,8 @@ def create_project():
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files'),
+    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files',
+                                        'activities.existing_application'),
                                context={'user': current_user})
     return out_schema.jsonify(new_project)
 
