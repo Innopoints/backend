@@ -83,7 +83,8 @@ def create_variety(product_id):
     out_schema = VarietySchema(exclude=('product_id',
                                         'product',
                                         'images.variety_id',
-                                        'images.id'))
+                                        'images.id',
+                                        'stock_changes'))
     return out_schema.jsonify(new_variety)
 
 
@@ -217,7 +218,8 @@ def purchase_variety(product_id, variety_id):
             'variety_id': variety.id,
         })
 
-    out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email'))
+    out_schema = StockChangeSchema(exclude=('transaction', 'account', 'account_email',
+                                            'product', 'variety'))
     return out_schema.jsonify(new_stock_change)
 
 
@@ -255,7 +257,8 @@ def get_purchases_for_review():
     db_query = StockChange.query.filter(
         StockChange.status.in_((StockChangeStatus.pending, StockChangeStatus.ready_for_pickup))
     )
-    schema = StockChangeSchema(many=True, exclude=('transaction',))
+    schema = StockChangeSchema(many=True, exclude=('transaction', 'variety.product_id',
+                                                   'variety.product'))
     return schema.jsonify(db_query.all())
 
 
