@@ -103,7 +103,9 @@ def get_info(email):
 @admin_required
 def list_groups():
     """Return a list of all existing groups of users."""
-    groups = db.session.query(Account.group).group_by(Account.group)
+    groups = db.session.query(Account.group) \
+                .filter(~Account.is_admin, Account.group.isnot(None)) \
+                .group_by(Account.group)
     return jsonify([row[0] for row in groups.all()])
 
 
