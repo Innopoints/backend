@@ -34,6 +34,7 @@ from innopoints.models import (
     Application,
     ApplicationStatus,
     LifetimeStage,
+    Notification,
     NotificationType,
     Project,
     project_moderation,
@@ -402,6 +403,15 @@ def leave_feedback(project_id, activity_id, application_id):
                                   feedback_id=new_feedback)
     new_feedback.transaction = new_transaction
     db.session.add(new_transaction)
+
+    notification = Notification.query.filter(
+        Notification.recipient_email == current_user.email,
+        Notification.type == NotificationType.claim_innopoints,
+        Notification.payload.op('->>')('application_id').cast(db.Integer) == application_id,
+    ).one_or_none()
+
+    if notification is not None:
+        notification.is_read = True
 
     try:
         db.session.commit()
