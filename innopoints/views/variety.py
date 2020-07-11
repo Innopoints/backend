@@ -243,7 +243,13 @@ def list_purchases():
 
     purchases = StockChange.query.filter(StockChange.amount < 0)
     count = db.session.query(purchases.subquery()).count()
-    purchases = purchases.offset(limit * (page - 1)).limit(limit)
+    purchases = (
+        # pylint: disable=bad-continuation
+        purchases
+            .order_by(StockChange.time.desc())
+            .offset(limit * (page - 1))
+            .limit(limit)
+    )
 
     schema = StockChangeSchema(many=True)
     return jsonify(pages=math.ceil(count / limit),
