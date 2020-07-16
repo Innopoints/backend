@@ -262,6 +262,7 @@ def get_timeline(email):
                    Project.review_status,
                    Project.creation_time.label('entry_time'))
             .filter_by(creator=user)
+            .filter(Project.lifetime_stage != LifetimeStage.draft)
     )
 
     timeline = (
