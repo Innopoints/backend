@@ -245,7 +245,7 @@ def get_timeline(email):
             .filter_by(recipient_email=user.email, type=NotificationType.added_as_moderator)
             .join(Project,
                   Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
-            .filter(Project.creator != user)
+            .filter(Project.creator != user, Project.lifetime_stage != LifetimeStage.draft)
             .add_column(Project.name.label('project_name'))
             .outerjoin(Activity, (Activity.project_id == Project.id)
                                & (Activity.internal)
@@ -262,6 +262,7 @@ def get_timeline(email):
                    Project.review_status,
                    Project.creation_time.label('entry_time'))
             .filter_by(creator=user)
+            .filter(Project.lifetime_stage != LifetimeStage.draft)
     )
 
     timeline = (
