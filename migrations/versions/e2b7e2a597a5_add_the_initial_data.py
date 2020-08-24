@@ -49,15 +49,15 @@ def upgrade():
     op.bulk_insert(
         competences_table,
         [{'id': id, 'name': value} for id, value in enumerate(
-            ('Teamwork & Cooperation',
-             'Healthy Lifestyle & Wellbeing',
+            ('Teamwork',
+             'Emotional Intelligence',
              'Communication',
              'Digital Grammar',
-             'Learning to Learn',
+             'Problem Solving',
              'Proactivity',
              'Critical Thinking',
              'Civil Competence',
-             'Creativity & Innovation'),
+             'Creativity'),
             start=1,
         )]
     )
