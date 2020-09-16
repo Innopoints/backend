@@ -55,7 +55,7 @@ def get_content(type: NotificationType, payload: dict):
             body.append('is being processed again.')
     elif type == NotificationType.new_arrivals:
         title = 'New arrivals'
-        link = '/store'
+        link = '/products'
         body = ['New products have arrived at the InnoStore.']
     elif type == NotificationType.application_status_changed:
         title = 'Application status changed'
