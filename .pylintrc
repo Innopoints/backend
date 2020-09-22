@@ -60,7 +60,14 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=no-self-use, wildcard-import, unused-wildcard-import, too-many-statements, too-many-locals, redefined-builtin, too-many-ancestors
+disable=no-self-use,
+        wildcard-import,
+        unused-wildcard-import,
+        too-many-statements,
+        too-many-locals,
+        redefined-builtin,
+        too-many-ancestors,
+        wrong-import-position,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -374,7 +381,7 @@ single-line-if-stmt=no
 
 # Format style used to check logging format string. `old` means using %
 # formatting, while `new` is for `{}` formatting.
-logging-format-style=fstr
+#logging-format-style=fstr
 
 # Logging modules to check that the string format arguments are in logging
 # function parameter format.
