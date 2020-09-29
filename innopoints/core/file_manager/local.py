@@ -26,11 +26,11 @@ class FileManagerLocal:
         file = open(path, 'rb')
         return file.read()
 
-    def store(self, file: Union[FileStorage, Image.Image], handle: str, format: str = None):
+    def store(self, file: Union[FileStorage, Image.Image], handle: str):
         """Upload the given file with the handle."""
         filename = self._join_base(handle)
-        if format is not None:
-            file.save(filename, format=format)
+        if isinstance(file, Image.Image):
+            file.save(filename, format='WebP', quality=80)
         else:
             file.save(filename)
 

@@ -19,6 +19,7 @@ from sqlalchemy.exc import IntegrityError
 from innopoints.blueprints import api
 from innopoints.core.file_manager import file_manager
 from innopoints.core.helpers import abort, allow_no_json
+from innopoints.core.image import crop, shrink
 from innopoints.extensions import db
 from innopoints.models import StaticFile
 
@@ -53,29 +54,18 @@ def upload_file():
     if mimetype not in ALLOWED_MIMETYPES:
         abort(400, {'message': f'Mimetype "{mimetype}" is not allowed.'})
 
-    format = None
-    if 'x' in request.form:
-        try:
-            # pylint: disable=invalid-name
-            x = int(request.form['x'])
-            y = int(request.form['y'])
-            width = int(request.form['width'])
-            height = int(request.form['height'])
-        except KeyError:
-            abort(400, {'message': 'Not enough data to perform the crop.'})
-        else:
-            image = Image.open(file.stream)
-            if x != 0 or y != 0 or width != image.width or height != image.height:
-                file = image.crop((x, y, x + width, y + height))
-                format = mimetype.split('/')[1]
-            else:
-                file.stream.seek(0)
+    image = shrink(
+        crop(
+            Image.open(file.stream),
+            request.form
+        )
+    )
 
-    new_file = StaticFile(mimetype=mimetype, owner=current_user)
+    new_file = StaticFile(mimetype='image/webp', owner=current_user)
     db.session.add(new_file)
     db.session.commit()
     try:
-        file_manager.store(file, str(new_file.id), format=format)
+        file_manager.store(image, str(new_file.id))
     except (OSError, requests.exceptions.HTTPError) as err:
         log.exception(err)
         db.session.delete(new_file)
