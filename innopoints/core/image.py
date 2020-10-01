@@ -26,7 +26,7 @@ def crop(image: Image.Image, dimensions: Dict[str, str]):
         return image
 
 
-SQUARE_THRESHOLD = 416
+SQUARE_THRESHOLD = 832
 ANY_THRESHOLD = 1024
 
 def shrink(image: Image.Image):
