@@ -30,7 +30,7 @@ class FileManagerLocal:
         """Upload the given file with the handle."""
         filename = self._join_base(handle)
         if isinstance(file, Image.Image):
-            file.save(filename, format='WebP', quality=80)
+            file.save(filename, format='WebP', quality=100)
         else:
             file.save(filename)
 
