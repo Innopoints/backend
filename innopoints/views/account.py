@@ -104,8 +104,11 @@ def get_info(email):
 def list_groups():
     """Return a list of all existing groups of users."""
     groups = db.session.query(Account.group) \
-                .filter(~Account.is_admin, Account.group.isnot(None)) \
-                .group_by(Account.group)
+                .filter(~Account.is_admin,
+                        Account.group.isnot(None),
+                        Account.group.op('SIMILAR TO')('[BM][0-9]+(-[A-Z]+)?-[0-9]+')) \
+                .group_by(Account.group) \
+                .order_by(Account.group)
     return jsonify([row[0] for row in groups.all()])
 
 
