@@ -2,6 +2,7 @@
 
 import os
 from base64 import b64decode
+from datetime import timedelta
 
 from innopoints.config.common import *
 
@@ -13,6 +14,7 @@ INNOPOLIS_SSO_CLIENT_SECRET = os.environ['INNOPOLIS_SSO_CLIENT_SECRET']
 
 SESSION_COOKIE_SECURE = True
 REMEMBER_COOKIE_SECURE = True
+REMEMBER_COOKIE_DURATION = timedelta(days=60)
 
 FRONTEND_BASE = 'https://ipts.innopolis.university'
 
