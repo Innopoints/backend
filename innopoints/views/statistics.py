@@ -19,6 +19,7 @@ from innopoints.models import (
     Application,
     Competence,
     Feedback,
+    LifetimeStage,
     Project,
     StockChange,
     Transaction,
@@ -65,7 +66,7 @@ def get_competence_stats():
             .join(Application)
             .join(Activity)
             .join(Project)
-            .join(project_tags)
+            .outerjoin(project_tags)
             .join(Account, Account.email == Application.applicant_email)
             .add_column(db.func.count(Feedback.application_id).label('amount'))
             .filter(Feedback.time > start_date,
@@ -117,8 +118,9 @@ def get_hour_stats():
             .query(db.func.sum(Application.actual_hours))
             .join(Activity)
             .join(Project)
-            .join(project_tags)
+            .outerjoin(project_tags)
             .join(Account, Account.email == Application.applicant_email)
+            .filter(Project.lifetime_stage == LifetimeStage.finished)
             .filter(Activity.start_date > start_date,
                     Activity.end_date < end_date)
     )
