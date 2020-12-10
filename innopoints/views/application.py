@@ -386,7 +386,7 @@ def leave_feedback(project_id, activity_id, application_id):
     if application.status != ApplicationStatus.approved:
         abort(400, {'message': 'Feedback may only be left on approved applications.'})
 
-    if project.lifetime_stage != LifetimeStages.finished:
+    if project.lifetime_stage != LifetimeStage.finished:
         abort(400, {'message': 'Feedback may only be left on finished projects.'})
 
     in_schema = FeedbackSchema(exclude=('time',))
