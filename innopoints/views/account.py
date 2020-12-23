@@ -86,10 +86,12 @@ def get_info(email):
     csrf_token = None
     if email is None:
         user = current_user
+        if 'csrf_token' not in session:
+            abort(403)
         csrf_token = session['csrf_token']
     else:
         if not current_user.is_admin and email != current_user.email:
-            abort(401)
+            abort(403)
         user = Account.query.get_or_404(email)
 
     out_schema = AccountSchema(exclude=('moderated_projects', 'created_projects', 'stock_changes',
