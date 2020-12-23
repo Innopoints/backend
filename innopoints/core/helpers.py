@@ -29,7 +29,8 @@ def csrf_protect():
     if request.method not in MODIFYING_METHODS:
         return
 
-    if not hmac.compare_digest(request.headers.get('X-CSRF-Token', ''), session['csrf_token']):
+    if not hmac.compare_digest(request.headers.get('X-CSRF-Token', ''),
+                               session.get('csrf_token', '')):
         abort(403, {'message': 'CSRF token invalid.'})
 
 
