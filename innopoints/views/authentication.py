@@ -70,6 +70,7 @@ def authorize():
 
     login_user(user, remember=True)
     session['csrf_token'] = secrets.token_urlsafe()
+    session.permanent = True
 
     final_redirect_uri = session.pop('final_redirect_location', '/')
     frontend_base = session.pop('frontend_base', current_app.config['FRONTEND_BASE'])
