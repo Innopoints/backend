@@ -18,7 +18,7 @@ def _factory(partial_module_string, url_prefix='/'):
     Blueprint instance for a view module.
     """
     name = partial_module_string
-    import_name = f'innopoints.views'
+    import_name = 'innopoints.views'
     blueprint = Blueprint(name, import_name, url_prefix=url_prefix)
     return blueprint
 
