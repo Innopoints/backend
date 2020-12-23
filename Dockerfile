@@ -13,12 +13,6 @@ COPY Pipfile Pipfile.lock /app/
 RUN pip install --upgrade pip
 RUN pip install pipenv && pipenv install --system
 
-# copy the project code
-COPY innopoints /app/innopoints
-COPY migrations /app/migrations
-COPY templates /app/templates
-COPY run.py /app/
-
 # expose the port
 EXPOSE 7507
 
@@ -31,3 +25,9 @@ VOLUME [ "/app/static_files" ]
 
 # define the default command to run when starting the container
 CMD [ "flask", "run", "--host=0.0.0.0"]
+
+# copy the project code
+COPY run.py /app/
+COPY templates /app/templates
+COPY migrations /app/migrations
+COPY innopoints /app/innopoints
