@@ -14,7 +14,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_pywebpush import WebPush
 
 
-db = SQLAlchemy()
+db = SQLAlchemy(session_options={'future': True})
 
 ma = Marshmallow()
 
