@@ -54,7 +54,10 @@ class Notification(db.Model):
     __tablename__ = 'notifications'
 
     id = db.Column(db.Integer, primary_key=True)
-    recipient_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
+    recipient_email = db.Column(db.String(128),
+                                db.ForeignKey('accounts.email', ondelete='CASCADE'),
+                                nullable=False)
+    recipient = db.relationship('Account', back_populates='notifications')
     is_read = db.Column(db.Boolean, nullable=False, default=False)
     payload = db.Column(JSONB, nullable=True)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)

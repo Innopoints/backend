@@ -25,10 +25,14 @@ class Application(db.Model):
     applicant_email = db.Column(db.String(128),
                                 db.ForeignKey('accounts.email', ondelete='CASCADE'),
                                 nullable=False)
-    # property `applicant` created with a backref
+    applicant = db.relationship('Account', back_populates='applications')
     activity_id = db.Column(db.Integer,
                             db.ForeignKey('activities.id', ondelete='CASCADE'),
                             nullable=False)
+    activity = db.relationship('Activity',
+                               uselist=False,
+                               single_parent=True,
+                               back_populates='applications')
     comment = db.Column(db.String(1024), nullable=True)
     application_time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     telegram_username = db.Column(db.String(32), nullable=True)
@@ -41,11 +45,9 @@ class Application(db.Model):
                               back_populates='application')
     feedback = db.relationship('Feedback',
                                uselist=False,
-                               cascade='all, delete-orphan')
-    activity = db.relationship('Activity',
-                               uselist=False,
-                               single_parent=True,
-                               back_populates='applications')
+                               cascade='all, delete-orphan',
+                               passive_deletes=True,
+                               back_populates='application')
 
 
 class VolunteeringReport(db.Model):
@@ -57,19 +59,17 @@ class VolunteeringReport(db.Model):
     )
 
     application_id = db.Column(db.Integer,
-                               db.ForeignKey('applications.id'))
+                               db.ForeignKey('applications.id', ondelete='CASCADE'))
+    application = db.relationship('Application', back_populates='reports')
     reporter_email = db.Column(db.String(128),
                                db.ForeignKey('accounts.email', ondelete='CASCADE'),
                                nullable=False)
+    reporter = db.relationship('Account', back_populates='reports')
     time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     rating = db.Column(db.Integer,
                        db.CheckConstraint('rating <= 5 AND rating >= 1'),
                        nullable=False)
     content = db.Column(db.String(1024), nullable=True)
-    application = db.relationship('Application',
-                                  uselist=False,
-                                  single_parent=True,
-                                  back_populates='reports')
 
 
 class Feedback(db.Model):
@@ -80,10 +80,15 @@ class Feedback(db.Model):
                                db.ForeignKey('applications.id', ondelete='CASCADE'),
                                unique=True,
                                primary_key=True)
-    # property `competences` created with a backref
+    application = db.relationship('Application',
+                                  back_populates='feedback',
+                                  uselist=False,
+                                  single_parent=True)
+    competences = db.relationship('Competence',
+                                  secondary='feedback_competence')
     time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     answers = db.Column(db.ARRAY(db.String(1024)), nullable=False)
     transaction = db.relationship('Transaction',
                                   uselist=False,
-                                  cascade='all, delete-orphan',
-                                  passive_deletes=True)
+                                  single_parent=True,
+                                  back_populates='feedback')

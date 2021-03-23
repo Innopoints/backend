@@ -19,7 +19,7 @@ class Product(db.Model):
     varieties = db.relationship('Variety',
                                 cascade='all, delete-orphan',
                                 passive_deletes=True,
-                                backref='product')
+                                back_populates='product')
     price = db.Column(db.Integer,
                       db.CheckConstraint('price >= 0', name='non-negative price'),
                       nullable=False)
