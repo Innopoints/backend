@@ -17,6 +17,7 @@ DEFAULT_NOTIFICATIONS = {
     NotificationGroup.service: 'email',
 }
 
+
 class Account(UserMixin, db.Model):
     """Represents an account of a logged in user."""
     __tablename__ = 'accounts'
@@ -28,27 +29,36 @@ class Account(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, nullable=False)
     created_projects = db.relationship('Project',
                                        cascade='all, delete-orphan',
-                                       backref='creator')
+                                       passive_deletes=True,
+                                       back_populates='creator')
     notification_settings = db.Column(JSONB, nullable=False, default=DEFAULT_NOTIFICATIONS)
-    # property `moderated_projects` created with a backref
+    moderated_projects = db.relationship('Project',
+                                         secondary='project_moderation',
+                                         back_populates='moderators')
     stock_changes = db.relationship('StockChange',
                                     cascade='all, delete-orphan',
                                     passive_deletes=True,
-                                    backref='account')
+                                    back_populates='account')
     transactions = db.relationship('Transaction',
                                    cascade='all, delete-orphan',
                                    passive_deletes=True,
-                                   backref='account')
+                                   back_populates='account')
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan',
                                    passive_deletes=True,
-                                   backref='applicant')
+                                   back_populates='applicant')
     static_files = db.relationship('StaticFile',
                                    cascade='all, delete-orphan',
                                    passive_deletes=True,
-                                   backref='owner')
+                                   back_populates='owner')
     reports = db.relationship('VolunteeringReport',
-                              cascade='all, delete-orphan')
+                              cascade='all, delete-orphan',
+                              passive_deletes=True,
+                              back_populates='reporter')
+    notifications = db.relationship('Notification',
+                                    cascade='all, delete-orphan',
+                                    passive_deletes=True,
+                                    back_populates='recipient')
 
     def get_id(self):
         """Return the user's e-mail."""
@@ -82,11 +92,15 @@ class Transaction(db.Model):
     account_email = db.Column(db.String(128),
                               db.ForeignKey('accounts.email', ondelete='CASCADE'),
                               nullable=False)
-    # property `account` created with a backref
+    account = db.relationship('Account', back_populates='transactions')
     change = db.Column(db.Integer, nullable=False)
     stock_change_id = db.Column(db.Integer,
                                 db.ForeignKey('stock_changes.id', ondelete='SET NULL'),
                                 nullable=True)
+    stock_change = db.relationship('StockChange',
+                                   back_populates='transaction')
     feedback_id = db.Column(db.Integer,
                             db.ForeignKey('feedback.application_id', ondelete='SET NULL'),
                             nullable=True)
+    feedback = db.relationship('StockChange',
+                               back_populates='transaction')

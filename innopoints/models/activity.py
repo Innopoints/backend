@@ -55,13 +55,16 @@ class Activity(db.Model):
     project_id = db.Column(db.Integer,
                            db.ForeignKey('projects.id', ondelete='CASCADE'),
                            nullable=False)
-    # property `project` created with a backref
+    project = db.relationship('Project',
+                              back_populates='activities')
     working_hours = db.Column(db.Integer, nullable=True, default=1)
     reward_rate = db.Column(db.Integer, nullable=False, default=IPTS_PER_HOUR)
     fixed_reward = db.Column(db.Boolean, nullable=False, default=False)
     people_required = db.Column(db.Integer, nullable=True)
     telegram_required = db.Column(db.Boolean, nullable=False, default=False)
-    # property `competences` created with a backref
+    competences = db.relationship('Competence',
+                                  secondary=activity_competence,
+                                  back_populates='activities')
     application_deadline = db.Column(db.DateTime(timezone=True), nullable=True)
     feedback_questions = db.Column(db.ARRAY(db.String(1024)),
                                    nullable=False,
@@ -70,6 +73,7 @@ class Activity(db.Model):
     draft = db.Column(db.Boolean, nullable=False, default=True)
     applications = db.relationship('Application',
                                    cascade='all, delete-orphan',
+                                   passive_deletes=True,
                                    back_populates='activity')
 
     @property
@@ -118,13 +122,3 @@ class Competence(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False, unique=True)
-
-    activities = db.relationship('Activity',
-                                 secondary=activity_competence,
-                                 lazy=True,
-                                 backref=db.backref('competences', lazy=True))
-
-    feedback = db.relationship('Feedback',
-                               secondary=feedback_competence,
-                               lazy=True,
-                               backref=db.backref('competences', lazy=True))

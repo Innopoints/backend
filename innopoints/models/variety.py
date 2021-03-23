@@ -40,7 +40,7 @@ class Variety(db.Model):
     product_id = db.Column(db.Integer,
                            db.ForeignKey('products.id', ondelete='CASCADE'),
                            nullable=False)
-    # property `product` created with a backref
+    product = db.relationship('Product', back_populates='varieties')
     size = db.Column(db.String(3),
                      db.ForeignKey('sizes.value', ondelete='CASCADE'),
                      nullable=True)
@@ -49,7 +49,8 @@ class Variety(db.Model):
                       nullable=True)
     images = db.relationship('ProductImage',
                              cascade='all, delete-orphan',
-                             passive_deletes=True)
+                             passive_deletes=True,
+                             back_populates='variety')
     stock_changes = db.relationship('StockChange',
                                     cascade='all, delete-orphan',
                                     passive_deletes=True,
@@ -95,9 +96,13 @@ class ProductImage(db.Model):
     variety_id = db.Column(db.Integer,
                            db.ForeignKey('varieties.id', ondelete='CASCADE'),
                            nullable=False)
+    variety = db.relationship('Variety',
+                              uselist=False,
+                              back_populates='images')
     image_id = db.Column(db.Integer,
                          db.ForeignKey('static_files.id', ondelete='CASCADE'),
                          nullable=False)
+    image = db.relationship('StaticFile', back_populates='product_image', uselist=False)
     order = db.Column(db.Integer,
                       db.CheckConstraint('"order" >= 0', name='non-negative order'),
                       nullable=False)
@@ -114,13 +119,17 @@ class StockChange(db.Model):
     account_email = db.Column(db.String(128),
                               db.ForeignKey('accounts.email', ondelete='CASCADE'),
                               nullable=False)
-    # property `account` created with a backref
+    account = db.relationship('Account',
+                              back_populates='stock_changes')
     variety_id = db.Column(db.Integer,
                            db.ForeignKey('varieties.id', ondelete='CASCADE'),
                            nullable=False)
     variety = db.relationship('Variety',
                               back_populates='stock_changes')
-    transaction = db.relationship('Transaction', uselist=False)
+    transaction = db.relationship('Transaction',
+                                  uselist=False,
+                                  single_parent=True,
+                                  back_populates='stock_change')
 
 
 class Color(db.Model):

@@ -12,12 +12,15 @@ class StaticFile(db.Model):
     owner_email = db.Column(db.String(128),
                             db.ForeignKey('accounts.email', ondelete='CASCADE'),
                             nullable=False)
-    # property `owner` created with a backref
+    owner = db.relationship('Account', back_populates='static_files')
     product_image = db.relationship('ProductImage',
                                     uselist=False,
-                                    cascade='all, delete-orphan')
+                                    cascade='all, delete-orphan',
+                                    passive_deletes=True,
+                                    back_populates='image')
     project_file = db.relationship('ProjectFile',
                                    uselist=False,
-                                   cascade='all, delete-orphan')
+                                   cascade='all, delete-orphan',
+                                   passive_deletes=True)
     cover_for = db.relationship('Project',
-                                uselist=False)
+                                back_populates='image')

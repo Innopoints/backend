@@ -13,7 +13,7 @@ project_moderation = db.Table(
               db.ForeignKey('projects.id', ondelete='CASCADE'),
               primary_key=True),
     db.Column('account_email', db.String(128),
-              db.ForeignKey('accounts.email', ondelete='CASCADE', onupdate='CASCADE'),
+              db.ForeignKey('accounts.email', ondelete='CASCADE'),
               primary_key=True)
 )
 
@@ -51,27 +51,24 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=True)
     image_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), nullable=True)
+    image = db.relationship('StaticFile', back_populates='cover_for')
     creation_time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
     activities = db.relationship('Activity',
                                  cascade='all, delete-orphan',
                                  passive_deletes=True,
-                                 backref='project')
+                                 back_populates='project')
     moderators = db.relationship('Account',
                                  secondary=project_moderation,
-                                 backref=db.backref('moderated_projects', lazy=True))
-    creator_email = db.Column(db.String(128), db.ForeignKey('accounts.email'), nullable=False)
-    # property `creator` created with a backref
+                                 back_populates='moderated_projects')
+    creator_email = db.Column(db.String(128),
+                              db.ForeignKey('accounts.email', ondelete='CASCADE'),
+                              nullable=False)
+    creator = db.relationship('Account',
+                              back_populates='created_projects')
     admin_feedback = db.Column(db.String(1024), nullable=True)
     review_status = db.Column(db.Enum(ReviewStatus), nullable=True)
     lifetime_stage = db.Column(db.Enum(LifetimeStage), nullable=False, default=LifetimeStage.draft)
-
-    tags = db.relationship('Tag',
-                           secondary=project_tags,
-                           backref=db.backref('projects', lazy=True))
-
-    files = db.relationship('ProjectFile',
-                            cascade='all, delete-orphan',
-                            backref='project')
+    tags = db.relationship('Tag', secondary=project_tags)
 
     @property
     def start_date(self):
@@ -101,11 +98,17 @@ class Project(db.Model):
 
 class ProjectFile(db.Model):
     """Represents the files that can only be accessed by volunteers and moderators
-       of a certain project."""
+       of a certain project.
+
+       WARNING: this class is currently not used."""
     __tablename__ = 'project_files'
 
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), primary_key=True)
-    file_id = db.Column(db.Integer, db.ForeignKey('static_files.id'), primary_key=True)
+    project_id = db.Column(db.Integer,
+                           db.ForeignKey('projects.id', ondelete='CASCADE'),
+                           primary_key=True)
+    file_id = db.Column(db.Integer,
+                        db.ForeignKey('static_files.id', ondelete='CASCADE'),
+                        primary_key=True)
 
 
 class Tag(db.Model):
