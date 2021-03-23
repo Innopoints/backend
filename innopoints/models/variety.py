@@ -52,7 +52,8 @@ class Variety(db.Model):
                              passive_deletes=True)
     stock_changes = db.relationship('StockChange',
                                     cascade='all, delete-orphan',
-                                    passive_deletes=True)
+                                    passive_deletes=True,
+                                    back_populates='variety')
 
     @property
     def amount(self):
@@ -117,7 +118,8 @@ class StockChange(db.Model):
     variety_id = db.Column(db.Integer,
                            db.ForeignKey('varieties.id', ondelete='CASCADE'),
                            nullable=False)
-    variety = db.relationship('Variety')
+    variety = db.relationship('Variety',
+                              back_populates='stock_changes')
     transaction = db.relationship('Transaction', uselist=False)
 
 
