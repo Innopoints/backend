@@ -353,9 +353,10 @@ def get_statistics(email):
         # pylint: disable=bad-continuation, invalid-unary-operand-type
         db.session.query(db.func.sum(Application.actual_hours),
                          db.func.count(Application.id))
-            .filter_by(applicant=user, status=ApplicationStatus.approved)
-            .filter(Application.application_time >= start_date)
-            .filter(Application.application_time <= end_date)
+            .filter(Application.applicant == user,
+                    Application.status == ApplicationStatus.approved,
+                    Application.application_time >= start_date,
+                    Application.application_time <= end_date)
             .join(Activity).filter(~Activity.fixed_reward, ~Activity.internal)
             .join(Project).filter(Project.lifetime_stage == LifetimeStage.finished)
     ).one()
