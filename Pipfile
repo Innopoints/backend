@@ -8,10 +8,11 @@ pylint = "*"
 pylint_flask_sqlalchemy = "*"
 isort = "*"
 python-language-server = "*"
+ipython = "*"
 
 [packages]
 flask = "== 1.1.*"
-flask-sqlalchemy = "== 2.4.*"
+flask-sqlalchemy = "== 2.5.*"
 psycopg2-binary = "== 2.8.*"
 uwsgi = "== 2.0.*"
 gunicorn = "== 20.0.*"
