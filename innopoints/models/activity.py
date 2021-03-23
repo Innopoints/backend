@@ -69,7 +69,8 @@ class Activity(db.Model):
     internal = db.Column(db.Boolean, nullable=False, default=False)
     draft = db.Column(db.Boolean, nullable=False, default=True)
     applications = db.relationship('Application',
-                                   cascade='all, delete-orphan')
+                                   cascade='all, delete-orphan',
+                                   back_populates='activity')
 
     @property
     def dates(self):
