@@ -40,7 +40,7 @@ To install the dependencies and run the development server, run the following co
 
 ```bash
 pipenv install
-pipenv run python run.py
+pipenv run start
 ```
 
 ## Project structure
@@ -66,9 +66,9 @@ The database migration history is powered by Flask-Migrate. All the migrations a
 
 ```bash
 # To snapshot the changes into a migration
-pipenv run flask db migrate -m "Make some changes"
+pipenv run new-migration -m "Make some changes"
 # To apply the migration to the database
-pipenv run flask db upgrade
+pipenv run apply-migrations
 ```
 
 **Warning**: Flask-Migrate uses Alembic to analyze the models and autogenerate migrations. There are [some things Alebmic cannot detect](https://alembic.sqlalchemy.org/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect). Make sure you compare the migration created by Alembic with your changes and manually change the migration if necessary.

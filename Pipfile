@@ -32,3 +32,8 @@ pillow = "== 8.1.*"
 
 [requires]
 python_version = "3.8"
+
+[scripts]
+start = "python run.py"
+new-migration = "flask db migrate"
+apply-migrations = "flask db upgrade"
