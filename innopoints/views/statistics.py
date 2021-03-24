@@ -58,16 +58,19 @@ def get_competence_stats():
     project_tag = request.args.get('tag')
 
     competences = (
-        # pylint: disable=bad-continuation
         db.session
             .query(Competence.id.label('competence_id'))
-            .join(feedback_competence)
-            .join(Feedback)
-            .join(Application)
-            .join(Activity)
-            .join(Project)
-            .outerjoin(project_tags)
-            .join(Account, Account.email == Application.applicant_email)
+            .join_from(Competence, feedback_competence,
+                       Competence.id == feedback_competence.c.competence_id)
+            .join_from(feedback_competence, Feedback,
+                       feedback_competence.c.feedback_id == Feedback.id)
+            .join(Feedback.application)
+            .join(Application.activity)
+            .join(Activity.project)
+            .outerjoin_from(Project, project_tags,
+                            Project.id == project_tags.c.project_id)
+            .join_from(Application, Account,
+                       Account.email == Application.applicant_email)
             .add_columns(db.func.count(Feedback.application_id).label('amount'))
             .filter(Feedback.time > start_date,
                     Feedback.time < end_date)
@@ -116,10 +119,12 @@ def get_hour_stats():
         # pylint: disable=bad-continuation
         db.session
             .query(db.func.sum(Application.actual_hours))
-            .join(Activity)
-            .join(Project)
-            .outerjoin(project_tags)
-            .join(Account, Account.email == Application.applicant_email)
+            .join(Application.activity)
+            .join(Activity.project)
+            .outerjoin_from(Project, project_tags,
+                            Project.id == project_tags.c.project_id)
+            .join_from(Application, Account,
+                       Account.email == Application.applicant_email)
             .filter(Project.lifetime_stage == LifetimeStage.finished)
             .filter(Activity.start_date > start_date,
                     Activity.end_date < end_date)
@@ -163,11 +168,11 @@ def get_innopoint_stats():
     student_groups = request.args.getlist('group')
 
     innopoints = (
-        # pylint: disable=bad-continuation
         db.session
             .query(db.func.sum(Transaction.change))
-            .join(Account)
-            .join(StockChange, StockChange.id == Transaction.stock_change_id)
+            .join(Transaction.account)
+            .join_from(Transaction, StockChange,
+                       StockChange.id == Transaction.stock_change_id)
             .filter(StockChange.time > start_date,
                     StockChange.time < end_date)
     )

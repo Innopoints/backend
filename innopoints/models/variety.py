@@ -64,7 +64,7 @@ class Variety(db.Model):
         # pylint: disable=invalid-unary-operand-type
         return -(db.session.query(
             db.func.sum(StockChange.amount)
-        ).join(Account).filter(
+        ).join(StockChange.account).filter(
             StockChange.variety_id == self.id,
             StockChange.status != StockChangeStatus.rejected,
             StockChange.amount < 0,
