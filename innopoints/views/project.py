@@ -79,7 +79,6 @@ def list_ongoing_projects():
 
     db_query = Project.query.filter_by(lifetime_stage=LifetimeStage.ongoing)
 
-    # pylint: disable=bad-continuation
     narrowed_activity = None
     narrowed_subquery = None
     if spots > 0:

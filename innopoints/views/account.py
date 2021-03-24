@@ -212,7 +212,7 @@ def get_timeline(email):
     else:
         end_date = tz_aware_now()
 
-    # pylint: disable=bad-continuation, invalid-unary-operand-type
+    # pylint: disable=invalid-unary-operand-type
 
     applications = (
         db.session

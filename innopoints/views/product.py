@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 @api.route('/products')
 def list_products():
     """List products available in InnoStore."""
-    # pylint: disable=bad-continuation, invalid-unary-operand-type
+    # pylint: disable=invalid-unary-operand-type
     purchases = (
         db.session.query(StockChange.variety_id,
                          db.func.sum(StockChange.amount).label('variety_purchases'))
