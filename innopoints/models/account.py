@@ -102,5 +102,5 @@ class Transaction(db.Model):
     feedback_id = db.Column(db.Integer,
                             db.ForeignKey('feedback.application_id', ondelete='SET NULL'),
                             nullable=True)
-    feedback = db.relationship('StockChange',
+    feedback = db.relationship('Feedback',
                                back_populates='transaction')
