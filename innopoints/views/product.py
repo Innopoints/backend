@@ -46,7 +46,7 @@ def list_products():
     purchases = (
         db.session.query(StockChange.variety_id,
                          db.func.sum(StockChange.amount).label('variety_purchases'))
-            .join(Account)
+            .join(StockChange.account)
             .filter(StockChange.amount < 0,
                     StockChange.status != StockChangeStatus.rejected,
                     ~Account.is_admin)
@@ -99,7 +99,7 @@ def list_products():
         db_query = db_query.filter(or_condition).distinct()
 
     if excluded_colors:
-        db_query = db_query.join(Variety)
+        db_query = db_query.join(Product.varieties)
         if '\x00' in excluded_colors:
             db_query = db_query.filter(Variety.color.isnot(None))
             excluded_colors.remove('\x00')
@@ -118,8 +118,9 @@ def list_products():
         if excluded_colors:
             abort(400, {'message': 'Ordering by purchases is not allowed when filtering.'})
         db_query = (
-            db_query.join(Variety)
-                .outerjoin(purchases, Variety.id == purchases.c.variety_id)
+            db_query.join(Product.varieties)
+                .outerjoin_from(Variety, purchases,
+                                Variety.id == purchases.c.variety_id)
                 .group_by(Product)
         )
 

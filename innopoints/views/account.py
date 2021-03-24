@@ -220,14 +220,17 @@ def get_timeline(email):
                    Application.status.label('application_status'))
             .add_columns(Application.application_time.label('entry_time'))
             .filter(Application.applicant == user)
-            .join(Activity).add_columns(Activity.name.label('activity_name'),
-                                        Activity.id.label('activity_id'))
+            .join(Application.activity)
+            .add_columns(Activity.name.label('activity_name'),
+                         Activity.id.label('activity_id'))
             .filter(~Activity.internal)
-            .join(Project).add_columns(Project.name.label('project_name'),
-                                       Project.id.label('project_id'),
-                                       Project.lifetime_stage.label('project_stage'))
-            .outerjoin(Feedback).add_columns(Feedback.application_id.label('feedback_id'))
-            .add_columns((Application.actual_hours * Activity.reward_rate).label('reward'))
+            .join(Activity.project)
+            .add_columns(Project.name.label('project_name'),
+                         Project.id.label('project_id'),
+                         Project.lifetime_stage.label('project_stage'))
+            .outerjoin(Application.feedback)
+            .add_columns(Feedback.application_id.label('feedback_id'),
+                         (Application.actual_hours * Activity.reward_rate).label('reward'))
     )
 
     purchases = (
@@ -237,9 +240,10 @@ def get_timeline(email):
                    StockChange.time.label('entry_time'))
             .filter(StockChange.account == user)
             .filter(StockChange.amount < 0)
-            .join(Variety).join(Product).add_columns(Product.id.label('product_id'),
-                                                     Product.name.label('product_name'),
-                                                     Product.type.label('product_type'))
+            .join(StockChange.variety).join(Variety.product)
+            .add_columns(Product.id.label('product_id'),
+                         Product.name.label('product_name'),
+                         Product.type.label('product_type'))
     )
 
     promotions = (
@@ -249,15 +253,17 @@ def get_timeline(email):
                    Notification.timestamp.label('entry_time'))
             .filter(Notification.recipient == user,
                     Notification.type == NotificationType.added_as_moderator)
-            .join(Project,
-                  Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
+            .join_from(Notification, Project,
+                       Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
             .filter(Project.creator != user, Project.lifetime_stage != LifetimeStage.draft)
             .add_columns(Project.name.label('project_name'))
-            .outerjoin(Activity, (Activity.project_id == Project.id)
-                               & (Activity.internal)
-                               & (Activity.name == '[[Moderation]]'))
-            .outerjoin(Application, (Application.activity_id == Activity.id)
-                                  & (Application.applicant == user))
+            .outerjoin_from(Project, Activity,
+                            (Activity.project_id == Project.id)
+                            & (Activity.internal)
+                            & (Activity.name == '[[Moderation]]'))
+            .outerjoin_from(Activity, Application,
+                            (Application.activity_id == Activity.id)
+                            & (Application.applicant == user))
             .add_columns(Application.id.label('application_id'))
     )
 
@@ -351,21 +357,20 @@ def get_statistics(email):
         end_date = tz_aware_now()
 
     volunteering = (
-        # pylint: disable=bad-continuation, invalid-unary-operand-type
+        # pylint: disable=invalid-unary-operand-type
         db.session.query(db.func.sum(Application.actual_hours),
                          db.func.count(Application.id))
             .filter(Application.applicant == user,
                     Application.status == ApplicationStatus.approved,
                     Application.application_time >= start_date,
                     Application.application_time <= end_date)
-            .join(Activity).filter(~Activity.fixed_reward, ~Activity.internal)
-            .join(Project).filter(Project.lifetime_stage == LifetimeStage.finished)
+            .join(Application.activity).filter(~Activity.fixed_reward, ~Activity.internal)
+            .join(Activity.project).filter(Project.lifetime_stage == LifetimeStage.finished)
     ).one()
 
     rating = (
-        # pylint: disable=bad-continuation
         db.session.query(db.func.avg(VolunteeringReport.rating))
-            .join(Application)
+            .join(VolunteeringReport.application)
             .filter(Application.applicant == user,
                     Application.status == ApplicationStatus.approved,
                     Application.application_time >= start_date,
@@ -373,15 +378,19 @@ def get_statistics(email):
     ).scalar()
 
     competences = (
-        # pylint: disable=bad-continuation
         db.session.query(db.func.count(feedback_competence.c.feedback_id),
                          feedback_competence.c.competence_id)
             .group_by(feedback_competence.c.competence_id)
-            .join(Feedback).join(Application)
+            .join_from(feedback_competence, Feedback,
+                       feedback_competence.c.feedback_id == Feedback.id)
+            .join(Feedback.application)
             .filter(Application.applicant == user,
                     Application.application_time >= start_date,
                     Application.application_time <= end_date)
-            .join(Competence).add_columns(Competence.name).group_by(Competence.name)
+            .join_from(feedback_competence, Competence,
+                       feedback_competence.c.competence_id == Competence.id)
+            .add_columns(Competence.name)
+            .group_by(Competence.name)
     ).all()
 
     return jsonify(hours=volunteering[0] or 0,

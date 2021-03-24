@@ -211,7 +211,7 @@ def get_report_info(project_id, activity_id, application_id):
 
     avg_rating = db.session.query(
         db.func.round(db.func.avg(VolunteeringReport.rating))
-    ).join(Application).join(Activity).join(
+    ).join(VolunteeringReport.application).join(Application.activity).join(
         project_moderation,
         VolunteeringReport.reporter_email == project_moderation.c.account_email
     ).filter(
@@ -219,13 +219,17 @@ def get_report_info(project_id, activity_id, application_id):
         project_moderation.c.project_id == project_id,
     ).scalar() or 0
 
-    reports = VolunteeringReport.query.join(Application).join(Activity).join(
-        project_moderation,
-        VolunteeringReport.reporter_email == project_moderation.c.account_email
-    ).filter(
-        Application.applicant_email == application.applicant_email,
-        project_moderation.c.project_id == project_id,
-    ).all()
+    reports = (
+        VolunteeringReport.query
+            .join(VolunteeringReport.application)
+            .join(Application.activity)
+            .join_from(VolunteeringReport, project_moderation,
+                       VolunteeringReport.reporter_email == project_moderation.c.account_email)
+            .filter(
+                Application.applicant_email == application.applicant_email,
+                project_moderation.c.project_id == project_id,
+            ).all()
+    )
 
     out_schema = VolunteeringReportSchema(only=('content', 'rating', 'time', 'application'),
                                           many=True)
