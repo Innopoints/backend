@@ -87,7 +87,7 @@ def list_ongoing_projects():
             (narrowed_activity or Activity.query)
                 .outerjoin(Application, (Activity.id == Application.activity_id)
                                       & (Application.status == ApplicationStatus.approved))
-                .add_column(
+                .add_columns(
                     db.func.greatest(
                         Activity.people_required - db.func.count(Application.id), -1
                     ).label('spots')

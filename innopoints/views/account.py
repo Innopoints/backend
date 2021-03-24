@@ -218,7 +218,7 @@ def get_timeline(email):
         db.session
             .query(Application.id.label('application_id'),
                    Application.status.label('application_status'))
-            .add_column(Application.application_time.label('entry_time'))
+            .add_columns(Application.application_time.label('entry_time'))
             .filter(Application.applicant == user)
             .join(Activity).add_columns(Activity.name.label('activity_name'),
                                         Activity.id.label('activity_id'))
@@ -226,8 +226,8 @@ def get_timeline(email):
             .join(Project).add_columns(Project.name.label('project_name'),
                                        Project.id.label('project_id'),
                                        Project.lifetime_stage.label('project_stage'))
-            .outerjoin(Feedback).add_column(Feedback.application_id.label('feedback_id'))
-            .add_column((Application.actual_hours * Activity.reward_rate).label('reward'))
+            .outerjoin(Feedback).add_columns(Feedback.application_id.label('feedback_id'))
+            .add_columns((Application.actual_hours * Activity.reward_rate).label('reward'))
     )
 
     purchases = (
@@ -252,13 +252,13 @@ def get_timeline(email):
             .join(Project,
                   Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
             .filter(Project.creator != user, Project.lifetime_stage != LifetimeStage.draft)
-            .add_column(Project.name.label('project_name'))
+            .add_columns(Project.name.label('project_name'))
             .outerjoin(Activity, (Activity.project_id == Project.id)
                                & (Activity.internal)
                                & (Activity.name == '[[Moderation]]'))
             .outerjoin(Application, (Application.activity_id == Activity.id)
                                   & (Application.applicant == user))
-            .add_column(Application.id.label('application_id'))
+            .add_columns(Application.id.label('application_id'))
     )
 
     projects = (
@@ -381,7 +381,7 @@ def get_statistics(email):
             .filter(Application.applicant == user,
                     Application.application_time >= start_date,
                     Application.application_time <= end_date)
-            .join(Competence).add_column(Competence.name).group_by(Competence.name)
+            .join(Competence).add_columns(Competence.name).group_by(Competence.name)
     ).all()
 
     return jsonify(hours=volunteering[0] or 0,
