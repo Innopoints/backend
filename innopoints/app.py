@@ -90,3 +90,10 @@ def create_app(config='config/prod.py'):
     # Needed when running behind Nginx under Docker for authorization
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1)
     return app
+
+
+def bootstrap_debug():
+    '''Create a development-configured application and push its context.
+       Helpful for trying queries and DB operations in the REPL.'''
+    app = create_app('config/dev.py')
+    app.app_context().push()
