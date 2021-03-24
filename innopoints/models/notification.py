@@ -1,4 +1,6 @@
-"""The Notification model."""
+"""The Notification model.
+
+Also contains the NotificationType and NotificationGroup enums."""
 
 from enum import Enum, auto
 

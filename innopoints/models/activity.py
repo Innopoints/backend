@@ -1,35 +1,13 @@
-"""The Activity and Competence models."""
+"""The Activity model."""
 
 from innopoints.extensions import db
 
-from .application import Application, ApplicationStatus
+from innopoints.models.application import Application, ApplicationStatus
 
 
 IPTS_PER_HOUR = 70
 DEFAULT_QUESTIONS = ("What did you learn from this volunteering opportunity?",
                      "What could be improved in the organization?")
-
-
-activity_competence = db.Table(
-    'activity_competence',
-    db.Column('activity_id', db.Integer,
-              db.ForeignKey('activities.id', ondelete='CASCADE'),
-              primary_key=True),
-    db.Column('competence_id', db.Integer,
-              db.ForeignKey('competences.id', ondelete='CASCADE'),
-              primary_key=True)
-)
-
-
-feedback_competence = db.Table(
-    'feedback_competence',
-    db.Column('feedback_id', db.Integer,
-              db.ForeignKey('feedback.application_id', ondelete='CASCADE'),
-              primary_key=True),
-    db.Column('competence_id', db.Integer,
-              db.ForeignKey('competences.id', ondelete='CASCADE'),
-              primary_key=True)
-)
 
 
 class Activity(db.Model):
@@ -63,7 +41,7 @@ class Activity(db.Model):
     people_required = db.Column(db.Integer, nullable=True)
     telegram_required = db.Column(db.Boolean, nullable=False, default=False)
     competences = db.relationship('Competence',
-                                  secondary=activity_competence)
+                                  secondary='activity_competence')
     application_deadline = db.Column(db.DateTime(timezone=True), nullable=True)
     feedback_questions = db.Column(db.ARRAY(db.String(1024)),
                                    nullable=False,
@@ -113,11 +91,3 @@ class Activity(db.Model):
             and self.reward_rate is not None
             and len(self.competences) in range(1, 4)
         )
-
-
-class Competence(db.Model):
-    """Represents volunteers' competences."""
-    __tablename__ = 'competences'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False, unique=True)
