@@ -1,32 +1,12 @@
-"""The Project, ProjectFile and Tag models."""
+"""The Project model.
+
+Also contains the ReviewStatus and LifetimeStage enums."""
 
 from enum import Enum, auto
 
 from innopoints.core.timezone import tz_aware_now
 from innopoints.extensions import db
-from innopoints.models import Activity
-
-
-project_moderation = db.Table(
-    'project_moderation',
-    db.Column('project_id', db.Integer,
-              db.ForeignKey('projects.id', ondelete='CASCADE'),
-              primary_key=True),
-    db.Column('account_email', db.String(128),
-              db.ForeignKey('accounts.email', ondelete='CASCADE'),
-              primary_key=True)
-)
-
-
-project_tags = db.Table(
-    'project_tags',
-    db.Column('project_id', db.Integer,
-              db.ForeignKey('projects.id', ondelete='CASCADE'),
-              primary_key=True),
-    db.Column('tag_id', db.Integer,
-              db.ForeignKey('tags.id', ondelete='CASCADE'),
-              primary_key=True)
-)
+from innopoints.models.activity import Activity
 
 
 class ReviewStatus(Enum):
@@ -58,7 +38,7 @@ class Project(db.Model):
                                  passive_deletes=True,
                                  back_populates='project')
     moderators = db.relationship('Account',
-                                 secondary=project_moderation,
+                                 secondary='project_moderation',
                                  back_populates='moderated_projects')
     creator_email = db.Column(db.String(128),
                               db.ForeignKey('accounts.email', ondelete='CASCADE'),
@@ -68,7 +48,7 @@ class Project(db.Model):
     admin_feedback = db.Column(db.String(1024), nullable=True)
     review_status = db.Column(db.Enum(ReviewStatus), nullable=True)
     lifetime_stage = db.Column(db.Enum(LifetimeStage), nullable=False, default=LifetimeStage.draft)
-    tags = db.relationship('Tag', secondary=project_tags)
+    tags = db.relationship('Tag', secondary='project_tags')
 
     @property
     def start_date(self):
@@ -94,26 +74,3 @@ class Project(db.Model):
         if self.image_id is None:
             return None
         return f'/file/{self.image_id}'
-
-
-class ProjectFile(db.Model):
-    """Represents the files that can only be accessed by volunteers and moderators
-       of a certain project.
-
-       WARNING: this class is currently not used."""
-    __tablename__ = 'project_files'
-
-    project_id = db.Column(db.Integer,
-                           db.ForeignKey('projects.id', ondelete='CASCADE'),
-                           primary_key=True)
-    file_id = db.Column(db.Integer,
-                        db.ForeignKey('static_files.id', ondelete='CASCADE'),
-                        primary_key=True)
-
-
-class Tag(db.Model):
-    """Represents tags for grouping projects in the statistics."""
-    __tablename__ = 'tags'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False, unique=True)

@@ -1,18 +1,8 @@
-"""The Variety, ProductImage, StockChange, Color and Size models."""
+"""The Variety model."""
 
-from enum import Enum, auto
-
-from innopoints.core.timezone import tz_aware_now
 from innopoints.extensions import db
-from .account import Account
-
-
-class StockChangeStatus(Enum):
-    """Represents a status of product variety stock change."""
-    carried_out = auto()
-    pending = auto()
-    ready_for_pickup = auto()
-    rejected = auto()
+from innopoints.models.account import Account
+from innopoints.models.stock_change import StockChange, StockChangeStatus
 
 
 class Variety(db.Model):
@@ -80,73 +70,3 @@ class Variety(db.Model):
             StockChange.amount < 0,
             ~Account.is_admin
         ).scalar() or 0)
-
-
-class ProductImage(db.Model):
-    """Represents an ordered image for a particular variety of a product."""
-    __tablename__ = 'product_images'
-    __table_args__ = (
-        db.UniqueConstraint('variety_id', 'order',
-                            name='unique order indices',
-                            deferrable=True,
-                            initially='DEFERRED'),
-    )
-
-    id = db.Column(db.Integer, primary_key=True)
-    variety_id = db.Column(db.Integer,
-                           db.ForeignKey('varieties.id', ondelete='CASCADE'),
-                           nullable=False)
-    variety = db.relationship('Variety',
-                              uselist=False,
-                              back_populates='images')
-    image_id = db.Column(db.Integer,
-                         db.ForeignKey('static_files.id', ondelete='CASCADE'),
-                         nullable=False)
-    image = db.relationship('StaticFile', back_populates='product_image', uselist=False)
-    order = db.Column(db.Integer,
-                      db.CheckConstraint('"order" >= 0', name='non-negative order'),
-                      nullable=False)
-
-
-class StockChange(db.Model):
-    """Represents the change in the amount of variety available."""
-    __tablename__ = 'stock_changes'
-
-    id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Integer, nullable=False)
-    time = db.Column(db.DateTime(timezone=True), nullable=False, default=tz_aware_now)
-    status = db.Column(db.Enum(StockChangeStatus), nullable=False)
-    account_email = db.Column(db.String(128),
-                              db.ForeignKey('accounts.email', ondelete='CASCADE'),
-                              nullable=False)
-    account = db.relationship('Account',
-                              back_populates='stock_changes')
-    variety_id = db.Column(db.Integer,
-                           db.ForeignKey('varieties.id', ondelete='CASCADE'),
-                           nullable=False)
-    variety = db.relationship('Variety',
-                              back_populates='stock_changes')
-    transaction = db.relationship('Transaction',
-                                  uselist=False,
-                                  single_parent=True,
-                                  back_populates='stock_change')
-
-
-class Color(db.Model):
-    """Represents colors of items in the store."""
-    __tablename__ = 'colors'
-
-    value = db.Column(db.String(6), primary_key=True)
-    varieties = db.relationship('Variety',
-                                cascade='all, delete-orphan',
-                                passive_deletes=True)
-
-
-class Size(db.Model):
-    """Represents sizes of items in the store."""
-    __tablename__ = 'sizes'
-
-    value = db.Column(db.String(3), primary_key=True)
-    varieties = db.relationship('Variety',
-                                cascade='all, delete-orphan',
-                                passive_deletes=True)
