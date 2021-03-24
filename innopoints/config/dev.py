@@ -4,7 +4,7 @@ import os
 from innopoints.config.common import *
 
 
-SQLALCHEMY_ECHO = True  # Will log all the issued SQL statements
+# SQLALCHEMY_ECHO = True  # Will log all the issued SQL statements
 SECRET_KEY = b'\xdb4\xab_\xb0\xbf\xc2L\x86H<\xc8^\xc0\x95\xb7'
 
 INNOPOLIS_SSO_CLIENT_ID = os.getenv('INNOPOLIS_SSO_CLIENT_ID')
