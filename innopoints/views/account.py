@@ -39,7 +39,6 @@ from werkzeug.security import check_password_hash
 from innopoints.blueprints import api
 from innopoints.core.helpers import abort, admin_required
 from innopoints.core.timezone import tz_aware_now, unix_epoch
-from innopoints.core.sql_hacks import as_row
 from innopoints.core.notifications import notify
 from innopoints.extensions import db
 from innopoints.models import (
@@ -69,12 +68,12 @@ log = logging.getLogger(__name__)
 def subquery_to_events(subquery, event_type):
     """Take a subquery that has an 'entry_time' field and output a query
     that packs the rest of the fields into a JSON payload and returns it with the time."""
-    payload = db.func.row_to_json(as_row(subquery)).cast(JSONB) - 'entry_time'
+    # payload = db.func.row_to_json(query).cast(JSONB) - 'entry_time'
     return db.session.query(
-        'entry_time',
+        subquery.c.entry_time.label('entry_time'),
         db.literal(event_type).label('type'),
-        payload.label('payload')
-    ).select_from(subquery)
+        (db.func.row_to_json(db.literal_column(subquery.name)).cast(JSONB) - 'entry_time').label('payload')
+    )
 
 
 @api.route('/account', defaults={'email': None})
@@ -273,28 +272,28 @@ def get_timeline(email):
                     Project.lifetime_stage != LifetimeStage.draft)
     )
 
-    timeline = (
+    timeline = subquery_to_events(
+        applications.filter(Application.application_time >= start_date,
+                            Application.application_time <= end_date).subquery('application_events'),
+        'application',
+    ).union(
         subquery_to_events(
-            applications.filter(Application.application_time >= start_date,
-                                Application.application_time <= end_date).subquery(),
-            'application'
-        )
-        .union(subquery_to_events(
             purchases.filter(StockChange.time >= start_date,
-                             StockChange.time <= end_date).subquery(),
+                             StockChange.time <= end_date).subquery('purchase_events'),
             'purchase'
-        ))
-        .union(subquery_to_events(
+        ),
+        subquery_to_events(
             promotions.filter(Notification.timestamp >= start_date,
-                              Notification.timestamp <= end_date).subquery(),
+                              Notification.timestamp <= end_date).subquery('promotion_events'),
             'promotion'
-        ))
-        .union(subquery_to_events(
+        ),
+        subquery_to_events(
             projects.filter(Project.creation_time >= start_date,
-                            Project.creation_time <= end_date).subquery(),
+                            Project.creation_time <= end_date).subquery('project_events'),
             'project'
-        ))
-    ).order_by(db.desc('entry_time'))
+        )
+    ).subquery()
+    ordered_timeline = db.session.query(timeline).order_by(timeline.c.entry_time.desc())
 
     leftover_applications = db.session.query(
         applications.filter(Application.application_time <= start_date).exists()
@@ -310,7 +309,7 @@ def get_timeline(email):
     ).scalar()
 
     out_schema = TimelineSchema(many=True)
-    return jsonify(data=out_schema.dump(timeline.all()),
+    return jsonify(data=out_schema.dump(ordered_timeline.all()),
                    more=any((leftover_applications,
                              leftover_purchases,
                              leftover_promotions,
