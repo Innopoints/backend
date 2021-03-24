@@ -219,7 +219,7 @@ def get_timeline(email):
             .query(Application.id.label('application_id'),
                    Application.status.label('application_status'))
             .add_column(Application.application_time.label('entry_time'))
-            .filter_by(applicant=user)
+            .filter(Application.applicant == user)
             .join(Activity).add_columns(Activity.name.label('activity_name'),
                                         Activity.id.label('activity_id'))
             .filter(~Activity.internal)
@@ -235,7 +235,7 @@ def get_timeline(email):
             .query(StockChange.id.label('stock_change_id'),
                    StockChange.status.label('stock_change_status'),
                    StockChange.time.label('entry_time'))
-            .filter_by(account=user)
+            .filter(StockChange.account == user)
             .filter(StockChange.amount < 0)
             .join(Variety).join(Product).add_columns(Product.id.label('product_id'),
                                                      Product.name.label('product_name'),
@@ -247,7 +247,8 @@ def get_timeline(email):
         db.session
             .query(Notification.payload['project_id'].label('project_id'),
                    Notification.timestamp.label('entry_time'))
-            .filter_by(recipient_email=user.email, type=NotificationType.added_as_moderator)
+            .filter(Notification.recipient == user,
+                    Notification.type == NotificationType.added_as_moderator)
             .join(Project,
                   Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
             .filter(Project.creator != user, Project.lifetime_stage != LifetimeStage.draft)
@@ -266,8 +267,8 @@ def get_timeline(email):
                    Project.name.label('project_name'),
                    Project.review_status,
                    Project.creation_time.label('entry_time'))
-            .filter_by(creator=user)
-            .filter(Project.lifetime_stage != LifetimeStage.draft)
+            .filter(Project.creator == user,
+                    Project.lifetime_stage != LifetimeStage.draft)
     )
 
     timeline = (
@@ -364,9 +365,11 @@ def get_statistics(email):
     rating = (
         # pylint: disable=bad-continuation
         db.session.query(db.func.avg(VolunteeringReport.rating))
-            .join(Application).filter_by(applicant=user, status=ApplicationStatus.approved)
-            .filter(Application.application_time >= start_date)
-            .filter(Application.application_time <= end_date)
+            .join(Application)
+            .filter(Application.applicant == user,
+                    Application.status == ApplicationStatus.approved,
+                    Application.application_time >= start_date,
+                    Application.application_time <= end_date)
     ).scalar()
 
     competences = (
@@ -374,9 +377,10 @@ def get_statistics(email):
         db.session.query(db.func.count(feedback_competence.c.feedback_id),
                          feedback_competence.c.competence_id)
             .group_by(feedback_competence.c.competence_id)
-            .join(Feedback).join(Application).filter_by(applicant=user)
-            .filter(Application.application_time >= start_date)
-            .filter(Application.application_time <= end_date)
+            .join(Feedback).join(Application)
+            .filter(Application.applicant == user,
+                    Application.application_time >= start_date,
+                    Application.application_time <= end_date)
             .join(Competence).add_column(Competence.name).group_by(Competence.name)
     ).all()
 

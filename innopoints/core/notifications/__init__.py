@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 
 from innopoints.extensions import db, mail
 from innopoints.models import Notification, NotificationType, Account, type_to_group
-from .content import get_content, Link
+from .content import get_content
 from .push import push
 
 log = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ def notify(recipient_email: str, notification_type: NotificationType, payload=No
     channel = db.session.query(
         # pylint: disable=unsubscriptable-object
         Account.notification_settings[notification_group]
-    ).filter_by(email=recipient_email).scalar()
+    ).filter(Account.email == recipient_email).scalar()
 
     if channel == 'email':
         message_content = get_content(notification_type, payload)
