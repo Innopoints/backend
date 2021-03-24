@@ -14,8 +14,6 @@ class CompetenceSchema(ma.SQLAlchemyAutoSchema):
         model = Competence
         load_instance = True
         ordered = True
-        include_relationships = True
-        exclude = ('activities', 'feedback')
 
 
 class ActivitySchema(ma.SQLAlchemyAutoSchema):
