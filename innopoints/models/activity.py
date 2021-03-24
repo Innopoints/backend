@@ -63,8 +63,7 @@ class Activity(db.Model):
     people_required = db.Column(db.Integer, nullable=True)
     telegram_required = db.Column(db.Boolean, nullable=False, default=False)
     competences = db.relationship('Competence',
-                                  secondary=activity_competence,
-                                  back_populates='activities')
+                                  secondary=activity_competence)
     application_deadline = db.Column(db.DateTime(timezone=True), nullable=True)
     feedback_questions = db.Column(db.ARRAY(db.String(1024)),
                                    nullable=False,
