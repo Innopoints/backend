@@ -63,7 +63,7 @@ def get_competence_stats():
             .join(feedback_competence,
                   Competence.id == feedback_competence.c.competence_id)
             .join(Feedback,
-                  feedback_competence.c.feedback_id == Feedback.id)
+                  feedback_competence.c.feedback_id == Feedback.application_id)
             .join(Feedback.application)
             .join(Application.activity)
             .join(Activity.project)

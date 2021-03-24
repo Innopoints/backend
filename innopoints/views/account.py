@@ -378,7 +378,7 @@ def get_statistics(email):
                          feedback_competence.c.competence_id)
             .group_by(feedback_competence.c.competence_id)
             .join(Feedback,
-                  feedback_competence.c.feedback_id == Feedback.id)
+                  feedback_competence.c.feedback_id == Feedback.application_id)
             .join(Feedback.application)
             .filter(Application.applicant == user,
                     Application.application_time >= start_date,
