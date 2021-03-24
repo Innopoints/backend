@@ -109,7 +109,8 @@ def list_products():
                 .having(~(color_array.cast(db.ARRAY(db.Text)).op('<@')(excluded_colors)))
         )
 
-    db_query = db_query.filter(Product.price >= min_price)
+    if min_price > 0:
+        db_query = db_query.filter(Product.price >= min_price)
     if max_price is not None:
         db_query = db_query.filter(Product.price <= max_price)
 
@@ -123,7 +124,6 @@ def list_products():
                                 Variety.id == purchases.c.variety_id)
                 .group_by(Product)
         )
-
 
     db_query = db_query.order_by(ordering[order_by, order])
     db_query = db_query.offset(limit * (page - 1)).limit(limit)
