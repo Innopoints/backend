@@ -244,7 +244,6 @@ def list_purchases():
     purchases = StockChange.query.filter(StockChange.amount < 0)
     count = db.session.query(purchases.subquery()).count()
     purchases = (
-        # pylint: disable=bad-continuation
         purchases
             .order_by(StockChange.time.desc())
             .offset(limit * (page - 1))

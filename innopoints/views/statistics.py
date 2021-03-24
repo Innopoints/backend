@@ -116,7 +116,6 @@ def get_hour_stats():
     project_tag = request.args.get('tag')
 
     hours = (
-        # pylint: disable=bad-continuation
         db.session
             .query(db.func.sum(Application.actual_hours))
             .join(Application.activity)
