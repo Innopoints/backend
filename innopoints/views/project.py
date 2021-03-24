@@ -158,7 +158,7 @@ def list_ongoing_projects():
         conditional_exclude.remove('moderators')
         if current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'files', 'lifetime_stage']
+    exclude = ['admin_feedback', 'lifetime_stage']
     activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
                                                             'fixed_reward', 'working_hours',
                                                             'reward_rate', 'people_required',
@@ -203,7 +203,7 @@ def list_past_projects():
         conditional_exclude.remove('moderators')
         if current_user.is_admin:
             conditional_exclude.remove('review_status')
-    exclude = ['admin_feedback', 'files', 'lifetime_stage']
+    exclude = ['admin_feedback', 'lifetime_stage']
     activity_exclude = [f'activities.{field}' for field in ('description', 'telegram_required',
                                                             'fixed_reward', 'working_hours',
                                                             'reward_rate', 'people_required',
@@ -239,7 +239,7 @@ def list_projects_for_review():
 def create_project():
     """Create a new draft project."""
     in_schema = ProjectSchema(exclude=('id', 'creation_time', 'creator', 'admin_feedback',
-                                       'review_status', 'lifetime_stage', 'files',
+                                       'review_status', 'lifetime_stage',
                                        'activities.internal', 'activities.id',
                                        'activities.project', 'activities.applications'))
 
@@ -267,7 +267,7 @@ def create_project():
         log.exception(err)
         abort(400, {'message': 'Data integrity violated.'})
 
-    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status', 'files',
+    out_schema = ProjectSchema(exclude=('admin_feedback', 'review_status',
                                         'activities.existing_application'),
                                context={'user': current_user})
     return out_schema.jsonify(new_project)
@@ -465,8 +465,7 @@ class ProjectDetailAPI(MethodView):
     def get(self, project_id):
         """Get full information about the project"""
         project = Project.query.get_or_404(project_id)
-        exclude = ['files',
-                   'review_status',
+        exclude = ['review_status',
                    'admin_feedback',
                    'activities.applications',
                    'activities.existing_application',
