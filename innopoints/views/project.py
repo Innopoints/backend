@@ -84,9 +84,10 @@ def list_ongoing_projects():
     if spots > 0:
         narrowed_activity = (
             (narrowed_activity or Activity.query)
-                .outerjoin_from(Activity, Application,
-                                (Activity.id == Application.activity_id)
-                                & (Application.status == ApplicationStatus.approved))
+                .outerjoin(
+                    Activity.applications
+                        .and_(Application.status == ApplicationStatus.approved)
+                )
                 .add_columns(
                     db.func.greatest(
                         Activity.people_required - db.func.count(Application.id), -1
@@ -97,16 +98,16 @@ def list_ongoing_projects():
     if excluded_competences:
         narrowed_activity = (
             (narrowed_activity or Activity.query)
-                .join_from(Activity, activity_competence,
-                           Activity.id == activity_competence.c.activity_id)
+                .join(activity_competence,
+                      Activity.id == activity_competence.c.activity_id)
                 .group_by(Activity)
                 .having(~(competence_array.op('<@')(excluded_competences)))
         )
         narrowed_subquery = narrowed_activity.subquery()
 
     if narrowed_subquery is not None:
-        db_query = db_query.join_from(Project, narrowed_subquery,
-                                      Project.id == narrowed_subquery.c.project_id)
+        db_query = db_query.join(narrowed_subquery,
+                                 Project.id == narrowed_subquery.c.project_id)
     else:
         db_query = db_query.join(Project.activities)
 

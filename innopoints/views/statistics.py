@@ -60,17 +60,16 @@ def get_competence_stats():
     competences = (
         db.session
             .query(Competence.id.label('competence_id'))
-            .join_from(Competence, feedback_competence,
-                       Competence.id == feedback_competence.c.competence_id)
-            .join_from(feedback_competence, Feedback,
-                       feedback_competence.c.feedback_id == Feedback.id)
+            .join(feedback_competence,
+                  Competence.id == feedback_competence.c.competence_id)
+            .join(Feedback,
+                  feedback_competence.c.feedback_id == Feedback.id)
             .join(Feedback.application)
             .join(Application.activity)
             .join(Activity.project)
-            .outerjoin_from(Project, project_tags,
-                            Project.id == project_tags.c.project_id)
-            .join_from(Application, Account,
-                       Account.email == Application.applicant_email)
+            .outerjoin(project_tags,
+                       Project.id == project_tags.c.project_id)
+            .join(Application.applicant)
             .add_columns(db.func.count(Feedback.application_id).label('amount'))
             .filter(Feedback.time > start_date,
                     Feedback.time < end_date)
@@ -120,10 +119,9 @@ def get_hour_stats():
             .query(db.func.sum(Application.actual_hours))
             .join(Application.activity)
             .join(Activity.project)
-            .outerjoin_from(Project, project_tags,
-                            Project.id == project_tags.c.project_id)
-            .join_from(Application, Account,
-                       Account.email == Application.applicant_email)
+            .outerjoin(project_tags,
+                       Project.id == project_tags.c.project_id)
+            .join(Application.applicant)
             .filter(Project.lifetime_stage == LifetimeStage.finished)
             .filter(Activity.start_date > start_date,
                     Activity.end_date < end_date)
@@ -170,8 +168,7 @@ def get_innopoint_stats():
         db.session
             .query(db.func.sum(Transaction.change))
             .join(Transaction.account)
-            .join_from(Transaction, StockChange,
-                       StockChange.id == Transaction.stock_change_id)
+            .join(Transaction.stock_change)
             .filter(StockChange.time > start_date,
                     StockChange.time < end_date)
     )
