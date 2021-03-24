@@ -68,7 +68,7 @@ def get_competence_stats():
             .join(Project)
             .outerjoin(project_tags)
             .join(Account, Account.email == Application.applicant_email)
-            .add_column(db.func.count(Feedback.application_id).label('amount'))
+            .add_columns(db.func.count(Feedback.application_id).label('amount'))
             .filter(Feedback.time > start_date,
                     Feedback.time < end_date)
             .group_by(Competence.id)
