@@ -253,17 +253,13 @@ def get_timeline(email):
                    Notification.timestamp.label('entry_time'))
             .filter(Notification.recipient == user,
                     Notification.type == NotificationType.added_as_moderator)
-            .join_from(Notification, Project,
-                       Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
+            .join(Project,
+                  Project.id == Notification.payload.op('->>')('project_id').cast(db.Integer))
             .filter(Project.creator != user, Project.lifetime_stage != LifetimeStage.draft)
             .add_columns(Project.name.label('project_name'))
-            .outerjoin_from(Project, Activity,
-                            (Activity.project_id == Project.id)
-                            & (Activity.internal)
-                            & (Activity.name == '[[Moderation]]'))
-            .outerjoin_from(Activity, Application,
-                            (Application.activity_id == Activity.id)
-                            & (Application.applicant == user))
+            .outerjoin(Project.activities.and_(Activity.internal,
+                                               Activity.name == '[[Moderation]]'))
+            .outerjoin(Activity.applications.and_(Application.applicant == user))
             .add_columns(Application.id.label('application_id'))
     )
 
@@ -381,14 +377,14 @@ def get_statistics(email):
         db.session.query(db.func.count(feedback_competence.c.feedback_id),
                          feedback_competence.c.competence_id)
             .group_by(feedback_competence.c.competence_id)
-            .join_from(feedback_competence, Feedback,
-                       feedback_competence.c.feedback_id == Feedback.id)
+            .join(Feedback,
+                  feedback_competence.c.feedback_id == Feedback.id)
             .join(Feedback.application)
             .filter(Application.applicant == user,
                     Application.application_time >= start_date,
                     Application.application_time <= end_date)
-            .join_from(feedback_competence, Competence,
-                       feedback_competence.c.competence_id == Competence.id)
+            .join(Competence,
+                  feedback_competence.c.competence_id == Competence.id)
             .add_columns(Competence.name)
             .group_by(Competence.name)
     ).all()

@@ -120,8 +120,8 @@ def list_products():
             abort(400, {'message': 'Ordering by purchases is not allowed when filtering.'})
         db_query = (
             db_query.join(Product.varieties)
-                .outerjoin_from(Variety, purchases,
-                                Variety.id == purchases.c.variety_id)
+                .outerjoin(purchases,
+                           Variety.id == purchases.c.variety_id)
                 .group_by(Product)
         )
 

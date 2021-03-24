@@ -223,8 +223,8 @@ def get_report_info(project_id, activity_id, application_id):
         VolunteeringReport.query
             .join(VolunteeringReport.application)
             .join(Application.activity)
-            .join_from(VolunteeringReport, project_moderation,
-                       VolunteeringReport.reporter_email == project_moderation.c.account_email)
+            .join(project_moderation,
+                  VolunteeringReport.reporter_email == project_moderation.c.account_email)
             .filter(
                 Application.applicant_email == application.applicant_email,
                 project_moderation.c.project_id == project_id,
