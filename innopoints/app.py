@@ -29,7 +29,7 @@ def create_app(config='config/prod.py'):
     # Initialize extensions/add-ons/plugins.
     db.init_app(app)
     Migrate(app, db)
-    while True:
+    for _ in range(3):
         try:
             with app.app_context():
                 db.engine.connect()
@@ -37,6 +37,8 @@ def create_app(config='config/prod.py'):
         except (RuntimeError, psycopg2.OperationalError, sqlalchemy.exc.OperationalError) as err:
             log.exception(f'Couldn\'t connect to DB. Error: {err.with_traceback(None)}. retrying..')
             time.sleep(5)
+    else:
+        raise Exception('Database unreachable')
 
     with app.app_context():
         upgrade()
