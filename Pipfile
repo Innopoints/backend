@@ -11,6 +11,7 @@ python-language-server = "*"
 ipython = "*"
 pytest-flask = "*"
 pytest = "*"
+faker = "*"
 
 [packages]
 flask = "== 1.1.*"
