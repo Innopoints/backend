@@ -9,6 +9,7 @@ pylint_flask_sqlalchemy = "*"
 isort = "*"
 python-language-server = "*"
 ipython = "*"
+pytest-flask = "*"
 pytest = "*"
 
 [packages]
@@ -37,3 +38,4 @@ python_version = "3.8"
 start = "python run.py"
 new-migration = "flask db migrate"
 apply-migrations = "flask db upgrade"
+test = "python -m pytest --import-mode=importlib"
