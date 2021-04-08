@@ -96,6 +96,17 @@ def create_app(config='config/prod.py'):
 
 def bootstrap_debug():
     '''Create a development-configured application and push its context.
-       Helpful for trying queries and DB operations in the REPL.'''
+       Helpful for trying queries and DB operations in the REPL.
+
+       Launch IPython and run the following lines:
+       ```python
+       from innopoints.app import bootstrap_debug
+       bootstrap_debug()
+       from innopoints.models import *
+       from innopoints.extensions import db
+       ```
+
+       You'll now have a functioning `db.session` and all models in the namespace.
+    '''
     app = create_app('config/dev.py')
     app.app_context().push()

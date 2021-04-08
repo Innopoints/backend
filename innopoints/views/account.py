@@ -489,6 +489,7 @@ def change_notification_settings(email):
 
     return NO_PAYLOAD
 
+
 @api.route('/reclaim-innopoints', methods=['POST'])
 @login_required
 def reclaim_innopoints():
