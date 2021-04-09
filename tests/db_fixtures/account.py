@@ -7,13 +7,13 @@ import flask_login
 import pytest
 from faker import Faker
 from flask import Flask, session as top_level_session
-from flask.testing import FlaskClient
 
 from innopoints.extensions import db
 from innopoints.models import Account
+from tests.json_capable_test_client import JsonCapableTestClient
 
 
-def login_user(user: Account, app: Flask, client: FlaskClient, csrf_token: str):
+def login_user(user: Account, app: Flask, client: JsonCapableTestClient, csrf_token: str):
     '''Log in a particular user for the current instance of the test client.'''
 
     with app.test_request_context('/login'):
@@ -107,7 +107,7 @@ def admins(faker: Faker) -> Generator[List[Account], None, None]:
 @pytest.fixture()
 def logged_in_student(
     app: Flask,
-    client: FlaskClient,
+    client: JsonCapableTestClient,
     students: List[Account],
     faker: Faker,
 ) -> Tuple[Account, str]:
@@ -123,7 +123,7 @@ def logged_in_student(
 @pytest.fixture()
 def logged_in_admin(
     app: Flask,
-    client: FlaskClient,
+    client: JsonCapableTestClient,
     admins: List[Account],
     faker: Faker,
 ) -> Tuple[Account, str]:

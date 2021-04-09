@@ -14,6 +14,7 @@ class AccountSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         ordered = True
         include_relationships = True
+        exclude = ('notifications',)
 
     def get_csrf_token(self, _account):
         return self.context.get('csrf_token')
