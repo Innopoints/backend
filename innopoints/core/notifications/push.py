@@ -23,7 +23,10 @@ def remove_links(fragment):
 
 def push(recipient_email: str, notification_type: NotificationType, payload=None):
     '''Sends a notification to the specified user.'''
-    subscriptions = Account.query.get(recipient_email).notification_settings.get('subscriptions')
+    subscriptions = (
+        db.session.get(Account, recipient_email)
+            .notification_settings.get('subscriptions')
+    )
     if subscriptions is None:
         log.error(f'User {recipient_email} is not subscribed to push notifications.')
         return

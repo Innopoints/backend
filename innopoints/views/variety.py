@@ -278,7 +278,7 @@ def edit_purchase_status(stock_change_id):
 
     stock_change = StockChange.query.get_or_404(stock_change_id)
     if stock_change.status != status:
-        variety = Variety.query.get(stock_change.variety_id)
+        variety = db.session.get(Variety, stock_change.variety_id)
         product = variety.product
         if status == StockChangeStatus.rejected:
             db.session.delete(stock_change.transaction)

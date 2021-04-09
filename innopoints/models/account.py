@@ -78,4 +78,4 @@ class Account(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(email):
     """Return a user instance by the e-mail."""
-    return Account.query.get(email)
+    return db.session.get(Account, email)

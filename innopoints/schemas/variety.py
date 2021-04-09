@@ -163,7 +163,7 @@ class StockChangeSchema(ma.SQLAlchemyAutoSchema):
 
     @pre_dump
     def get_product(self, stock_change, **_kwargs):
-        stock_change.product = Product.query.get(stock_change.variety.product_id)
+        stock_change.product = db.session.get(Product, stock_change.variety.product_id)
         return stock_change
 
 

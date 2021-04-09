@@ -47,7 +47,7 @@ def authorize():
     except (MissingClaimError, InvalidClaimError):
         abort(401)
 
-    user = Account.query.get(userinfo['email'])
+    user = db.session.get(Account, userinfo['email'])
     should_be_admin = 'Innopoints_Admins' in userinfo.get('group', [])
     if user is None:
         user = Account(email=userinfo['email'],
