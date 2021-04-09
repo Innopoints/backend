@@ -20,6 +20,17 @@ def _factory(partial_module_string, url_prefix='/'):
     name = partial_module_string
     import_name = 'innopoints.views'
     blueprint = Blueprint(name, import_name, url_prefix=url_prefix)
+
+    @blueprint.errorhandler(401)
+    def _unauthorized_no_body(_error):
+        '''Prevent sending the HTML body with the 401 response.'''
+        return '', 401
+
+    @blueprint.errorhandler(403)
+    def _forbidden_no_body(_error):
+        '''Prevent sending the HTML body with the 403 response.'''
+        return '', 403
+
     return blueprint
 
 
