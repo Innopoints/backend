@@ -9,7 +9,6 @@ pylint_flask_sqlalchemy = "*"
 isort = "*"
 python-language-server = "*"
 ipython = "*"
-pytest-flask = "*"
 pytest = "*"
 faker = "*"
 
