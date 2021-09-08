@@ -27,7 +27,7 @@ python-dotenv = "== 0.14.*"
 flask-mail = "== 0.9.*"
 pywebpush = "== 1.13.*"
 flask-pywebpush = "== 1.1.*"
-pillow = "== 8.2.*"
+pillow = "== 8.3.*"
 marshmallow-sqlalchemy = "== 0.24.*"
 
 [requires]
