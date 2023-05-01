@@ -12,7 +12,7 @@ ipython = "*"
 pytest = "*"
 
 [packages]
-flask = "== 1.1.*"
+flask = "== 2.3.*"
 flask-sqlalchemy = "== 2.5.*"
 psycopg2-binary = "== 2.8.*"
 uwsgi = "== 2.0.*"
