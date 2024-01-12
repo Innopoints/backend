@@ -20,9 +20,9 @@ class Activity(db.Model):
                            name='people required are unset or non-negative'),
         db.CheckConstraint('draft OR working_hours != NULL',
                            name='working hours are not nullable for non-drafts'),
-        db.CheckConstraint(f'draft OR (fixed_reward AND working_hours = 1) '
-                           f'OR (NOT fixed_reward AND reward_rate = {IPTS_PER_HOUR})',
-                           name='reward policy'),
+        # db.CheckConstraint(f'draft OR (fixed_reward AND working_hours = 1) '
+        #                    f'OR (NOT fixed_reward AND reward_rate = {IPTS_PER_HOUR})',
+        #                    name='reward policy'),
     )
 
     id = db.Column(db.Integer, primary_key=True)
