@@ -5,7 +5,7 @@ from innopoints.extensions import db
 from innopoints.models.application import Application, ApplicationStatus
 
 
-IPTS_PER_HOUR = 70
+IPTS_PER_HOUR = 100
 DEFAULT_QUESTIONS = ("What did you learn from this volunteering opportunity?",
                      "What could be improved in the organization?")
 

@@ -2223,7 +2223,7 @@ components:
         reward_rate:
           type: integer
           minimum: 0
-          default: 70
+          default: 100
         fixed_reward:
           type: boolean
           default: false
